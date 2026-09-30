@@ -22,11 +22,11 @@ CPMAddPackage(
 )
 
 option(AMPERSAND_MODULE_CORE "Build the Core module" ON)
-option(AMPERSAND_MODULE_AUDIO "Build the Audio module" OFF)
-option(AMPERSAND_MODULE_INPUT "Build the Input module" OFF)
-option(AMPERSAND_MODULE_NET "Build the Network module" OFF)
-option(AMPERSAND_MODULE_PHYSICS "Build the Physics module" OFF)
-option(AMPERSAND_MODULE_RENDER "Build the Render module" OFF)
+option(AMPERSAND_MODULE_AUDIO "Build the Audio module" ON)
+option(AMPERSAND_MODULE_INPUT "Build the Input module" ON)
+option(AMPERSAND_MODULE_NET "Build the Network module" ON)
+option(AMPERSAND_MODULE_PHYSICS "Build the Physics module" ON)
+option(AMPERSAND_MODULE_RENDER "Build the Render module" ON)
 
 enable_testing()
 
