@@ -17,6 +17,13 @@ function(add_engine_module MODULE)
     )
 endfunction()
 
+ if(NOT AMPERSAND_MODULE_CORE)
+     if(AMPERSAND_MODULE_AUDIO OR AMPERSAND_MODULE_INPUT OR AMPERSAND_MODULE_NET
+        OR AMPERSAND_MODULE_PHYSICS OR AMPERSAND_MODULE_RENDER)
+         message(FATAL_ERROR "AMPERSAND_MODULE_CORE must be enabled when another engine module is enabled")
+     endif()
+ endif()
+
 if(AMPERSAND_MODULE_CORE)
     add_engine_module(core)
 endif()

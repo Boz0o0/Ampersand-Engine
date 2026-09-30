@@ -12,14 +12,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(cmake/CPM.cmake)
 
-CPMAddPackage(
-    NAME googletest
-    GITHUB_REPOSITORY google/googletest
-    GIT_TAG v1.15.2
-    OPTIONS
-        "INSTALL_GTEST OFF"
-        "gtest_force_shared_crt ON"
-)
+include(CTest)
+
+if(BUILD_TESTING)
+    CPMAddPackage(
+        NAME googletest
+        GITHUB_REPOSITORY google/googletest
+        GIT_TAG v1.15.2
+        OPTIONS
+            "INSTALL_GTEST OFF"
+            "gtest_force_shared_crt ON"
+    )
+
+    add_subdirectory(tests)
+endif()
 
 option(AMPERSAND_MODULE_CORE "Build the Core module" ON)
 option(AMPERSAND_MODULE_AUDIO "Build the Audio module" ON)
@@ -31,5 +37,3 @@ option(AMPERSAND_MODULE_RENDER "Build the Render module" ON)
 enable_testing()
 
 add_subdirectory(src)
-
-add_subdirectory(tests)
