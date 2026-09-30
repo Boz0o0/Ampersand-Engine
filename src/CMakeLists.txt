@@ -4,47 +4,64 @@ function(add_engine_module MODULE)
         "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}/*.hpp"
     )
 
-    add_library(${MODULE} STATIC ${SOURCES})
+    add_library(ampersand_${MODULE} STATIC ${SOURCES})
 
-    target_include_directories(${MODULE}
+    target_include_directories(ampersand_${MODULE}
         PUBLIC
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
 
-    target_compile_features(${MODULE}
+    target_compile_features(ampersand_${MODULE}
         PUBLIC
             cxx_std_17
     )
 endfunction()
 
-add_engine_module(core)
-add_engine_module(audio)
-add_engine_module(input)
-add_engine_module(net)
-add_engine_module(physics)
-add_engine_module(render)
+if(AMPERSAND_MODULE_CORE)
+    add_engine_module(core)
+endif()
 
-target_link_libraries(audio
-    PUBLIC
-        core
-)
+if(AMPERSAND_MODULE_AUDIO)
+    add_engine_module(audio)
 
-target_link_libraries(input
-    PUBLIC
-        core
-)
+    target_link_libraries(ampersand_audio
+        PUBLIC
+            ampersand_core
+    )
+endif()
 
-target_link_libraries(net
-    PUBLIC
-        core
-)
+if(AMPERSAND_MODULE_INPUT)
+    add_engine_module(input)
 
-target_link_libraries(physics
-    PUBLIC
-        core
-)
+    target_link_libraries(ampersand_input
+        PUBLIC
+            ampersand_core
+    )
+endif()
 
-target_link_libraries(render
-    PUBLIC
-        core
-)
+if(AMPERSAND_MODULE_NET)
+    add_engine_module(net)
+
+    target_link_libraries(ampersand_net
+        PUBLIC
+            ampersand_core
+    )
+endif()
+
+if(AMPERSAND_MODULE_PHYSICS)
+    add_engine_module(physics)
+
+    target_link_libraries(ampersand_physics
+        PUBLIC
+            ampersand_core
+    )
+endif()
+
+if(AMPERSAND_MODULE_RENDER)
+    add_engine_module(render)
+
+    target_link_libraries(ampersand_render
+        PUBLIC
+            ampersand_core
+    )
+endif()

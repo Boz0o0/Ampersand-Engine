@@ -12,7 +12,7 @@ function(add_engine_tests MODULE)
     target_link_libraries(test_${MODULE}
         PRIVATE
             GTest::gtest_main
-            ${MODULE}
+            ampersand_${MODULE}
     )
 
     gtest_discover_tests(test_${MODULE})

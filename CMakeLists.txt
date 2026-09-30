@@ -21,24 +21,15 @@ CPMAddPackage(
         "gtest_force_shared_crt ON"
 )
 
-set(CMAKE_CXX_CLANG_TIDY clang-tidy)
+option(AMPERSAND_MODULE_CORE "Build the Core module" ON)
+option(AMPERSAND_MODULE_AUDIO "Build the Audio module" OFF)
+option(AMPERSAND_MODULE_INPUT "Build the Input module" OFF)
+option(AMPERSAND_MODULE_NET "Build the Network module" OFF)
+option(AMPERSAND_MODULE_PHYSICS "Build the Physics module" OFF)
+option(AMPERSAND_MODULE_RENDER "Build the Render module" OFF)
 
 enable_testing()
 
 add_subdirectory(src)
-
-add_executable(ampersand_engine
-    src/main.cpp
-)
-
-target_link_libraries(ampersand_engine
-    PRIVATE
-        core
-        audio
-        input
-        net
-        physics
-        render
-)
 
 add_subdirectory(tests)
