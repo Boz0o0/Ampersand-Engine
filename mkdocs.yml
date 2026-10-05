@@ -6,14 +6,14 @@ docs_dir: docs
 
 theme:
   name: material
-  logo: assets/ampersand_logo.png
-  favicon: assets/ampersand_logo.png
+  logo: assets/ampersand-logo-light.svg
+  favicon: assets/ampersand-logo.svg
   palette:
     - scheme: slate
       toggle: { icon: material/brightness-4, name: Light mode }
     - scheme: default
       toggle: { icon: material/brightness-7, name: Dark mode }
-  features: [navigation.sections, navigation.instant, content.code.copy, search.highlight]
+  features: [navigation.sections, navigation.indexes, navigation.instant, content.code.copy, search.highlight]
 
 markdown_extensions:
   - admonition
@@ -25,3 +25,13 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Adding a feature: adding-a-feature.md #ptet rename add a component et pr l'ecs jsp
+  - Architecture:
+      - architecture/index.md
+      - ECS: architecture/ecs.md
+      - Modules: architecture/modules.md
+  - Design decisions: decisions.md
