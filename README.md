@@ -23,7 +23,7 @@ The full documentation can be found **[here](https://boz0o0.github.io/Ampersand-
 
 ## Modules
 
-The engine is split into independent static libraries so that you only compile what you need.
+The engine is split into libraries so that you only compile what you need.
 Every module depends on `core`.
 
 | Module    | CMake target         | Option                    |
