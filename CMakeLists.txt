@@ -40,6 +40,7 @@ if (AMPERSAND_MODULE_RENDER)
         OPTIONS
             "SFML_BUILD_EXAMPLES OFF"
             "SFML_BUILD_TEST_SUITE OFF"
+            "SFML_USE_SYSTEM_DEPS OFF"
     )
 endif()
 
