@@ -48,26 +48,15 @@ All modules are enabled by default.
 - A C++17 compiler (GCC, Clang or MSVC)
 - Git (dependencies are fetched with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake))
 
-### Build
+### Build and test
 
 ```sh
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build --parallel
-```
-
-To build only some modules, turn the others off:
-
-```sh
-cmake -B build -DAMPERSAND_MODULE_NET=OFF -DAMPERSAND_MODULE_AUDIO=OFF
-```
-
-### Tests
-
-Unit tests use [GoogleTest](https://github.com/google/googletest) and are built by default (`BUILD_TESTING=ON`).
-
-```sh
 ctest --test-dir build --output-on-failure
 ```
+
+See [Getting started](https://boz0o0.github.io/Ampersand-Engine/getting-started/) for module options, build output and more.
 
 ## Project structure
 
