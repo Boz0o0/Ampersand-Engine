@@ -11,9 +11,9 @@ Checks: >
   -readability-magic-numbers
 
 WarningsAsErrors: "*"
-HeaderFilterRegex: "include/.*"
+HeaderFilterRegex: "include/ampersand/.*"
 FormatStyle: "file"
 
-ExtraArgs:
+ExtraArgsBefore:
   - "-isysroot"
   - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"

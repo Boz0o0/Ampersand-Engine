@@ -8,6 +8,7 @@ function(add_engine_module MODULE)
 
     target_include_directories(ampersand_${MODULE}
         PUBLIC
+            "${CMAKE_SOURCE_DIR}/include"
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
 
@@ -70,5 +71,8 @@ if(AMPERSAND_MODULE_RENDER)
     target_link_libraries(ampersand_render
         PUBLIC
             ampersand_core
+            SFML::Graphics
+            SFML::Window
+            SFML::System
     )
 endif()
