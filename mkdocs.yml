@@ -6,6 +6,8 @@ docs_dir: docs
 
 theme:
   name: material
+  logo: assets/ampersand_logo.png
+  favicon: assets/ampersand_logo.png
   palette:
     - scheme: slate
       toggle: { icon: material/brightness-4, name: Light mode }
@@ -15,6 +17,7 @@ theme:
 
 markdown_extensions:
   - admonition
+  - attr_list
   - toc: { permalink: true }
   - pymdownx.highlight
   - pymdownx.superfences:
