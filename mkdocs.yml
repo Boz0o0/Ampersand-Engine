@@ -1,0 +1,24 @@
+site_name: Ampersand Engine
+site_url: https://boz0o0.github.io/Ampersand-Engine/
+repo_url: https://github.com/Boz0o0/Ampersand-Engine
+repo_name: Boz0o0/Ampersand-Engine
+docs_dir: docs
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      toggle: { icon: material/brightness-4, name: Light mode }
+    - scheme: default
+      toggle: { icon: material/brightness-7, name: Dark mode }
+  features: [navigation.sections, navigation.instant, content.code.copy, search.highlight]
+
+markdown_extensions:
+  - admonition
+  - toc: { permalink: true }
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
