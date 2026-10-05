@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="docs/assets/ampersand_logo.png" alt="Ampersand Engine logo" width="120">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/ampersand-logo-light.svg">
+    <img src="docs/assets/ampersand-logo-dark.svg" alt="Ampersand Engine logo" width="120">
+  </picture>
 </p>
 
 <h1 align="center">Ampersand Engine</h1>
