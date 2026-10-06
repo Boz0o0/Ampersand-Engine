@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics.hpp>
 #include <ampersand/render/IRenderer.hpp>
-#include <cstdint>
 #include <unordered_map>
 
 namespace ampersand::render {
@@ -80,8 +79,8 @@ class SfmlRenderer final : public IRenderer {
 
  private:
   sf::RenderWindow window_;
-  std::unordered_map<std::uint32_t, sf::Texture> textures_;
-  std::uint32_t nextId_{1};
+  std::unordered_map<TextureId, sf::Texture> textures_;
+  TextureId nextId_{1};
 };
 
 }  // namespace ampersand::render
