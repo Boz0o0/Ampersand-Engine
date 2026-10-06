@@ -64,4 +64,4 @@ void SfmlRenderer::draw(const Sprite& sprite, core::math::Vec2f position) {
 
 void SfmlRenderer::endFrame() { this->window_.display(); }
 
-};  // namespace ampersand::render
+}  // namespace ampersand::render
