@@ -11,3 +11,7 @@ It is split into independent modules (core, audio, input, network, physics, rend
 - **[Getting started](getting-started.md)**: requirements, building the engine, choosing modules and running the tests.
 - **[Architecture](architecture/index.md)**: how the engine is organised and how its parts work together.
 - **[Design decisions](decisions.md)**: the choices we made, the alternatives we considered, and why.
+
+## Used by
+
+- **[R-Type](https://boz0o0.github.io/R-Type/)** ([source code](https://github.com/Boz0o0/R-Type)): a R-Type game built on top of Ampersand Engine.
