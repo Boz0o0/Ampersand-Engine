@@ -4,7 +4,7 @@
 #include <ampersand/render/Color.hpp>
 #include <ampersand/render/Event.hpp>
 #include <ampersand/render/Sprite.hpp>
-#include <ampersand/render/Window.hpp>
+#include <ampersand/render/WindowConfig.hpp>
 #include <filesystem>
 #include <optional>
 
