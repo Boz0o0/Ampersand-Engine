@@ -17,11 +17,15 @@ option(AMPERSAND_MODULE_NET "Build the Network module" ON)
 option(AMPERSAND_MODULE_PHYSICS "Build the Physics module" ON)
 option(AMPERSAND_MODULE_RENDER "Build the Render module" ON)
 
+option(AMPERSAND_BUILD_TESTS "Build the engine unit tests" ${PROJECT_IS_TOP_LEVEL})
+
 include(cmake/CPM.cmake)
 
-include(CTest)
+if(AMPERSAND_BUILD_TESTS)
+    include(CTest)
+endif()
 
-if(BUILD_TESTING)
+if(AMPERSAND_BUILD_TESTS AND BUILD_TESTING)
     CPMAddPackage(
         NAME googletest
         GITHUB_REPOSITORY google/googletest
@@ -46,6 +50,6 @@ endif()
 
 add_subdirectory(src)
 
-if (BUILD_TESTING)
+if(AMPERSAND_BUILD_TESTS AND BUILD_TESTING)
     add_subdirectory(tests)
 endif()

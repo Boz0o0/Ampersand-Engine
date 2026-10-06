@@ -40,6 +40,7 @@ Every module depends on `core`.
 
 All modules are enabled by default.
 
+Unit tests are triggered by `AMPERSAND_BUILD_TESTS`, which is `ON` only when the engine is the top-level project.
 ## Getting started
 
 ### Requirements
