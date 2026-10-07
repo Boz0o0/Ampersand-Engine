@@ -3,6 +3,7 @@
 #include <ampersand/core/ecs/ECSConfig.hpp>
 #include <ampersand/core/ecs/Entity.hpp>
 #include <cstdint>
+#include <queue>
 #include <vector>
 
 namespace ampersand::core::ecs {
@@ -31,6 +32,17 @@ public:
     Entity create();
 
     /**
+     * @brief Destroys an entity and frees its row for a later create().
+     *
+     * The version of the row is incremented, so every handle to the destroyed
+     * entity stops being alive, even after the row is reused.
+     *
+     * @param entity Entity to destroy.
+     * @throws InvalidEntity if the entity is dead, null or out of range.
+     */
+    void destroy(Entity entity);
+
+    /**
      * @brief Checks whether a handle designates a live entity.
      *
      * @param entity Handle to check; the null entity is never alive.
@@ -41,6 +53,7 @@ public:
 private:
     std::uint32_t _maxEntities;
     std::vector<std::uint32_t> _versions;
+    std::queue<std::uint32_t> _free;
 };
 
 }  // namespace ampersand::core::ecs

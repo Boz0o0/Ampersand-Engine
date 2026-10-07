@@ -14,4 +14,14 @@ struct Entity {
     std::uint32_t version{};
 };
 
+/** @brief Two entities are equal when they designate the same row version. */
+[[nodiscard]] constexpr bool operator==(Entity lhs, Entity rhs) {
+    return lhs.index == rhs.index && lhs.version == rhs.version;
+}
+
+/** @brief Negation of == */
+[[nodiscard]] constexpr bool operator!=(Entity lhs, Entity rhs) {
+    return !(lhs == rhs);
+}
+
 }  // namespace ampersand::core::ecs
