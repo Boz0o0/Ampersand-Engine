@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/ampersand-logo-light.svg">
-    <img src="docs/assets/ampersand-logo-dark.svg" alt="Ampersand Engine logo" width="120">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/mkdocs/assets/ampersand-logo-light.svg">
+    <img src="docs/mkdocs/assets/ampersand-logo-dark.svg" alt="Ampersand Engine logo" width="120">
   </picture>
 </p>
 
@@ -29,18 +29,19 @@ The full documentation can be found **[here](https://boz0o0.github.io/Ampersand-
 The engine is split into libraries so that you only compile what you need.
 Every module depends on `core`.
 
-| Module    | CMake target         | Option                    |
-| --------- | -------------------- | ------------------------- |
-| Core      | `ampersand_core`     | `AMPERSAND_MODULE_CORE`    |
-| Audio     | `ampersand_audio`    | `AMPERSAND_MODULE_AUDIO`   |
-| Input     | `ampersand_input`    | `AMPERSAND_MODULE_INPUT`   |
-| Network   | `ampersand_net`      | `AMPERSAND_MODULE_NET`     |
-| Physics   | `ampersand_physics`  | `AMPERSAND_MODULE_PHYSICS` |
-| Render    | `ampersand_render`   | `AMPERSAND_MODULE_RENDER`  |
+| Module  | CMake target        | Option                     |
+| ------- | ------------------- | -------------------------- |
+| Core    | `ampersand_core`    | `AMPERSAND_MODULE_CORE`    |
+| Audio   | `ampersand_audio`   | `AMPERSAND_MODULE_AUDIO`   |
+| Input   | `ampersand_input`   | `AMPERSAND_MODULE_INPUT`   |
+| Network | `ampersand_net`     | `AMPERSAND_MODULE_NET`     |
+| Physics | `ampersand_physics` | `AMPERSAND_MODULE_PHYSICS` |
+| Render  | `ampersand_render`  | `AMPERSAND_MODULE_RENDER`  |
 
 All modules are enabled by default.
 
 Unit tests are triggered by `AMPERSAND_BUILD_TESTS`, which is `ON` only when the engine is the top-level project.
+
 ## Getting started
 
 ### Requirements
