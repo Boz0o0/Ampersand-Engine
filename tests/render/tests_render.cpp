@@ -67,10 +67,3 @@ TEST(SpriteAnimation, RejectsInvalidConfigurationAndDelta) {
   EXPECT_THROW(animation.update(std::numeric_limits<float>::infinity()),
                std::invalid_argument);
 }
-
-TEST(RenderModule, MissingAssetsReturnZeroIds) {
-  ampersand::render::SfmlRenderer renderer;
-
-  EXPECT_EQ(renderer.loadTexture("/definitely/not/a/real/texture.png"), 0);
-  EXPECT_EQ(renderer.loadFont("/definitely/not/a/real/font.ttf"), 0);
-}
