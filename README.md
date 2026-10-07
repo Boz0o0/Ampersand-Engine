@@ -40,11 +40,12 @@ Every module depends on `core`.
 
 All modules are enabled by default.
 
+Unit tests are triggered by `AMPERSAND_BUILD_TESTS`, which is `ON` only when the engine is the top-level project.
 ## Getting started
 
 ### Requirements
 
-- CMake 3.16+
+- CMake 3.24+
 - A C++17 compiler (GCC, Clang or MSVC)
 - Git (dependencies are fetched with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake))
 
