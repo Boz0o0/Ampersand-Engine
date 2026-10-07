@@ -34,6 +34,7 @@ nav:
       - architecture/index.md
       - ECS: architecture/ecs.md
       - Modules: architecture/modules.md
+      - 2D rendering: architecture/rendering.md
   - Design decisions: decisions.md
   - R-Type:
       - Documentation ↗: https://boz0o0.github.io/R-Type/

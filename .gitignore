@@ -4,5 +4,5 @@
 build/
 ampersand_engine
 
-docs/doxygen/.venv/
+docs/doxygen/
 site/

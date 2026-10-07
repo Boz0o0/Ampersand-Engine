@@ -30,11 +30,16 @@ if(AMPERSAND_MODULE_CORE)
 endif()
 
 if(AMPERSAND_MODULE_AUDIO)
+    if(NOT AMPERSAND_MODULE_RENDER)
+        message(FATAL_ERROR "AMPERSAND_MODULE_RENDER must be enabled when the audio module is enabled")
+    endif()
+
     add_engine_module(audio)
 
     target_link_libraries(ampersand_audio
         PUBLIC
             ampersand_core
+            ampersand_render
     )
 endif()
 
