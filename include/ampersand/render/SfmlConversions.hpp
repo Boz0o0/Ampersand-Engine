@@ -1,9 +1,15 @@
 #pragma once
 
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <ampersand/input/Event.hpp>
+#include <ampersand/render/Color.hpp>
 
 namespace ampersand::render {
+
+inline sf::Color toSfColor(Color color) {
+  return {color.r, color.g, color.b, color.a};
+}
 
 inline input::Key toKey(sf::Keyboard::Key key) {
   switch (key) {

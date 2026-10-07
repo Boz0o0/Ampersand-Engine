@@ -1,22 +1,28 @@
 #pragma once
 
+#include <ampersand/core/Transform.hpp>
 #include <ampersand/core/math/Vec2.hpp>
 #include <ampersand/render/Color.hpp>
 #include <ampersand/render/Event.hpp>
+#include <ampersand/render/Primitive.hpp>
 #include <ampersand/render/Sprite.hpp>
+#include <ampersand/render/Text.hpp>
+#include <ampersand/render/View.hpp>
 #include <ampersand/render/WindowConfig.hpp>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <string>
 
 namespace ampersand::render {
 
 /**
  * @brief Abstract interface for all renderer backends.
  *
- * This interface defines the minimum functionality required to create a
- * windowed rendering context, process events, load textures and draw sprites.
- * Concrete implementations are expected to provide the platform-specific
- * behavior while keeping the high-level API uniform.
+ * This interface defines the functionality required to create a windowed
+ * rendering context, process events, load assets, and draw 2D content.
+ * Concrete implementations provide platform-specific behavior while keeping
+ * the high-level API uniform.
  */
 class IRenderer {
  public:
@@ -63,6 +69,16 @@ class IRenderer {
   virtual std::optional<Event> pollEvent() = 0;
 
   /**
+   * @brief Sets the world-space camera view used for subsequent draw commands.
+   */
+  virtual void setView(const View& view) = 0;
+
+  /**
+   * @brief Restores the default view covering the window in pixel coordinates.
+   */
+  virtual void resetView() = 0;
+
+  /**
    * @brief Loads a texture from the provided file path.
    *
    * @param path Location of the image file to load.
@@ -73,6 +89,11 @@ class IRenderer {
       const std::filesystem::path& path) = 0;
 
   /**
+   * @brief Loads a font and returns its resource identifier, or 0 on failure.
+   */
+  [[nodiscard]] virtual FontId loadFont(const std::filesystem::path& path) = 0;
+
+  /**
    * @brief Begins a new frame and clears the screen with the specified color.
    *
    * @param clear Color used to clear the framebuffer before drawing.
@@ -80,12 +101,32 @@ class IRenderer {
   virtual void beginFrame(Color clear) = 0;
 
   /**
-   * @brief Draws a sprite at the given position in the current frame.
-   *
-   * @param sprite Sprite to render.
-   * @param position Screen-space position where the sprite should be drawn.
+   * @brief Draws a sprite; the transform's Z position determines draw order.
    */
-  virtual void draw(const Sprite& sprite, core::math::Vec2f position) = 0;
+  virtual void draw(const Sprite& sprite, const core::Transform& transform) = 0;
+
+  /**
+   * @brief Draws a filled or outlined rectangle.
+   */
+  virtual void draw(const Rectangle& rectangle,
+                    const core::Transform& transform) = 0;
+
+  /**
+   * @brief Draws a filled or outlined circle.
+   */
+  virtual void draw(const Circle& circle, const core::Transform& transform) = 0;
+
+  /**
+   * @brief Draws a line segment.
+   */
+  virtual void draw(const Line& line, const core::Transform& transform) = 0;
+
+  /**
+   * @brief Draws text using a previously loaded font.
+   */
+  virtual void drawText(FontId font, const std::string& text,
+                        unsigned int characterSize, Color color,
+                        const core::Transform& transform) = 0;
 
   /**
    * @brief Presents the current frame to the display.

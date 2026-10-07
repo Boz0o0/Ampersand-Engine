@@ -2,7 +2,11 @@
 
 #include <SFML/Graphics.hpp>
 #include <ampersand/render/IRenderer.hpp>
+#include <cstdint>
+#include <functional>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace ampersand::render {
 
@@ -48,6 +52,9 @@ class SfmlRenderer final : public IRenderer {
    */
   std::optional<Event> pollEvent() override;
 
+  void setView(const View& view) override;
+  void resetView() override;
+
   /**
    * @brief Loads a texture from disk under a generated texture identifier.
    *
@@ -57,6 +64,8 @@ class SfmlRenderer final : public IRenderer {
   [[nodiscard]] TextureId loadTexture(
       const std::filesystem::path& path) override;
 
+  [[nodiscard]] FontId loadFont(const std::filesystem::path& path) override;
+
   /**
    * @brief Begins a new frame and clears the render target.
    *
@@ -64,13 +73,14 @@ class SfmlRenderer final : public IRenderer {
    */
   void beginFrame(Color clear) override;
 
-  /**
-   * @brief Draws a sprite at the provided position in the current frame.
-   *
-   * @param sprite Sprite to render.
-   * @param position Screen-space origin where the sprite is drawn.
-   */
-  void draw(const Sprite& sprite, core::math::Vec2f position) override;
+  void draw(const Sprite& sprite, const core::Transform& transform) override;
+  void draw(const Rectangle& rectangle,
+            const core::Transform& transform) override;
+  void draw(const Circle& circle, const core::Transform& transform) override;
+  void draw(const Line& line, const core::Transform& transform) override;
+  void drawText(FontId font, const std::string& text,
+                unsigned int characterSize, Color color,
+                const core::Transform& transform) override;
 
   /**
    * @brief Displays the rendered content on the active window.
@@ -78,9 +88,24 @@ class SfmlRenderer final : public IRenderer {
   void endFrame() override;
 
  private:
+  struct DrawCommand {
+    float layer{};
+    std::function<void()> draw;
+  };
+
+  [[nodiscard]] static float layerFor(const core::Transform& transform);
+  static void applyTransform(sf::Transformable& drawable,
+                             const core::Transform& transform);
+  void updateDefaultView();
+
   sf::RenderWindow window_;
   std::unordered_map<TextureId, sf::Texture> textures_;
+  std::unordered_map<FontId, sf::Font> fonts_;
+  std::vector<DrawCommand> drawCommands_;
+  sf::View defaultView_;
   TextureId nextId_{1};
+  FontId nextFontId_{1};
+  bool customView_{};
 };
 
 }  // namespace ampersand::render

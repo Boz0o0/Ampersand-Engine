@@ -19,6 +19,10 @@ graph BT
     net[net] --> core
     physics[physics] --> core
     render[render] --> core
+    audio --> render
+    render --> input
 ```
 
-`core` has no dependency on the other modules. Every other module depends only on `core` for now
+`core` has no dependency on the other modules. The render module also depends on
+input because its window event stream includes keyboard events. The audio module
+depends on render, but render does not depend on audio.
