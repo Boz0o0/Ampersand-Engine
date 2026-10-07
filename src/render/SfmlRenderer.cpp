@@ -25,11 +25,11 @@ std::optional<Event> SfmlRenderer::pollEvent() {
       return Resized{{resized->size.x, resized->size.y}};
     }
     if (const auto* const keyPressed = event->getIf<sf::Event::KeyPressed>()) {
-      return ampersand::render::KeyPressed{toKey(keyPressed->code)};
+      return ampersand::input::KeyPressed{toKey(keyPressed->code)};
     }
     if (const auto* const keyReleased =
             event->getIf<sf::Event::KeyReleased>()) {
-      return ampersand::render::KeyReleased{toKey(keyReleased->code)};
+      return ampersand::input::KeyReleased{toKey(keyReleased->code)};
     }
   }
   return std::nullopt;

@@ -66,11 +66,16 @@ if(AMPERSAND_MODULE_PHYSICS)
 endif()
 
 if(AMPERSAND_MODULE_RENDER)
+    if(NOT AMPERSAND_MODULE_INPUT)
+        message(FATAL_ERROR "AMPERSAND_MODULE_INPUT must be enabled when the render module is enabled")
+    endif()
+
     add_engine_module(render)
 
     target_link_libraries(ampersand_render
         PUBLIC
             ampersand_core
+            ampersand_input
             SFML::Graphics
             SFML::Window
             SFML::System

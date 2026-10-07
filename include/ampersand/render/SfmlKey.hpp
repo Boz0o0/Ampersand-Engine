@@ -1,26 +1,26 @@
 #pragma once
 
 #include <SFML/Window/Keyboard.hpp>
-#include <ampersand/render/Event.hpp>
+#include <ampersand/input/Event.hpp>
 
 namespace ampersand::render {
 
-inline Key toKey(sf::Keyboard::Key key) {
+inline input::Key toKey(sf::Keyboard::Key key) {
   switch (key) {
     case sf::Keyboard::Key::Up:
-      return Key::Up;
+      return input::Key::Up;
     case sf::Keyboard::Key::Down:
-      return Key::Down;
+      return input::Key::Down;
     case sf::Keyboard::Key::Left:
-      return Key::Left;
+      return input::Key::Left;
     case sf::Keyboard::Key::Right:
-      return Key::Right;
+      return input::Key::Right;
     case sf::Keyboard::Key::Space:
-      return Key::Space;
+      return input::Key::Space;
     case sf::Keyboard::Key::Escape:
-      return Key::Escape;
+      return input::Key::Escape;
     default:
-      return Key::Unknown;
+      return input::Key::Unknown;
   }
 }
 
