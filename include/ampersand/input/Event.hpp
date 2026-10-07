@@ -13,14 +13,14 @@ enum class Key : std::uint8_t { Up, Down, Left, Right, Space, Escape, Unknown };
  * @brief Event triggered when a key is pressed.
  */
 struct KeyPressed {
-  Key key;
+    Key key;
 };
 
 /**
  * @brief Event triggered when a key is released.
  */
 struct KeyReleased {
-  Key key;
+    Key key;
 };
 
 }  // namespace ampersand::input

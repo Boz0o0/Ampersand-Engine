@@ -15,7 +15,7 @@ struct Closed {};
  * @brief Event triggered when the window size changes.
  */
 struct Resized {
-  ampersand::core::math::Vec2u size;
+    ampersand::core::math::Vec2u size;
 };
 
 /**

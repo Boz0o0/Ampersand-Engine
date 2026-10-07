@@ -8,8 +8,8 @@ namespace ampersand::render {
  * @brief Camera view in world coordinates.
  */
 struct View {
-  core::math::Vec2f center;
-  core::math::Vec2f size;
+    core::math::Vec2f center;
+    core::math::Vec2f size;
 };
 
 }  // namespace ampersand::render
