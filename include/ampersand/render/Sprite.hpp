@@ -14,8 +14,8 @@ using TextureId = std::uint32_t;
  * @brief Describes a drawable sprite and the region of its texture to use.
  */
 struct Sprite {
-  TextureId texture{};
-  ampersand::core::math::Rect<std::int32_t> source;
+    TextureId texture{};
+    ampersand::core::math::Rect<std::int32_t> source;
 };
 
 }  // namespace ampersand::render
