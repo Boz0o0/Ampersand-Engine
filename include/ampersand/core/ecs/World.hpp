@@ -84,6 +84,18 @@ public:
         return poolOf<T>().get(cell - 1);  // cells store position + 1,
     }
 
+    /**
+     * @brief Checks whether an entity has a component of type T.
+     *
+     * @tparam T Component type.
+     * @param entity Entity to check.
+     * @return true if the entity has a component of type T, false otherwise.
+     */
+    template <typename T>
+    [[nodiscard]] bool has(Entity entity) const {
+        return alive(entity) && _rows[entity.index][componentId<T>()] != 0;
+    }
+
 private:
     /**
      * @brief One cell per component type: position in its pool + 1, or 0
