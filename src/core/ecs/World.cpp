@@ -1,5 +1,6 @@
 #include <ampersand/core/ecs/ECSExceptions.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <cstddef>
 #include <string>
 
 namespace ampersand::core::ecs {
@@ -24,8 +25,7 @@ Entity World::create() {
         _free.pop();
         return {index, _versions[index]};
     }
-    if (_versions.size() >= _maxEntities) {  // if no free slot and all rows
-                                             // used
+    if (_versions.size() >= _maxEntities) {
         throw EntityLimitReached(std::to_string(_maxEntities) + " entities");
     }
     const auto index = static_cast<std::uint32_t>(_versions.size());
@@ -38,12 +38,27 @@ void World::destroy(Entity entity) {
     if (!alive(entity)) {
         throw InvalidEntity(describe(entity) + " in destroy");
     }
+    // Remove every component of the entity
+    for (std::size_t column = 0; column < kMaxComponents; column++) {
+        if (_rows[entity.index][column] != 0) {
+            removeFromPool(entity, column);
+        }
+    }
     auto& version = _versions[entity.index];
     version++;
     if (version == 0) {
         version = 1;
     }
     _free.push(entity.index);
+}
+
+void World::removeFromPool(Entity entity, std::size_t column) {
+    const auto position = _rows[entity.index][column] - 1;
+    const Entity moved = _pools[column]->removeAt(position);
+    if (moved != Entity{}) {
+        _rows[moved.index][column] = position + 1;
+    }
+    _rows[entity.index][column] = 0;
 }
 
 bool World::alive(Entity entity) const {

@@ -5,6 +5,7 @@
 #include <ampersand/core/ecs/ECSConfig.hpp>
 #include <ampersand/core/ecs/Entity.hpp>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <queue>
@@ -107,16 +108,19 @@ public:
      */
     template <typename T>
     void remove(Entity entity) {
-        const auto column = componentId<T>();
-        const auto position = _rows[entity.index][column] - 1;
-        const Entity moved = poolOf<T>().removeAt(position);
-        if (moved != Entity{}) {
-            _rows[moved.index][column] = position + 1;
-        }
-        _rows[entity.index][column] = 0;
+        removeFromPool(entity, componentId<T>());
     }
 
 private:
+    /**
+     * @brief Removes the component an entity has in a column (swap-and-pop)
+     * and keeps the position table consistent.
+     *
+     * @param entity Entity owning the component.
+     * @param column Column of the component type.
+     */
+    void removeFromPool(Entity entity, std::size_t column);
+
     /**
      * @brief One cell per component type: position in its pool + 1, or 0
      * when the entity has no component of that type.

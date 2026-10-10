@@ -16,6 +16,15 @@ public:
     /** @brief Destroys the pool and its components. */
     virtual ~IComponentPool() = default;
 
+    /**
+     * @brief Removes the component stored at a position (swap-and-pop).
+     *
+     * @param position Position of the component to remove.
+     * @return The entity whose component moved into `position`, or the null
+     * entity if nothing moved.
+     */
+    [[nodiscard]] virtual Entity removeAt(std::uint32_t position) = 0;
+
     IComponentPool(const IComponentPool&) = delete;
     IComponentPool& operator=(const IComponentPool&) = delete;
 
@@ -66,7 +75,7 @@ public:
      * @return The entity whose component moved into `position`, or the null
      * entity if the removed component was the last one (nothing moved).
      */
-    [[nodiscard]] Entity removeAt(std::uint32_t position) {
+    [[nodiscard]] Entity removeAt(std::uint32_t position) override {
         const auto last = static_cast<std::uint32_t>(_data.size() - 1);
         Entity moved{};
         if (position != last) {
