@@ -1,18 +1,26 @@
 #pragma once
 
+#include <ampersand/core/ecs/ComponentId.hpp>
+#include <ampersand/core/ecs/ComponentPool.hpp>
 #include <ampersand/core/ecs/ECSConfig.hpp>
 #include <ampersand/core/ecs/Entity.hpp>
+#include <array>
 #include <cstdint>
+#include <memory>
 #include <queue>
+#include <utility>
 #include <vector>
 
 namespace ampersand::core::ecs {
 
 /**
- * @brief Owns the entities of one game (and, later, their components).
+ * @brief Owns the entities of one game and their components.
  *
- * A World is used by a single thread. Several Worlds can live side by side,
- * e.g. one per game instance on a server.
+ * Components are stored in one pool per type. Each entity has a row in
+ * the position table with one cell per component type: the position of its
+ * component in the pool (+1, so remove 1 when using it), or 0 when it has none
+ *
+ * A World is used by a single thread.
  */
 class World {
 public:
@@ -45,15 +53,64 @@ public:
     /**
      * @brief Checks whether a handle designates a live entity.
      *
-     * @param entity Handle to check; the null entity is never alive.
-     * @return true if the entity exists, false otherwise. Never throws.
+     * @param entity Handle to check
+     * @return true if the entity exists, false otherwise.
      */
     [[nodiscard]] bool alive(Entity entity) const;
 
+    /**
+     * @brief Attaches a component to an entity.
+     *
+     * @tparam T Component type, (deduced from the component arg).
+     * @param entity Entity receiving the component.
+     * @param component Component to attach, moved into the World.
+     */
+    template <typename T>
+    void add(Entity entity, T component) {
+        const auto position = poolOf<T>().push(entity, std::move(component));
+        _rows[entity.index][componentId<T>()] = position + 1;  // 0 = absent
+    }
+
+    /**
+     * @brief Accesses a component of an entity.
+     *
+     * @tparam T Component type.
+     * @param entity Entity owning the component.
+     * @return Reference to the component.
+     */
+    template <typename T>
+    T& get(Entity entity) {
+        const auto cell = _rows[entity.index][componentId<T>()];
+        return poolOf<T>().get(cell - 1);  // cells store position + 1,
+    }
+
 private:
+    /**
+     * @brief One cell per component type: position in its pool + 1, or 0
+     * when the entity has no component of that type.
+     */
+    using Row = std::array<std::uint32_t, kMaxComponents>;
+
+    /**
+     * @brief Returns the pool of component type T, creating it on first use.
+     *
+     * @tparam T Component type.
+     * @return Reference to the pool of T.
+     */
+    template <typename T>
+    ComponentPool<T>& poolOf() {
+        auto& slot = _pools[componentId<T>()];
+        if (!slot) {
+            slot = std::make_unique<ComponentPool<T>>();
+        }
+        return static_cast<ComponentPool<T>&>(*slot);
+    }
+
     std::uint32_t _maxEntities;
     std::vector<std::uint32_t> _versions;
     std::queue<std::uint32_t> _free;
+    std::vector<Row> _rows;
+    std::array<std::unique_ptr<IComponentPool>, kMaxComponents> _pools;
 };
 
 }  // namespace ampersand::core::ecs

@@ -15,6 +15,7 @@ std::string describe(Entity entity) {
 
 World::World(std::uint32_t maxEntities) : _maxEntities(maxEntities) {
     _versions.reserve(maxEntities);
+    _rows.reserve(maxEntities);
 }
 
 Entity World::create() {
@@ -23,11 +24,13 @@ Entity World::create() {
         _free.pop();
         return {index, _versions[index]};
     }
-    if (_versions.size() >= _maxEntities) {
+    if (_versions.size() >= _maxEntities) {  // if no free slot and all rows
+                                             // used
         throw EntityLimitReached(std::to_string(_maxEntities) + " entities");
     }
     const auto index = static_cast<std::uint32_t>(_versions.size());
     _versions.push_back(1);
+    _rows.emplace_back();  // every cell is 0
     return {index, _versions[index]};
 }
 
