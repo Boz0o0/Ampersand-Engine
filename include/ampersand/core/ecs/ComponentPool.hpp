@@ -56,6 +56,29 @@ public:
      */
     [[nodiscard]] T& get(std::uint32_t position) { return _data[position]; }
 
+    /**
+     * @brief Removes the component stored at a position.
+     *
+     * The last component is moved into the freed position, then the last slot
+     * is dropped (swap-and-pop), so the pool never has holes.
+     *
+     * @param position Position of the component to remove.
+     * @return The entity whose component moved into `position`, or the null
+     * entity if the removed component was the last one (nothing moved).
+     */
+    [[nodiscard]] Entity removeAt(std::uint32_t position) {
+        const auto last = static_cast<std::uint32_t>(_data.size() - 1);
+        Entity moved{};
+        if (position != last) {
+            _data[position] = std::move(_data[last]);
+            _owners[position] = _owners[last];
+            moved = _owners[position];
+        }
+        _data.pop_back();
+        _owners.pop_back();
+        return moved;
+    }
+
 private:
     std::vector<T> _data;
     std::vector<Entity> _owners;

@@ -96,6 +96,26 @@ public:
         return alive(entity) && _rows[entity.index][componentId<T>()] != 0;
     }
 
+    /**
+     * @brief Removes a component of an entity.
+     *
+     * The pools last component moves into the freed position, and the row of
+     * the entity owning it is updated.
+     *
+     * @tparam T Component type.
+     * @param entity Entity owning the component.
+     */
+    template <typename T>
+    void remove(Entity entity) {
+        const auto column = componentId<T>();
+        const auto position = _rows[entity.index][column] - 1;
+        const Entity moved = poolOf<T>().removeAt(position);
+        if (moved != Entity{}) {
+            _rows[moved.index][column] = position + 1;
+        }
+        _rows[entity.index][column] = 0;
+    }
+
 private:
     /**
      * @brief One cell per component type: position in its pool + 1, or 0
