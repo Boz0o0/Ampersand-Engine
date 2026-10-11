@@ -8,7 +8,7 @@
 <h1 align="center">Ampersand Engine</h1>
 
 <p align="center">
-  A modular C++ game engine built around a bitset-based ECS.
+  A modular C++20 game engine built around a sparse set ECS.
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ Unit tests are triggered by `AMPERSAND_BUILD_TESTS`, which is `ON` only when the
 ### Requirements
 
 - CMake 3.24+
-- A C++17 compiler (GCC, Clang or MSVC)
+- A C++20 compiler (GCC 10+, Clang 12+ or MSVC 2019 16.10+)
 - Git (dependencies are fetched with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake))
 
 ### Build and test
