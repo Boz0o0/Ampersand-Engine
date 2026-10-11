@@ -174,6 +174,30 @@ public:
         return static_cast<Resource<T>&>(*_resources[index]).get();
     }
 
+    /**
+     * @brief Checks whether the World has a resource of type T.
+     *
+     * @tparam T Resource type.
+     * @return true if the World has a T, false otherwise.
+     */
+    template <typename T>
+    [[nodiscard]] bool hasResource() const {
+        return resourceExists(resourceId<T>());
+    }
+
+    /**
+     * @brief Destroys the resource of type T.
+     *
+     * @tparam T Resource type.
+     * @throws ResourceNotFound if the World has no T.
+     */
+    template <typename T>
+    void removeResource() {
+        const auto index = resourceId<T>();
+        requireResource(index, "removeResource");
+        _resources[index].reset();
+    }
+
 private:
     /**
      * @brief Removes the component an entity has in a column (swap-and-pop)

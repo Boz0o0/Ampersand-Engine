@@ -97,7 +97,8 @@ public:
         : ECSError("Resource already exists: " + details) {}
 };
 
-/** @brief Thrown by getResource when the World has no resource of this type. */
+/** @brief Thrown by getResource and removeResource when the World has no
+ * resource of this type. */
 class ResourceNotFound : public ECSError {
 public:
     /**
