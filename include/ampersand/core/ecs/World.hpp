@@ -111,6 +111,24 @@ public:
         removeFromPool(entity, componentId<T>());
     }
 
+    /**
+     * @brief Lists the entities owning a component of type T.
+     *
+     * This is the pool's own list, not a copy. Inside a loop over it, do not
+     * remove<T>(), add<T>() or destroy() an entity owning a T, or entities
+     * get skipped. Destroy after the loop, or loop backwards by index.
+     *
+     * To iterate over several component types, loop on the rarest one and
+     * filter the others with has().
+     *
+     * @tparam T Component type.
+     * @return The entities owning a T (empty if none).
+     */
+    template <typename T>
+    [[nodiscard]] const std::vector<Entity>& owners() {
+        return poolOf<T>().owners();
+    }
+
 private:
     /**
      * @brief Removes the component an entity has in a column (swap-and-pop)

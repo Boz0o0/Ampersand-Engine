@@ -66,6 +66,13 @@ public:
     [[nodiscard]] T& get(std::uint32_t position) { return _data[position]; }
 
     /**
+     * @brief Lists the entities owning a component of this pool.
+     *
+     * @return The owners, in pool order.
+     */
+    [[nodiscard]] const std::vector<Entity>& owners() const { return _owners; }
+
+    /**
      * @brief Removes the component stored at a position.
      *
      * The last component is moved into the freed position, then the last slot
