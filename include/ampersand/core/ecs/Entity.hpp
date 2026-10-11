@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 
 namespace ampersand::core::ecs {
 
@@ -25,3 +27,17 @@ struct Entity {
 }
 
 }  // namespace ampersand::core::ecs
+
+/**
+ * @brief Lets an Entity be the key of a std::unordered_map / unordered_set.
+ *
+ * Not meant to be called manually.
+ *
+ */
+template <>
+struct std::hash<ampersand::core::ecs::Entity> {
+    [[nodiscard]] std::size_t operator()(
+        ampersand::core::ecs::Entity entity) const noexcept {
+        return std::hash<std::uint32_t>{}(entity.index);
+    }
+};
