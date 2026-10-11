@@ -4,6 +4,8 @@
 #include <ampersand/core/ecs/ComponentPool.hpp>
 #include <ampersand/core/ecs/ECSConfig.hpp>
 #include <ampersand/core/ecs/Entity.hpp>
+#include <ampersand/core/ecs/Resource.hpp>
+#include <ampersand/core/ecs/ResourceId.hpp>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -138,6 +140,40 @@ public:
         return poolOf<T>().owners();
     }
 
+    /**
+     * @brief Creates the World's single instance of resource type T.
+     *
+     * @tparam T Resource type.
+     * @param args Arguments forwarded to the constructor of T.
+     * @return Reference to the new resource.
+     * @throws ResourceAlreadyExists if the World already has a T.
+     */
+    template <typename T, typename... Args>
+    T& addResource(Args&&... args) {
+        const auto index = resourceId<T>();
+        requireNoResource(index, "addResource");
+        if (_resources.size() <= index) {
+            _resources.resize(index + 1);
+        }
+        _resources[index] =
+            std::make_unique<Resource<T>>(std::forward<Args>(args)...);
+        return static_cast<Resource<T>&>(*_resources[index]).get();
+    }
+
+    /**
+     * @brief Accesses the resource of type T.
+     *
+     * @tparam T Resource type.
+     * @return Reference to the resource.
+     * @throws ResourceNotFound if the World has no T.
+     */
+    template <typename T>
+    T& getResource() {
+        const auto index = resourceId<T>();
+        requireResource(index, "getResource");
+        return static_cast<Resource<T>&>(*_resources[index]).get();
+    }
+
 private:
     /**
      * @brief Removes the component an entity has in a column (swap-and-pop)
@@ -181,6 +217,31 @@ private:
                             const char* where) const;
 
     /**
+     * @brief Checks whether a resource slot holds a resource.
+     *
+     * @param index Id of the resource type.
+     * @return true if the slot exists and is filled, false otherwise.
+     */
+    [[nodiscard]] bool resourceExists(std::size_t index) const;
+
+    /**
+     * @brief Throws ResourceNotFound if the World has no resource of a type.
+     *
+     * @param index Id of the resource type.
+     * @param where Name of the calling function, for the error message.
+     */
+    void requireResource(std::size_t index, const char* where) const;
+
+    /**
+     * @brief Throws ResourceAlreadyExists if the World already has a resource
+     * of a type.
+     *
+     * @param index Id of the resource type.
+     * @param where Name of the calling function, for the error message.
+     */
+    void requireNoResource(std::size_t index, const char* where) const;
+
+    /**
      * @brief One cell per component type: position in its pool + 1, or 0
      * when the entity has no component of that type.
      */
@@ -206,6 +267,7 @@ private:
     std::queue<std::uint32_t> _free;
     std::vector<Row> _rows;
     std::array<std::unique_ptr<IComponentPool>, kMaxComponents> _pools;
+    std::vector<std::unique_ptr<IResource>> _resources;
 };
 
 }  // namespace ampersand::core::ecs

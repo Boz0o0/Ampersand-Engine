@@ -23,7 +23,7 @@ Entity World::create() {
     if (!_free.empty()) {
         const auto index = _free.front();
         _free.pop();
-        return {index, _versions[index]};
+        return {.index = index, .version = _versions[index]};
     }
     if (_versions.size() >= _maxEntities) {
         throw EntityLimitReached(std::to_string(_maxEntities) + " entities");
@@ -31,7 +31,7 @@ Entity World::create() {
     const auto index = static_cast<std::uint32_t>(_versions.size());
     _versions.push_back(1);
     _rows.emplace_back();  // every cell is 0
-    return {index, _versions[index]};
+    return {.index = index, .version = _versions[index]};
 }
 
 void World::destroy(Entity entity) {
@@ -80,6 +80,23 @@ void World::requireNoComponent(Entity entity, std::size_t column,
     if (_rows[entity.index][column] != 0) {
         throw ComponentAlreadyExists(describe(entity) + " in " + where +
                                      ", component #" + std::to_string(column));
+    }
+}
+
+bool World::resourceExists(std::size_t index) const {
+    return index < _resources.size() && _resources[index] != nullptr;
+}
+
+void World::requireResource(std::size_t index, const char* where) const {
+    if (!resourceExists(index)) {
+        throw ResourceNotFound("#" + std::to_string(index) + " in " + where);
+    }
+}
+
+void World::requireNoResource(std::size_t index, const char* where) const {
+    if (resourceExists(index)) {
+        throw ResourceAlreadyExists("#" + std::to_string(index) + " in " +
+                                    where);
     }
 }
 
