@@ -65,9 +65,12 @@ public:
      * @tparam T Component type, (deduced from the component arg).
      * @param entity Entity receiving the component.
      * @param component Component to attach, moved into the World.
+     * @throws InvalidEntity if the entity is dead, null or out of range.
+     * @throws ComponentAlreadyExists if the entity already has a T.
      */
     template <typename T>
     void add(Entity entity, T component) {
+        requireNoComponent(entity, componentId<T>(), "add");
         const auto position = poolOf<T>().push(entity, std::move(component));
         _rows[entity.index][componentId<T>()] = position + 1;  // 0 = absent
     }
@@ -78,9 +81,12 @@ public:
      * @tparam T Component type.
      * @param entity Entity owning the component.
      * @return Reference to the component.
+     * @throws InvalidEntity if the entity is dead, null or out of range.
+     * @throws ComponentNotFound if the entity has no T.
      */
     template <typename T>
     T& get(Entity entity) {
+        requireComponent(entity, componentId<T>(), "get");
         const auto cell = _rows[entity.index][componentId<T>()];
         return poolOf<T>().get(cell - 1);  // cells store position + 1,
     }
@@ -105,9 +111,12 @@ public:
      *
      * @tparam T Component type.
      * @param entity Entity owning the component.
+     * @throws InvalidEntity if the entity is dead, null or out of range.
+     * @throws ComponentNotFound if the entity has no T.
      */
     template <typename T>
     void remove(Entity entity) {
+        requireComponent(entity, componentId<T>(), "remove");
         removeFromPool(entity, componentId<T>());
     }
 
@@ -138,6 +147,38 @@ private:
      * @param column Column of the component type.
      */
     void removeFromPool(Entity entity, std::size_t column);
+
+    /**
+     * @brief Throws InvalidEntity if the entity is not alive.
+     *
+     * @param entity Entity to check.
+     * @param where Name of the calling function, for the error message.
+     */
+    void requireAlive(Entity entity, const char* where) const;
+
+    /**
+     * @brief Throws if the entity is not alive or has no component in a
+     * column.
+     *
+     * @param entity Entity to check.
+     * @param column Column of the component type.
+     * @param where Name of the calling function, for the error message.
+     * @throws InvalidEntity, ComponentNotFound
+     */
+    void requireComponent(Entity entity, std::size_t column,
+                          const char* where) const;
+
+    /**
+     * @brief Throws if the entity is not alive or already has a component in
+     * a column.
+     *
+     * @param entity Entity to check.
+     * @param column Column of the component type.
+     * @param where Name of the calling function, for the error message.
+     * @throws InvalidEntity, ComponentAlreadyExists
+     */
+    void requireNoComponent(Entity entity, std::size_t column,
+                            const char* where) const;
 
     /**
      * @brief One cell per component type: position in its pool + 1, or 0
