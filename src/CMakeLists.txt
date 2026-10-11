@@ -14,7 +14,7 @@ function(add_engine_module MODULE)
 
     target_compile_features(ampersand_${MODULE}
         PUBLIC
-            cxx_std_17
+            cxx_std_20
     )
 endfunction()
 
