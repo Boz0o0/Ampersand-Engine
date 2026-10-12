@@ -4,13 +4,13 @@ namespace ampersand::core::math {
 
 template <typename T>
 struct Vec3 {
-  T x{};
-  T y{};
-  T z{};
+    T x{};
+    T y{};
+    T z{};
 
-  constexpr Vec3() = default;
-  constexpr Vec3(T xValue, T yValue, T zValue)
-      : x(xValue), y(yValue), z(zValue) {}
+    constexpr Vec3() = default;
+    constexpr Vec3(T xValue, T yValue, T zValue)
+        : x(xValue), y(yValue), z(zValue) {}
 };
 
 using Vec3f = Vec3<float>;
