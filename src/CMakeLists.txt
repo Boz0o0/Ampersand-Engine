@@ -40,6 +40,7 @@ if(AMPERSAND_MODULE_AUDIO)
         PUBLIC
             ampersand_core
             ampersand_render
+            SFML::Audio
     )
 endif()
 
