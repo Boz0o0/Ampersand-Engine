@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <ampersand/core/Transform.hpp>
+#include <ampersand/core/components/Transform.hpp>
 
 TEST(Transform, DefaultsToIdentityTransform) {
     const ampersand::core::Transform transform;

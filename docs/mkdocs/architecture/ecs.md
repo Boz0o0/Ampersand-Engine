@@ -24,7 +24,7 @@ Everything is in the `ampersand::core::ecs` namespace. Include
 ## Example
 
 ```cpp
-#include <ampersand/core/Transform.hpp>
+#include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/ecs/World.hpp>
 
 namespace ecs = ampersand::core::ecs;

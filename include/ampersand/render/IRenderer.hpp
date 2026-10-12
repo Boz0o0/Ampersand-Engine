@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ampersand/core/Transform.hpp>
+#include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/math/Vec2.hpp>
 #include <ampersand/render/Color.hpp>
 #include <ampersand/render/Event.hpp>
