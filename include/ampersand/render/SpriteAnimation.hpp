@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ampersand/render/Sprite.hpp>
+#include <ampersand/render/components/Sprite.hpp>
 #include <vector>
 
 namespace ampersand::render {

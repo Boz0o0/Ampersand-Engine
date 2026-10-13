@@ -4,15 +4,16 @@
 #include <ampersand/core/math/Vec2.hpp>
 #include <ampersand/render/Color.hpp>
 #include <ampersand/render/Event.hpp>
+#include <ampersand/render/Font.hpp>
 #include <ampersand/render/Primitive.hpp>
-#include <ampersand/render/Sprite.hpp>
-#include <ampersand/render/Text.hpp>
+#include <ampersand/render/Texture.hpp>
 #include <ampersand/render/View.hpp>
 #include <ampersand/render/WindowConfig.hpp>
+#include <ampersand/render/components/Sprite.hpp>
+#include <ampersand/render/components/Text.hpp>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
-#include <string>
 
 namespace ampersand::render {
 
@@ -129,9 +130,7 @@ public:
     /**
      * @brief Draws text using a previously loaded font.
      */
-    virtual void drawText(FontId font, const std::string& text,
-                          unsigned int characterSize, Color color,
-                          const core::Transform& transform) = 0;
+    virtual void draw(const Text& text, const core::Transform& transform) = 0;
 
     /**
      * @brief Presents the current frame to the display.
