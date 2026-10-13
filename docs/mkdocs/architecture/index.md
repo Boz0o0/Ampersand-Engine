@@ -11,6 +11,7 @@ The engine is made of two layers:
 - **The modules** split the engine's features into separate libraries. Every module is built on top of `core`. See [Modules](modules.md).
 - **Physics** moves entities, makes them fall and finds the ones that touch. See [Physics](physics.md).
 - **Rendering** provides the 2D drawing API, including sprites, primitives, text, views, transforms, and animation. See [2D rendering](rendering.md).
+- **Audio** provides sound effects and music through an SFML-backed engine, with an `AudioSource` component and an `AudioSystem` driving them. See [Audio](audio.md).
 
 ## Module dependencies
 
@@ -21,10 +22,8 @@ graph BT
     net[net] --> core
     physics[physics] --> core
     render[render] --> core
-    audio --> render
     render --> input
 ```
 
 `core` has no dependency on the other modules. The render module also depends on
-input because its window event stream includes keyboard events. The audio module
-depends on render, but render does not depend on audio.
+input because its window event stream includes keyboard events.
