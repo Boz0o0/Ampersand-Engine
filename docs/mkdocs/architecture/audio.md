@@ -63,19 +63,26 @@ source.voice = engine.play(source.sound, source.volume, source.pitch,
 
 `AudioListener` is an empty tag for the entity whose `Transform` is the
 listener (usually the camera or the player). Each frame, the game syncs the
-listener and any spatial sources to their entity's position:
+listener and any spatial sources to their entity's position. Only the X and Y
+of the `Transform` are world position; Z is the 2D draw-order layer (see
+[2D rendering](rendering.md)), not depth, so it is left out of the audio
+position instead of being read as a literal distance:
 
 ```cpp
 for (const ecs::Entity entity : world.owners<ampersand::audio::AudioListener>()) {
+    if (!world.has<ampersand::core::Transform>(entity)) continue;
     const auto& transform = world.get<ampersand::core::Transform>(entity);
-    engine.setListenerPosition(transform.position);
+    engine.setListenerPosition(
+        {transform.position.x, transform.position.y, 0.0F});
 }
 
 for (const ecs::Entity entity : world.owners<ampersand::audio::AudioSource>()) {
     auto& source = world.get<ampersand::audio::AudioSource>(entity);
     if (!source.spatial) continue;
+    if (!world.has<ampersand::core::Transform>(entity)) continue;
     const auto& transform = world.get<ampersand::core::Transform>(entity);
-    engine.setPosition(source.voice, transform.position);
+    engine.setPosition(source.voice,
+                       {transform.position.x, transform.position.y, 0.0F});
 }
 ```
 
