@@ -105,6 +105,21 @@ TEST(CollisionSystem, ReportsTheSamePairEveryFrame) {
     EXPECT_EQ(world.getResource<Collisions>().pairs.size(), 1U);
 }
 
+TEST(CollisionSystem, OnlyCollidesOnTheSameZ) {
+    World world;
+    world.addResource<Collisions>();
+    const Entity ship = createBox(world, 0.0F, 0.0F, 32.0F);
+    const Entity enemy = createBox(world, 10.0F, 0.0F, 32.0F);
+    const Entity background = createBox(world, 0.0F, 0.0F, 100.0F);
+    world.get<Transform>(background).position.z = -1.0F;
+
+    CollisionSystem{}.update(world);
+
+    const auto& collisions = world.getResource<Collisions>();
+    ASSERT_EQ(collisions.pairs.size(), 1U);
+    EXPECT_TRUE(hasPair(collisions, ship, enemy));
+}
+
 TEST(CollisionSystem, IgnoresEntityWithoutTransform) {
     World world;
     world.addResource<Collisions>();

@@ -14,6 +14,7 @@ namespace {
 struct Box {
     core::ecs::Entity entity;
     core::math::Rect<float> bounds;
+    float z;
 };
 
 }  // namespace
@@ -26,14 +27,16 @@ void CollisionSystem::update(core::ecs::World& world) {
         if (!world.has<core::Transform>(entity)) {
             continue;
         }
+        const auto& transform = world.get<core::Transform>(entity);
         boxes.push_back(
             {.entity = entity,
-             .bounds = worldBounds(world.get<core::Transform>(entity),
-                                   world.get<BoxCollider>(entity))});
+             .bounds = worldBounds(transform, world.get<BoxCollider>(entity)),
+             .z = transform.position.z});
     }
     for (std::size_t first = 0; first < boxes.size(); first++) {
         for (std::size_t second = first + 1; second < boxes.size(); second++) {
-            if (boxes[first].bounds.intersects(boxes[second].bounds)) {
+            if (boxes[first].z == boxes[second].z &&
+                boxes[first].bounds.intersects(boxes[second].bounds)) {
                 collisions.pairs.emplace_back(boxes[first].entity,
                                               boxes[second].entity);
             }
