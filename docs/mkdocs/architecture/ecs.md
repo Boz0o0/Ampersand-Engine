@@ -14,7 +14,7 @@ For why we chose this design, see [Design decisions](../decisions.md#ecs).
 | **Component** | A plain data struct (`Transform`, `Health`, `Sprite`…) attached to an entity.  |
 | **Pool**      | The storage of one component type: all the `Transform`s together, packed.      |
 | **World**     | Owns everything: entities, their rows, the pools and the resources.            |
-| **System**    | Game logic: a function, written by the game, that loops over entities.         |
+| **System**    | Logic: a class with `update(World&)` that loops over entities.                 |
 | **Resource**  | An object that exists once per world and belongs to no entity (clock, score…). |
 
 Everything is in the `ampersand::core::ecs` namespace. Include
@@ -26,45 +26,33 @@ Everything is in the `ampersand::core::ecs` namespace. Include
 ```cpp
 #include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <ampersand/core/resources/Clock.hpp>
+#include <ampersand/physics/components/Velocity.hpp>
+#include <ampersand/physics/systems/MovementSystem.hpp>
 
+namespace core = ampersand::core;
 namespace ecs = ampersand::core::ecs;
-
-struct Velocity {  // a component, defined by the game
-    float vx{};
-    float vy{};
-};
-
-struct Clock {  // a resource, defined by the game
-    float delta{};
-};
-
-void movementSystem(ecs::World& world) {
-    const float dt = world.getResource<Clock>().delta;
-    for (const ecs::Entity entity : world.owners<Velocity>()) {
-        if (!world.has<ampersand::core::Transform>(entity)) {
-            continue;
-        }
-        auto& transform = world.get<ampersand::core::Transform>(entity);
-        const auto& velocity = world.get<Velocity>(entity);
-        transform.position.x += velocity.vx * dt;
-        transform.position.y += velocity.vy * dt;
-    }
-}
+namespace physics = ampersand::physics;
 
 int main() {
     ecs::World world;  // 10 000 entities at most by default
-    world.addResource<Clock>();
+    world.addResource<core::Clock>();  // a resource
 
-    const ecs::Entity ship = world.create();
-    world.add(ship, ampersand::core::Transform{});
-    world.add(ship, Velocity{.vx = 120.0F, .vy = 0.0F});
+    const ecs::Entity ship = world.create();  // an entity
+    world.add(ship, core::Transform{});  // its components
+    world.add(ship, physics::Velocity{.value = {120.0F, 0.0F}});
 
+    physics::MovementSystem movement;  // a system
     while (running) {
-        world.getResource<Clock>().delta = frameTime();
-        movementSystem(world);
+        world.getResource<core::Clock>().dt = frameTime();
+        movement.update(world);  // moves the ship
     }
 }
 ```
+
+The game adds its own components, resources and systems in the same way. The
+ones given by the engine are described in their module, for example
+[Physics](physics.md).
 
 ## Overview
 
@@ -197,18 +185,26 @@ writes in the rows.
 
 ## Systems
 
-A system is a function written by the game, called in its own loop.
+A system inherits `ISystem` and implements `update(World&)`. The game creates
+its systems once and calls `update` in its own loop, in the order it wants.
 `owners<T>()` gives the entities that have a `T`, and the system checks the other
 components it needs with `has`:
 
 ```cpp
-for (const ecs::Entity entity : world.owners<Velocity>()) {
-    if (!world.has<ampersand::core::Transform>(entity)) {
-        continue;
+class MovementSystem final : public ecs::ISystem {
+public:
+    void update(ecs::World& world) override {
+        for (const ecs::Entity entity : world.owners<Velocity>()) {
+            if (!world.has<ampersand::core::Transform>(entity)) {
+                continue;
+            }
+            ...
+        }
     }
-    ...
-}
+};
 ```
+
+A system that has to remember something between frames keeps it in its members.
 
 Loop on the component that the **fewest** entities have (here, fewer entities
 move than have a position), and check the others with `has`: each check is a

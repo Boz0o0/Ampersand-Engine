@@ -35,6 +35,7 @@ nav:
   - Architecture:
       - architecture/index.md
       - ECS: architecture/ecs.md
+      - Physics: architecture/physics.md
       - Modules: architecture/modules.md
       - 2D rendering: architecture/rendering.md
       - Audio: architecture/audio.md
