@@ -48,6 +48,27 @@ if (AMPERSAND_MODULE_RENDER)
     )
 endif()
 
+if (AMPERSAND_MODULE_NET)
+    CPMAddPackage(
+        NAME asio
+        GITHUB_REPOSITORY chriskohlhoff/asio
+        GIT_TAG asio-1-30-2
+        DOWNLOAD_ONLY YES
+    )
+
+    find_package(Threads REQUIRED)
+
+    add_library(asio INTERFACE)
+    target_include_directories(asio SYSTEM INTERFACE "${asio_SOURCE_DIR}/asio/include")
+    target_compile_definitions(asio INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+    target_link_libraries(asio INTERFACE Threads::Threads)
+
+    if(WIN32)
+        target_compile_definitions(asio INTERFACE _WIN32_WINNT=0x0A00)
+        target_link_libraries(asio INTERFACE ws2_32 wsock32)
+    endif()
+endif()
+
 add_subdirectory(src)
 
 if(AMPERSAND_BUILD_TESTS AND BUILD_TESTING)

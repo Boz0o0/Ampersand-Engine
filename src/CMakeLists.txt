@@ -59,6 +59,7 @@ if(AMPERSAND_MODULE_NET)
     target_link_libraries(ampersand_net
         PUBLIC
             ampersand_core
+            asio
     )
 endif()
 
