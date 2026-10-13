@@ -7,10 +7,10 @@
 #include <ampersand/render/Font.hpp>
 #include <ampersand/render/Primitive.hpp>
 #include <ampersand/render/Texture.hpp>
-#include <ampersand/render/View.hpp>
 #include <ampersand/render/WindowConfig.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
+#include <ampersand/render/resources/Camera.hpp>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -72,8 +72,11 @@ public:
     /**
      * @brief Sets the world-space camera view used for subsequent draw
      * commands.
+     *
+     * @throws std::invalid_argument if the camera is not finite or its size
+     * is not positive.
      */
-    virtual void setView(const View& view) = 0;
+    virtual void setView(const Camera& camera) = 0;
 
     /**
      * @brief Restores the default view covering the window in pixel

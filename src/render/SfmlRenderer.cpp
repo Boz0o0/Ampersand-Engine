@@ -49,16 +49,16 @@ std::optional<Event> SfmlRenderer::pollEvent() {
     return std::nullopt;
 }
 
-void SfmlRenderer::setView(const View& view) {
-    if (!std::isfinite(view.center.x) || !std::isfinite(view.center.y) ||
-        !std::isfinite(view.size.x) || !std::isfinite(view.size.y) ||
-        view.size.x <= 0.0F || view.size.y <= 0.0F) {
+void SfmlRenderer::setView(const Camera& camera) {
+    if (!std::isfinite(camera.center.x) || !std::isfinite(camera.center.y) ||
+        !std::isfinite(camera.size.x) || !std::isfinite(camera.size.y) ||
+        camera.size.x <= 0.0F || camera.size.y <= 0.0F) {
         throw std::invalid_argument(
-            "View center and size must be finite, and "
-            "view size must be positive");
+            "Camera center and size must be finite, and "
+            "camera size must be positive");
     }
-    this->window_.setView(
-        sf::View({view.center.x, view.center.y}, {view.size.x, view.size.y}));
+    this->window_.setView(sf::View({camera.center.x, camera.center.y},
+                                   {camera.size.x, camera.size.y}));
     this->customView_ = true;
 }
 

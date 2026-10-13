@@ -51,7 +51,7 @@ public:
      */
     std::optional<Event> pollEvent() override;
 
-    void setView(const View& view) override;
+    void setView(const Camera& camera) override;
     void resetView() override;
 
     /**

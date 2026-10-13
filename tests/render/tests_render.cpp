@@ -2,6 +2,7 @@
 
 #include <ampersand/render/SfmlRenderer.hpp>
 #include <ampersand/render/SpriteAnimation.hpp>
+#include <ampersand/render/resources/ClearColor.hpp>
 #include <limits>
 #include <stdexcept>
 #include <vector>
@@ -86,4 +87,13 @@ TEST(RenderComponents, SpriteAndTextDefaultToWhite) {
     EXPECT_EQ(text.color.r, 255);
     EXPECT_EQ(text.color.a, 255);
     EXPECT_EQ(text.size, 24U);
+}
+
+TEST(RenderResources, ClearColorDefaultsToOpaqueBlack) {
+    const ampersand::render::ClearColor clear;
+
+    EXPECT_EQ(clear.value.r, 0);
+    EXPECT_EQ(clear.value.g, 0);
+    EXPECT_EQ(clear.value.b, 0);
+    EXPECT_EQ(clear.value.a, 255);
 }
