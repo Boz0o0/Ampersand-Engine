@@ -84,6 +84,14 @@ public:
     virtual void setListenerPosition(const core::math::Vec3f& position) = 0;
 
     /**
+     * @brief Changes the global volume multiplier applied to every voice
+     * and music, on top of their own volume.
+     *
+     * @param volume Global volume, from 0 (mute) to 100 (unchanged).
+     */
+    virtual void setGlobalVolume(float volume) = 0;
+
+    /**
      * @brief Opens a streamed music track under a generated identifier.
      *
      * @param path File system path to the music file.
@@ -100,6 +108,13 @@ public:
      * @param loop Whether the track restarts from the beginning when it ends.
      */
     virtual void playMusic(MusicId music, float volume, bool loop) = 0;
+
+    /**
+     * @brief Changes the volume of a music track without restarting it.
+     *
+     * No-op if the track does not exist.
+     */
+    virtual void setMusicVolume(MusicId music, float volume) = 0;
 
     /** @brief Pauses a music track. No-op if it does not exist. */
     virtual void pauseMusic(MusicId music) = 0;

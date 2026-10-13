@@ -91,6 +91,14 @@ void SfmlAudioEngine::setListenerPosition(const core::math::Vec3f& position) {
     sf::Listener::setPosition({position.x, position.y, position.z});
 }
 
+void SfmlAudioEngine::setGlobalVolume(float volume) {
+    if (!std::isfinite(volume)) {
+        throw std::invalid_argument("Global volume must be finite");
+    }
+    this->pruneFinishedVoices();
+    sf::Listener::setGlobalVolume(volume);
+}
+
 MusicId SfmlAudioEngine::openMusic(const std::filesystem::path& path) {
     auto music = std::make_unique<sf::Music>();
     if (!music->openFromFile(path)) return 0;
@@ -110,6 +118,15 @@ void SfmlAudioEngine::playMusic(MusicId music, float volume, bool loop) {
         track->get().setLooping(loop);
         track->get().play();
     }
+}
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+void SfmlAudioEngine::setMusicVolume(MusicId music, float volume) {
+    if (!std::isfinite(volume)) {
+        throw std::invalid_argument("Music volume must be finite");
+    }
+    if (const auto track = this->findMusic(music))
+        track->get().setVolume(volume);
 }
 
 void SfmlAudioEngine::pauseMusic(MusicId music) {

@@ -32,9 +32,11 @@ public:
     void setPosition(VoiceId voice, const core::math::Vec3f& position) override;
 
     void setListenerPosition(const core::math::Vec3f& position) override;
+    void setGlobalVolume(float volume) override;
 
     [[nodiscard]] MusicId openMusic(const std::filesystem::path& path) override;
     void playMusic(MusicId music, float volume, bool loop) override;
+    void setMusicVolume(MusicId music, float volume) override;
     void pauseMusic(MusicId music) override;
     void stopMusic(MusicId music) override;
     [[nodiscard]] bool isMusicPlaying(MusicId music) const override;

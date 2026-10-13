@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
-#include <ampersand/audio/AudioListener.hpp>
-#include <ampersand/audio/AudioSource.hpp>
 #include <ampersand/audio/SfmlAudioEngine.hpp>
-#include <type_traits>
+#include <ampersand/audio/components/AudioSource.hpp>
+#include <ampersand/audio/resources/AudioListener.hpp>
+#include <variant>
 
 TEST(AudioModule, MissingAssetsReturnZeroIds) {
     ampersand::audio::SfmlAudioEngine engine;
@@ -48,16 +48,16 @@ TEST(AudioModule, ListenerPositionCanBeSetWithoutAnyVoice) {
 TEST(AudioSourceComponent, DefaultsToAudibleNonLoopingSilence) {
     const ampersand::audio::AudioSource source;
 
-    EXPECT_EQ(source.sound, 0U);
+    ASSERT_TRUE(
+        std::holds_alternative<ampersand::audio::SoundRef>(source.source));
+    EXPECT_EQ(std::get<ampersand::audio::SoundRef>(source.source).id, 0U);
     EXPECT_FLOAT_EQ(source.volume, 100.0F);
-    EXPECT_FLOAT_EQ(source.pitch, 1.0F);
     EXPECT_FALSE(source.loop);
-    EXPECT_FALSE(source.spatial);
-    EXPECT_EQ(source.voice, 0U);
+    EXPECT_FALSE(source.playing);
 }
 
-TEST(AudioListenerComponent, IsAnEmptyTag) {
+TEST(AudioListenerResource, DefaultsToFullVolume) {
     const ampersand::audio::AudioListener listener;
-    (void)listener;
-    EXPECT_TRUE(std::is_empty_v<ampersand::audio::AudioListener>);
+
+    EXPECT_FLOAT_EQ(listener.volume, 1.0F);
 }

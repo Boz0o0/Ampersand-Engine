@@ -1,8 +1,52 @@
 # Audio
 
-The audio module exposes an SFML-backed audio engine through `IAudioEngine`,
-plus two ECS components (`AudioSource`, `AudioListener`) the game attaches to
-entities to drive it.
+The audio module exposes an SFML-backed audio engine through `IAudioEngine`.
+For the ECS, it provides one component and two resources so a single
+`AudioSystem` can drive every sound and music track without the game calling
+the engine itself.
+
+## Concepts
+
+| Name             | Kind      | What it does                                                                 |
+| ---------------- | --------- | ------------------------------------------------------------------------------ |
+| `AudioSource`    | component | a sound or music an entity plays: `source`, `volume`, `loop`, `playing`       |
+| `AudioListener`  | resource  | global volume multiplier (0 to 1) applied to everything                      |
+| `SceneMusic`     | resource  | background music for the whole scene, belonging to no entity                 |
+| `AudioSystem`    | system    | starts, stops and live-syncs every `AudioSource` and `SceneMusic`, applies the global volume |
+
+`AudioSystem` throws `ResourceNotFound` if the World has no `AudioListener`.
+`SceneMusic` is only used if the World has one (like `GravityForce` in
+[Physics](physics.md)).
+
+## Example
+
+```cpp
+namespace audio = ampersand::audio;
+
+ampersand::audio::SfmlAudioEngine engine;
+const auto laser = engine.loadSound("assets/laser.wav");
+const auto theme = engine.openMusic("assets/theme.ogg");
+
+world.addResource<audio::AudioListener>().volume = 0.8F;
+world.addResource<audio::SceneMusic>() = {.music = theme, .playing = true};
+
+const ecs::Entity turret = world.create();
+world.add(turret, audio::AudioSource{.source = audio::SoundRef{laser}});
+
+audio::AudioSystem audioSystem(engine);  // a system, given the engine once
+
+while (running) {
+    // fire: the game only flips a flag, the system does the rest
+    world.get<audio::AudioSource>(turret).playing = true;
+    audioSystem.update(world);
+}
+```
+
+`AudioSystem` keeps its own bookkeeping (which entity started which voice or
+music) in its members, the same way any `ISystem` would (see
+[Systems](ecs.md#systems)). It never stores a runtime handle back into the
+component: `AudioSource` only ever holds what the game decided (what to
+play, how loud, whether it loops, whether it should be playing).
 
 ## Sounds and voices
 
@@ -28,63 +72,72 @@ if (!engine.isPlaying(voice)) {
 A finished, non-looping voice is dropped automatically the next time `play`
 is called, so one-shot sounds do not accumulate.
 
+`setPosition` and `setListenerPosition` are still there for a game that wants
+spatial audio by driving the engine directly; `AudioSource` and
+`AudioListener` do not use them (see [ECS integration](#ecs-integration)).
+
 ## Music
 
 Longer tracks are opened as a `MusicId` and streamed from disk with
 `sf::Music` instead of being fully decoded into memory, through `openMusic`,
-`playMusic`, `pauseMusic` and `stopMusic`.
+`playMusic`, `pauseMusic` and `stopMusic`. `setMusicVolume` changes the
+volume of a track that is already playing without restarting it.
 
 ```cpp
 const auto theme = engine.openMusic("assets/theme.ogg");
 engine.playMusic(theme, 100.0F, /*loop*/ true);
+engine.setMusicVolume(theme, 60.0F);
 ```
 
-## ECS components
+## ECS integration
 
-`AudioSource` is a plain data component attached to an entity with
-`world.add`. The game drives it directly with `IAudioEngine`, storing the
-returned `VoiceId` back into the component to control that entity's sound
-later:
+### AudioListener: the global volume
+
+`AudioListener` is a resource, not a component: it belongs to no entity, and
+there is only one per World. `AudioSystem` applies it every frame through
+`IAudioEngine::setGlobalVolume`, which SFML combines with the volume of
+every voice and music track:
 
 ```cpp
-#include <ampersand/audio/AudioSource.hpp>
-#include <ampersand/core/ecs/World.hpp>
+world.addResource<ampersand::audio::AudioListener>();  // volume 1.0 by default
+world.getResource<ampersand::audio::AudioListener>().volume = 0.5F;  // an options menu, for example
+```
 
-namespace ecs = ampersand::core::ecs;
+### AudioSource: sounds and music relative to an entity
 
-ecs::World world;
+`AudioSource` plays either a sound effect or a music track, and either kind
+can be attached to any entity: `source` holds a `SoundRef` or a `MusicRef`
+(`SoundId` and `MusicId` are both plain `std::uint32_t`, so these two
+one-field wrappers are what let a `std::variant` tell them apart).
+
+```cpp
+#include <ampersand/audio/components/AudioSource.hpp>
+
+namespace audio = ampersand::audio;
+
 const ecs::Entity turret = world.create();
-world.add(turret, ampersand::audio::AudioSource{.sound = laser});
+world.add(turret, audio::AudioSource{.source = audio::SoundRef{laser}});
 
-auto& source = world.get<ampersand::audio::AudioSource>(turret);
-source.voice = engine.play(source.sound, source.volume, source.pitch,
-                           source.loop);
+world.get<audio::AudioSource>(turret).playing = true;  // AudioSystem starts it
 ```
 
-`AudioListener` is an empty tag for the entity whose `Transform` is the
-listener (usually the camera or the player). Each frame, the game syncs the
-listener and any spatial sources to their entity's position. Only the X and Y
-of the `Transform` are world position; Z is the 2D draw-order layer (see
-[2D rendering](rendering.md)), not depth, so it is left out of the audio
-position instead of being read as a literal distance:
+Set `playing` to `true` to start it, `false` to stop it. `AudioSystem`
+resets `playing` to `false` on its own once a non-looping sound or track
+reaches its end, and always stops the sound of an entity that no longer has
+an `AudioSource` (destroyed, or the component removed) — a sound never
+outlives the entity it belongs to.
+
+### SceneMusic: music for the whole scene
+
+A music track that is not relative to any entity (a level's background
+music) is `SceneMusic`, a resource instead of a component for the same
+reason `AudioListener` is: it belongs to no entity, and the scene plays at
+most one. It is optional — `AudioSystem` simply does not touch it if the
+World has none:
 
 ```cpp
-for (const ecs::Entity entity : world.owners<ampersand::audio::AudioListener>()) {
-    if (!world.has<ampersand::core::Transform>(entity)) continue;
-    const auto& transform = world.get<ampersand::core::Transform>(entity);
-    engine.setListenerPosition(
-        {transform.position.x, transform.position.y, 0.0F});
-}
-
-for (const ecs::Entity entity : world.owners<ampersand::audio::AudioSource>()) {
-    auto& source = world.get<ampersand::audio::AudioSource>(entity);
-    if (!source.spatial) continue;
-    if (!world.has<ampersand::core::Transform>(entity)) continue;
-    const auto& transform = world.get<ampersand::core::Transform>(entity);
-    engine.setPosition(source.voice,
-                       {transform.position.x, transform.position.y, 0.0F});
-}
+world.addResource<ampersand::audio::SceneMusic>() =
+    {.music = theme, .volume = 100.0F, .loop = true, .playing = true};
 ```
 
-Only one entity should carry `AudioListener` at a time, since the underlying
-listener position is global to the audio engine.
+It follows the same `playing` convention as `AudioSource`.
