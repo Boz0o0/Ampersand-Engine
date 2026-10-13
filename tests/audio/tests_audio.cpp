@@ -59,5 +59,5 @@ TEST(AudioSourceComponent, DefaultsToAudibleNonLoopingSilence) {
 TEST(AudioListenerResource, DefaultsToFullVolume) {
     const ampersand::audio::AudioListener listener;
 
-    EXPECT_FLOAT_EQ(listener.volume, 1.0F);
+    EXPECT_FLOAT_EQ(listener.volume, 100.0F);
 }

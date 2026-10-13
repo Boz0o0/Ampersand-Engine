@@ -53,9 +53,9 @@ void SfmlAudioEngine::resume(VoiceId voice) {
 }
 
 bool SfmlAudioEngine::isPlaying(VoiceId voice) const {
-    const auto sound = this->findVoice(voice);
-    return sound.has_value() &&
-           sound->get().getStatus() == sf::Sound::Status::Playing;
+    const auto voiceIt = this->voices_.find(voice);
+    return voiceIt != this->voices_.end() &&
+           voiceIt->second->getStatus() == sf::Sound::Status::Playing;
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -87,7 +87,6 @@ void SfmlAudioEngine::setPosition(VoiceId voice,
 }
 
 void SfmlAudioEngine::setListenerPosition(const core::math::Vec3f& position) {
-    this->pruneFinishedVoices();
     sf::Listener::setPosition({position.x, position.y, position.z});
 }
 
@@ -95,7 +94,6 @@ void SfmlAudioEngine::setGlobalVolume(float volume) {
     if (!std::isfinite(volume)) {
         throw std::invalid_argument("Global volume must be finite");
     }
-    this->pruneFinishedVoices();
     sf::Listener::setGlobalVolume(volume);
 }
 
@@ -138,9 +136,9 @@ void SfmlAudioEngine::stopMusic(MusicId music) {
 }
 
 bool SfmlAudioEngine::isMusicPlaying(MusicId music) const {
-    const auto track = this->findMusic(music);
-    return track.has_value() &&
-           track->get().getStatus() == sf::Music::Status::Playing;
+    const auto musicIt = this->music_.find(music);
+    return musicIt != this->music_.end() &&
+           musicIt->second->getStatus() == sf::Music::Status::Playing;
 }
 
 void SfmlAudioEngine::pruneFinishedVoices() {
@@ -155,14 +153,14 @@ void SfmlAudioEngine::pruneFinishedVoices() {
 }
 
 std::optional<std::reference_wrapper<sf::Sound>> SfmlAudioEngine::findVoice(
-    VoiceId voice) const {
+    VoiceId voice) {
     const auto voiceIt = this->voices_.find(voice);
     if (voiceIt == this->voices_.end()) return std::nullopt;
     return *voiceIt->second;
 }
 
 std::optional<std::reference_wrapper<sf::Music>> SfmlAudioEngine::findMusic(
-    MusicId music) const {
+    MusicId music) {
     const auto musicIt = this->music_.find(music);
     if (musicIt == this->music_.end()) return std::nullopt;
     return *musicIt->second;

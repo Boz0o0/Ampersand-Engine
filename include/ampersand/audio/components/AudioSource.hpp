@@ -18,7 +18,12 @@ struct SoundRef {
     SoundId id{};
 };
 
-/** @brief Tags a MusicId inside AudioSource::source (see SoundRef). */
+/**
+ * @brief Tags a MusicId inside AudioSource::source (see SoundRef).
+ *
+ * A MusicId is a single stream: only one source (AudioSource or SceneMusic)
+ * can play it at a time, or they stop and restart each other.
+ */
 struct MusicRef {
     MusicId id{};
 };
@@ -33,7 +38,9 @@ struct MusicRef {
  *
  * Set `playing` to `true` to start it and `false` to stop it. The
  * AudioSystem resets `playing` to `false` on its own once a non-looping
- * sound or track reaches its end.
+ * sound or track reaches its end, or right away if the id is unknown (a
+ * failed load returns 0). An entity plays one voice at a time: setting
+ * `playing` again while it plays does not start a second one.
  */
 struct AudioSource {
     std::variant<SoundRef, MusicRef> source{SoundRef{}};

@@ -9,8 +9,8 @@ namespace ampersand::audio {
  * set `volume` whenever the game changes it (an options menu, for example).
  */
 struct AudioListener {
-    /** @brief Global volume, from 0 (mute) to 1 (unchanged). */
-    float volume{1.0F};
+    /** @brief Global volume, from 0 (mute) to 100 (unchanged). */
+    float volume{100.0F};
 };
 
 }  // namespace ampersand::audio

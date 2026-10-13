@@ -3,6 +3,7 @@
 #include <ampersand/audio/IAudioEngine.hpp>
 #include <ampersand/core/ecs/Entity.hpp>
 #include <ampersand/core/ecs/ISystem.hpp>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 
@@ -37,6 +38,7 @@ public:
      * @param world World holding the entities and the AudioListener
      * resource (and the SceneMusic resource, if any).
      * @throws ResourceNotFound if the World has no AudioListener.
+     * @throws std::invalid_argument if a volume is not finite.
      */
     void update(core::ecs::World& world) override;
 
@@ -53,11 +55,17 @@ private:
     /** @brief Starts, stops or live-syncs the music of one entity's source. */
     void updateMusicSource(core::ecs::Entity entity, AudioSource& source);
 
+    /**
+     * @brief Starts, stops or live-syncs the SceneMusic, and stops the track
+     * it started if the resource changed its music or was removed.
+     */
+    void updateSceneMusic(core::ecs::World& world);
+
     IAudioEngine& engine_;
     std::unordered_map<core::ecs::Entity, std::pair<SoundId, VoiceId>>
         activeVoices_;
     std::unordered_map<core::ecs::Entity, MusicId> activeMusic_;
-    bool sceneMusicActive_{false};
+    std::optional<MusicId> sceneMusic_;
 };
 
 }  // namespace ampersand::audio

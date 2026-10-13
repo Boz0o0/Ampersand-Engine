@@ -50,11 +50,11 @@ private:
 
     /** @brief Finds an active voice, or nullopt if it does not exist. */
     [[nodiscard]] std::optional<std::reference_wrapper<sf::Sound>> findVoice(
-        VoiceId voice) const;
+        VoiceId voice);
 
     /** @brief Finds an opened music track, or nullopt if it does not exist. */
     [[nodiscard]] std::optional<std::reference_wrapper<sf::Music>> findMusic(
-        MusicId music) const;
+        MusicId music);
 
     std::unordered_map<SoundId, std::unique_ptr<sf::SoundBuffer>> buffers_;
     std::unordered_map<VoiceId, std::unique_ptr<sf::Sound>> voices_;

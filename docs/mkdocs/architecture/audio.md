@@ -10,13 +10,13 @@ the engine itself.
 | Name             | Kind      | What it does                                                                 |
 | ---------------- | --------- | ------------------------------------------------------------------------------ |
 | `AudioSource`    | component | a sound or music an entity plays: `source`, `volume`, `loop`, `playing`       |
-| `AudioListener`  | resource  | global volume multiplier (0 to 1) applied to everything                      |
+| `AudioListener`  | resource  | global volume (0 to 100) applied to everything                               |
 | `SceneMusic`     | resource  | background music for the whole scene, belonging to no entity                 |
 | `AudioSystem`    | system    | starts, stops and live-syncs every `AudioSource` and `SceneMusic`, applies the global volume |
 
 `AudioSystem` throws `ResourceNotFound` if the World has no `AudioListener`.
-`SceneMusic` is only used if the World has one (like `GravityForce` in
-[Physics](physics.md)).
+`SceneMusic` is optional: the system ignores it if the World has none. Every
+volume goes from 0 (mute) to 100 (full).
 
 ## Example
 
@@ -27,17 +27,18 @@ ampersand::audio::SfmlAudioEngine engine;
 const auto laser = engine.loadSound("assets/laser.wav");
 const auto theme = engine.openMusic("assets/theme.ogg");
 
-world.addResource<audio::AudioListener>().volume = 0.8F;
+world.addResource<audio::AudioListener>().volume = 80.0F;
 world.addResource<audio::SceneMusic>() = {.music = theme, .playing = true};
-
-const ecs::Entity turret = world.create();
-world.add(turret, audio::AudioSource{.source = audio::SoundRef{laser}});
 
 audio::AudioSystem audioSystem(engine);  // a system, given the engine once
 
 while (running) {
-    // fire: the game only flips a flag, the system does the rest
-    world.get<audio::AudioSource>(turret).playing = true;
+    if (fired) {
+        // each shot is an entity: its sound starts with it, stops with it
+        const ecs::Entity shot = world.create();
+        world.add(shot, audio::AudioSource{.source = audio::SoundRef{laser},
+                                           .playing = true});
+    }
     audioSystem.update(world);
 }
 ```
@@ -70,7 +71,7 @@ if (!engine.isPlaying(voice)) {
 ```
 
 A finished, non-looping voice is dropped automatically the next time `play`
-is called, so one-shot sounds do not accumulate.
+is called (or when it is stopped), so one-shot sounds do not accumulate.
 
 `setPosition` and `setListenerPosition` are still there for a game that wants
 spatial audio by driving the engine directly; `AudioSource` and
@@ -99,8 +100,8 @@ there is only one per World. `AudioSystem` applies it every frame through
 every voice and music track:
 
 ```cpp
-world.addResource<ampersand::audio::AudioListener>();  // volume 1.0 by default
-world.getResource<ampersand::audio::AudioListener>().volume = 0.5F;  // an options menu, for example
+world.addResource<ampersand::audio::AudioListener>();  // volume 100 by default
+world.getResource<ampersand::audio::AudioListener>().volume = 50.0F;  // an options menu, for example
 ```
 
 ### AudioSource: sounds and music relative to an entity
@@ -115,10 +116,10 @@ one-field wrappers are what let a `std::variant` tell them apart).
 
 namespace audio = ampersand::audio;
 
-const ecs::Entity turret = world.create();
-world.add(turret, audio::AudioSource{.source = audio::SoundRef{laser}});
+const ecs::Entity boss = world.create();
+world.add(boss, audio::AudioSource{.source = audio::SoundRef{roar}});
 
-world.get<audio::AudioSource>(turret).playing = true;  // AudioSystem starts it
+world.get<audio::AudioSource>(boss).playing = true;  // AudioSystem starts it
 ```
 
 Set `playing` to `true` to start it, `false` to stop it. `AudioSystem`
@@ -126,6 +127,17 @@ resets `playing` to `false` on its own once a non-looping sound or track
 reaches its end, and always stops the sound of an entity that no longer has
 an `AudioSource` (destroyed, or the component removed) — a sound never
 outlives the entity it belongs to.
+
+An entity plays **one voice at a time**: setting `playing` to `true` while its
+sound still plays does not start a second one. To hear the same sound several
+times at once (rapid fire), give each one its own entity, as in the
+[example](#example). An unknown id (a failed load returns 0) plays nothing and
+`playing` goes back to `false`.
+
+!!! warning "One source per music track"
+    A `MusicId` is a single stream. If two sources (two `AudioSource`s, or one
+    and the `SceneMusic`) play the same `MusicId`, stopping one stops the other.
+    Open the file twice with `openMusic` to play it from two sources.
 
 ### SceneMusic: music for the whole scene
 
@@ -140,4 +152,6 @@ world.addResource<ampersand::audio::SceneMusic>() =
     {.music = theme, .volume = 100.0F, .loop = true, .playing = true};
 ```
 
-It follows the same `playing` convention as `AudioSource`.
+It follows the same `playing` convention as `AudioSource`. Changing its
+`music` while it plays stops the old track and starts the new one, and removing
+the resource stops it.

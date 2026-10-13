@@ -10,7 +10,7 @@ namespace ampersand::audio {
 AudioSystem::AudioSystem(IAudioEngine& engine) : engine_(engine) {}
 
 void AudioSystem::update(core::ecs::World& world) {
-    engine_.setGlobalVolume(world.getResource<AudioListener>().volume * 100.0F);
+    engine_.setGlobalVolume(world.getResource<AudioListener>().volume);
 
     this->stopOrphanedSounds(world);
 
@@ -23,23 +23,7 @@ void AudioSystem::update(core::ecs::World& world) {
         }
     }
 
-    if (world.hasResource<SceneMusic>()) {
-        auto& scene = world.getResource<SceneMusic>();
-        if (scene.playing) {
-            if (!this->sceneMusicActive_) {
-                engine_.playMusic(scene.music, scene.volume, scene.loop);
-                this->sceneMusicActive_ = true;
-            } else if (engine_.isMusicPlaying(scene.music)) {
-                engine_.setMusicVolume(scene.music, scene.volume);
-            } else {
-                this->sceneMusicActive_ = false;
-                scene.playing = false;
-            }
-        } else if (this->sceneMusicActive_) {
-            engine_.stopMusic(scene.music);
-            this->sceneMusicActive_ = false;
-        }
-    }
+    this->updateSceneMusic(world);
 }
 
 void AudioSystem::stopOrphanedSounds(core::ecs::World& world) {
@@ -84,6 +68,8 @@ void AudioSystem::updateSoundSource(core::ecs::Entity entity,
         } else if (engine_.isPlaying(voiceIt->second.second)) {
             engine_.setVolume(voiceIt->second.second, source.volume);
         } else {
+            engine_.stop(
+                voiceIt->second.second);  // releases the finished voice
             this->activeVoices_.erase(voiceIt);
             source.playing = false;
         }
@@ -116,6 +102,32 @@ void AudioSystem::updateMusicSource(core::ecs::Entity entity,
     } else if (musicIt != this->activeMusic_.end()) {
         engine_.stopMusic(musicIt->second);
         this->activeMusic_.erase(musicIt);
+    }
+}
+
+void AudioSystem::updateSceneMusic(core::ecs::World& world) {
+    const bool wanted = world.hasResource<SceneMusic>() &&
+                        world.getResource<SceneMusic>().playing;
+    if (!wanted) {
+        if (this->sceneMusic_) {
+            engine_.stopMusic(*this->sceneMusic_);
+            this->sceneMusic_.reset();
+        }
+        return;
+    }
+
+    auto& scene = world.getResource<SceneMusic>();
+    if (this->sceneMusic_ != scene.music) {
+        if (this->sceneMusic_) {
+            engine_.stopMusic(*this->sceneMusic_);
+        }
+        engine_.playMusic(scene.music, scene.volume, scene.loop);
+        this->sceneMusic_ = scene.music;
+    } else if (engine_.isMusicPlaying(scene.music)) {
+        engine_.setMusicVolume(scene.music, scene.volume);
+    } else {
+        this->sceneMusic_.reset();
+        scene.playing = false;
     }
 }
 
