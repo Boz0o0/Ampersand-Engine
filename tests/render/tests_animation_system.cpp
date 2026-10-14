@@ -22,8 +22,10 @@ using ampersand::render::Sprite;
 
 /** @brief Three 16x16 frames side by side, half a second each. */
 Animation threeFrames() {
-    return {.frames = {{0, 0, 16, 16}, {16, 0, 16, 16}, {32, 0, 16, 16}},
-            .frameDuration = 0.5F};
+    return {
+        .frames = {{0, 0, 16, 16}, {16, 0, 16, 16}, {32, 0, 16, 16}},
+        .frameDuration = 0.5F,
+    };
 }
 
 Entity createAnimated(World& world, Animation animation) {

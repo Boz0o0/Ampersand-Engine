@@ -7,6 +7,7 @@
 #include <ampersand/render/components/Text.hpp>
 #include <ampersand/render/resources/Camera.hpp>
 #include <ampersand/render/resources/ClearColor.hpp>
+#include <ampersand/render/resources/Renderer.hpp>
 #include <ampersand/render/systems/RenderSystem.hpp>
 #include <filesystem>
 #include <optional>
@@ -27,6 +28,7 @@ using ampersand::render::FontId;
 using ampersand::render::IRenderer;
 using ampersand::render::Line;
 using ampersand::render::Rectangle;
+using ampersand::render::Renderer;
 using ampersand::render::RenderSystem;
 using ampersand::render::Sprite;
 using ampersand::render::Text;
@@ -115,19 +117,24 @@ Entity createAt(World& world, float left, float top) {
 TEST(RenderSystem, EmptyWorldStillDrawsAFrame) {
     FakeRenderer renderer;
     World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
 
-    RenderSystem{renderer}.update(world);
+    RenderSystem{}.update(world);
 
-    const std::vector<std::string> expected{"beginFrame", "resetView",
-                                            "endFrame"};
+    const std::vector<std::string> expected{
+        "beginFrame",
+        "resetView",
+        "endFrame",
+    };
     EXPECT_EQ(renderer.calls, expected);
 }
 
 TEST(RenderSystem, ClearsInBlackWithoutClearColor) {
     FakeRenderer renderer;
     World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
 
-    RenderSystem{renderer}.update(world);
+    RenderSystem{}.update(world);
 
     EXPECT_EQ(renderer.clearColor.r, 0);
     EXPECT_EQ(renderer.clearColor.g, 0);
@@ -138,9 +145,10 @@ TEST(RenderSystem, ClearsInBlackWithoutClearColor) {
 TEST(RenderSystem, ClearsWithTheClearColor) {
     FakeRenderer renderer;
     World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
     world.addResource<ClearColor>().value = {.r = 10, .g = 20, .b = 30};
 
-    RenderSystem{renderer}.update(world);
+    RenderSystem{}.update(world);
 
     EXPECT_EQ(renderer.clearColor.r, 10);
     EXPECT_EQ(renderer.clearColor.g, 20);
@@ -150,10 +158,13 @@ TEST(RenderSystem, ClearsWithTheClearColor) {
 TEST(RenderSystem, UsesTheCamera) {
     FakeRenderer renderer;
     World world;
-    world.addResource<Camera>() = {.center = {960.0F, 540.0F},
-                                   .size = {1920.0F, 1080.0F}};
+    world.addResource<Renderer>(renderer, WindowConfig{});
+    world.addResource<Camera>() = {
+        .center = {960.0F, 540.0F},
+        .size = {1920.0F, 1080.0F},
+    };
 
-    RenderSystem{renderer}.update(world);
+    RenderSystem{}.update(world);
 
     ASSERT_TRUE(renderer.lastCamera.has_value());
     const Camera camera = renderer.lastCamera.value_or(Camera{});
@@ -164,9 +175,12 @@ TEST(RenderSystem, UsesTheCamera) {
 TEST(RenderSystem, RemovingTheCameraGoesBackToTheDefaultView) {
     FakeRenderer renderer;
     World world;
-    world.addResource<Camera>() = {.center = {1.0F, 1.0F},
-                                   .size = {2.0F, 2.0F}};
-    RenderSystem render(renderer);
+    world.addResource<Renderer>(renderer, WindowConfig{});
+    world.addResource<Camera>() = {
+        .center = {1.0F, 1.0F},
+        .size = {2.0F, 2.0F},
+    };
+    RenderSystem render;
     render.update(world);
 
     world.removeResource<Camera>();
@@ -178,12 +192,13 @@ TEST(RenderSystem, RemovingTheCameraGoesBackToTheDefaultView) {
 TEST(RenderSystem, DrawsEverySpriteAtItsTransform) {
     FakeRenderer renderer;
     World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
     const Entity ship = createAt(world, 10.0F, 20.0F);
     world.add(ship, Sprite{.texture = 1, .source = {0, 0, 33, 17}});
     const Entity enemy = createAt(world, 500.0F, 40.0F);
     world.add(enemy, Sprite{.texture = 2});
 
-    RenderSystem{renderer}.update(world);
+    RenderSystem{}.update(world);
 
     ASSERT_EQ(renderer.sprites.size(), 2U);
     EXPECT_EQ(renderer.sprites[0].texture, 1U);
@@ -196,10 +211,11 @@ TEST(RenderSystem, DrawsEverySpriteAtItsTransform) {
 TEST(RenderSystem, DrawsText) {
     FakeRenderer renderer;
     World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
     const Entity score = createAt(world, 5.0F, 5.0F);
     world.add(score, Text{.font = 1, .value = "0042"});
 
-    RenderSystem{renderer}.update(world);
+    RenderSystem{}.update(world);
 
     ASSERT_EQ(renderer.texts.size(), 1U);
     EXPECT_EQ(renderer.texts[0].value, "0042");
@@ -209,11 +225,12 @@ TEST(RenderSystem, DrawsText) {
 TEST(RenderSystem, SkipsEntityWithoutTransform) {
     FakeRenderer renderer;
     World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
     const Entity ghost = world.create();
     world.add(ghost, Sprite{.texture = 1});
     world.add(ghost, Text{.font = 1});
 
-    RenderSystem{renderer}.update(world);
+    RenderSystem{}.update(world);
 
     EXPECT_TRUE(renderer.sprites.empty());
     EXPECT_TRUE(renderer.texts.empty());
@@ -222,14 +239,18 @@ TEST(RenderSystem, SkipsEntityWithoutTransform) {
 TEST(RenderSystem, DrawsBetweenBeginAndEndFrame) {
     FakeRenderer renderer;
     World world;
-    world.addResource<Camera>() = {.center = {1.0F, 1.0F},
-                                   .size = {2.0F, 2.0F}};
+    world.addResource<Renderer>(renderer, WindowConfig{});
+    world.addResource<Camera>() = {
+        .center = {1.0F, 1.0F},
+        .size = {2.0F, 2.0F},
+    };
     world.add(createAt(world, 0.0F, 0.0F), Sprite{.texture = 1});
     world.add(createAt(world, 0.0F, 0.0F), Text{.font = 1});
 
-    RenderSystem{renderer}.update(world);
+    RenderSystem{}.update(world);
 
     const std::vector<std::string> expected{
-        "beginFrame", "setView", "drawSprite", "drawText", "endFrame"};
+        "beginFrame", "setView", "drawSprite", "drawText", "endFrame",
+    };
     EXPECT_EQ(renderer.calls, expected);
 }

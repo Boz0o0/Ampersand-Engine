@@ -10,7 +10,7 @@ the engine itself.
 | Name             | Kind      | What it does                                                                 |
 | ---------------- | --------- | ------------------------------------------------------------------------------ |
 | `AudioSource`    | component | a sound or music an entity plays: `source`, `volume`, `loop`, `playing`       |
-| `AudioListener`  | resource  | global volume (0 to 100) applied to everything                               |
+| `AudioListener`  | resource  | the `IAudioEngine` used (`engine`) and the global volume (0 to 100) applied to everything |
 | `SceneMusic`     | resource  | background music for the whole scene, belonging to no entity                 |
 | `AudioSystem`    | system    | starts, stops and live-syncs every `AudioSource` and `SceneMusic`, applies the global volume |
 
@@ -23,14 +23,15 @@ volume goes from 0 (mute) to 100 (full).
 ```cpp
 namespace audio = ampersand::audio;
 
-ampersand::audio::SfmlAudioEngine engine;
-const auto laser = engine.loadSound("assets/laser.wav");
-const auto theme = engine.openMusic("assets/theme.ogg");
+audio::SfmlAudioEngine sfml;  // the only line that names the backend
+auto& listener = world.addResource<audio::AudioListener>(sfml);
+listener.volume = 80.0F;
+const auto laser = listener.engine.loadSound("assets/laser.wav");
+const auto theme = listener.engine.openMusic("assets/theme.ogg");
 
-world.addResource<audio::AudioListener>().volume = 80.0F;
 world.addResource<audio::SceneMusic>() = {.music = theme, .playing = true};
 
-audio::AudioSystem audioSystem(engine);  // a system, given the engine once
+audio::AudioSystem audioSystem;  // finds the engine in the AudioListener
 
 while (running) {
     if (fired) {
@@ -92,15 +93,21 @@ engine.setMusicVolume(theme, 60.0F);
 
 ## ECS integration
 
-### AudioListener: the global volume
+### AudioListener: the engine and the global volume
 
 `AudioListener` is a resource, not a component: it belongs to no entity, and
-there is only one per World. `AudioSystem` applies it every frame through
+there is only one per World. It holds the engine every sound goes through:
+`AudioSystem`, and any system of the game, finds it with
+`world.getResource<AudioListener>().engine` instead of keeping a reference
+itself, so the backend (`SfmlAudioEngine`) is only named where the resource is
+added. The engine is not copied: it must stay alive as long as the World.
+
+`AudioSystem` applies `volume` every frame through
 `IAudioEngine::setGlobalVolume`, which SFML combines with the volume of
 every voice and music track:
 
 ```cpp
-world.addResource<ampersand::audio::AudioListener>();  // volume 100 by default
+world.addResource<ampersand::audio::AudioListener>(engine);  // volume 100 by default
 world.getResource<ampersand::audio::AudioListener>().volume = 50.0F;  // an options menu, for example
 ```
 

@@ -1,9 +1,9 @@
 # Render
 
 The render module draws the entities in a window. The game only adds
-components: the `RenderSystem` draws them through an `IRenderer`
-(`SfmlRenderer` here), so the game never calls SFML itself. The server does not
-need this module.
+components: the `RenderSystem` draws them through the `IRenderer` stored in the
+`Renderer` resource (`SfmlRenderer` here), so the game never calls SFML itself.
+The server does not need this module.
 
 ## Concepts
 
@@ -12,6 +12,7 @@ need this module.
 | `Sprite`          | component | image to draw: `texture`, `source` (part of the texture), `color` (tint)      |
 | `Text`            | component | text to draw: `font`, `value`, `size`, `color`                                |
 | `Animation`       | component | list of frames played on the `Sprite`, `isFinished` (see [Animation](#animation)) |
+| `Renderer`        | resource  | the `IRenderer` and its window: `size`, `title`, `isOpen` (see [Window](#window)) |
 | `Clock`           | resource  | `dt` of the frame in seconds, filled by the game (from `core`)                |
 | `Camera`          | resource  | part of the world shown in the window (see [Camera](#camera)), optional       |
 | `ClearColor`      | resource  | background color of the window, optional (black without it)                  |
@@ -20,8 +21,8 @@ need this module.
 | `IRenderer`       | interface | the window: open, events, load textures and fonts, draw (`SfmlRenderer`)     |
 
 The systems only use the entities that also have a `Transform` (and a `Sprite`
-for the `AnimationSystem`). The `AnimationSystem` throws `ResourceNotFound`
-without a `Clock`.
+for the `AnimationSystem`). The `RenderSystem` throws `ResourceNotFound`
+without a `Renderer`, and the `AnimationSystem` without a `Clock`.
 
 The `z` of the `Transform` is the draw order: the bigger `z` is drawn on top.
 
@@ -30,10 +31,11 @@ The `z` of the `Transform` is the draw order: the bigger `z` is drawn on top.
 ```cpp
 namespace render = ampersand::render;
 
-render::SfmlRenderer renderer;
-renderer.open({.size = {1280, 720}, .title = "R-Type"});
-const auto ships = renderer.loadTexture("assets/ships.png");
-const auto font = renderer.loadFont("assets/font.ttf");
+render::SfmlRenderer sfml;  // the only line that names the backend
+auto& window = world.addResource<render::Renderer>(
+    sfml, render::WindowConfig{.size = {1280, 720}, .title = "R-Type"});
+const auto ships = window.renderer.loadTexture("assets/ships.png");
+const auto font = window.renderer.loadFont("assets/font.ttf");
 
 world.addResource<ampersand::core::Clock>();
 world.addResource<render::ClearColor>().value = {.r = 8, .g = 8, .b = 24};
@@ -48,17 +50,45 @@ world.add(score, ampersand::core::Transform{});
 world.add(score, render::Text{.font = font, .value = "0000"});
 
 render::AnimationSystem animation;
-render::RenderSystem draw(renderer);
+render::RenderSystem draw;  // finds the renderer in the Renderer resource
 
-while (renderer.isOpen()) {
-    while (const auto event = renderer.pollEvent()) {
-        if (std::holds_alternative<render::Closed>(*event)) renderer.close();
+while (window.isOpen) {
+    while (const auto event = window.renderer.pollEvent()) {
+        if (std::holds_alternative<render::Closed>(*event)) window.isOpen = false;
     }
     world.getResource<ampersand::core::Clock>().dt = frameTime();
     animation.update(world);
     draw.update(world);  // always last: it displays the frame
 }
 ```
+
+## Window
+
+The `Renderer` resource is the one place where the backend is given: adding it
+opens the window with the `WindowConfig`, and every system then finds the
+renderer and the window in the World, without holding a reference itself.
+
+```cpp
+const auto& window = world.getResource<render::Renderer>();
+window.renderer;  // IRenderer: load textures and fonts, poll events, draw by hand
+window.size;      // size of the window in pixels
+window.title;     // title given when it was opened
+window.isOpen;    // false once the window is closed
+```
+
+At the start of each update, the `RenderSystem` keeps the resource up to date:
+
+- `isOpen = false` (set by the game) closes the window, and nothing is drawn.
+- A window closed another way (`window.renderer.close()`) sets `isOpen` back to
+  `false`.
+- `size` is copied from the window, so it follows the user resizing it.
+
+Only `isOpen` acts on the window: writing `size` or `title` changes nothing
+(the next update overwrites `size`). If the window cannot be opened, `isOpen`
+is `false` from the start.
+
+The backend (`sfml` in the example) is not copied: it must stay alive as long
+as the World, so declare it before the World.
 
 ## Sprites
 
@@ -135,7 +165,8 @@ window does not have the same ratio as `size`, the image is stretched.
 
 ## Drawing by hand
 
-`IRenderer` can also draw without the ECS: `beginFrame`, then `draw` (with a
-`Sprite`, a `Text` or a `Rectangle`, `Circle` or `Line`), then `endFrame`. The
+`IRenderer` (`window.renderer`) can also draw without the ECS: `beginFrame`,
+then `draw` (with a `Sprite`, a `Text` or a `Rectangle`, `Circle` or `Line`),
+then `endFrame`. The
 `RenderSystem` already does `beginFrame` and `endFrame`, so use one or the
 other, not both in the same frame.

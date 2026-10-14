@@ -116,18 +116,17 @@ Entity createSource(World& world, AudioSource source) {
 }  // namespace
 
 TEST(AudioSystem, ThrowsWithoutAudioListener) {
-    FakeAudioEngine engine;
     World world;
 
-    EXPECT_THROW(AudioSystem{engine}.update(world), ResourceNotFound);
+    EXPECT_THROW(AudioSystem{}.update(world), ResourceNotFound);
 }
 
 TEST(AudioSystem, AppliesTheGlobalVolumeAsIs) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>().volume = 40.0F;
+    world.addResource<AudioListener>(engine).volume = 40.0F;
 
-    AudioSystem{engine}.update(world);
+    AudioSystem{}.update(world);
 
     EXPECT_FLOAT_EQ(engine.globalVolume, 40.0F);
 }
@@ -135,9 +134,9 @@ TEST(AudioSystem, AppliesTheGlobalVolumeAsIs) {
 TEST(AudioSystem, StartsASoundOnce) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     createSource(world, {.source = SoundRef{1}, .playing = true});
-    AudioSystem audio(engine);
+    AudioSystem audio;
 
     audio.update(world);
     audio.update(world);
@@ -149,10 +148,10 @@ TEST(AudioSystem, StartsASoundOnce) {
 TEST(AudioSystem, SyncsTheVolumeWhilePlaying) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     const Entity ship =
         createSource(world, {.source = SoundRef{1}, .playing = true});
-    AudioSystem audio(engine);
+    AudioSystem audio;
     audio.update(world);
 
     world.get<AudioSource>(ship).volume = 30.0F;
@@ -164,10 +163,10 @@ TEST(AudioSystem, SyncsTheVolumeWhilePlaying) {
 TEST(AudioSystem, StopsWhenPlayingIsSetToFalse) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     const Entity ship =
         createSource(world, {.source = SoundRef{1}, .playing = true});
-    AudioSystem audio(engine);
+    AudioSystem audio;
     audio.update(world);
 
     world.get<AudioSource>(ship).playing = false;
@@ -180,10 +179,10 @@ TEST(AudioSystem, StopsWhenPlayingIsSetToFalse) {
 TEST(AudioSystem, FinishedSoundResetsPlayingAndReleasesTheVoice) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     const Entity ship =
         createSource(world, {.source = SoundRef{1}, .playing = true});
-    AudioSystem audio(engine);
+    AudioSystem audio;
     audio.update(world);
 
     engine.finish(1);
@@ -196,10 +195,10 @@ TEST(AudioSystem, FinishedSoundResetsPlayingAndReleasesTheVoice) {
 TEST(AudioSystem, UnknownSoundResetsPlaying) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     const Entity ship =
         createSource(world, {.source = SoundRef{0}, .playing = true});
-    AudioSystem audio(engine);
+    AudioSystem audio;
 
     audio.update(world);
     audio.update(world);
@@ -210,10 +209,10 @@ TEST(AudioSystem, UnknownSoundResetsPlaying) {
 TEST(AudioSystem, ChangingTheSoundStopsTheOldVoice) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     const Entity ship =
         createSource(world, {.source = SoundRef{1}, .playing = true});
-    AudioSystem audio(engine);
+    AudioSystem audio;
     audio.update(world);
 
     world.get<AudioSource>(ship).source = SoundRef{2};
@@ -226,10 +225,10 @@ TEST(AudioSystem, ChangingTheSoundStopsTheOldVoice) {
 TEST(AudioSystem, DestroyedEntityStopsItsSound) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     const Entity ship =
         createSource(world, {.source = SoundRef{1}, .playing = true});
-    AudioSystem audio(engine);
+    AudioSystem audio;
     audio.update(world);
 
     world.destroy(ship);
@@ -241,10 +240,10 @@ TEST(AudioSystem, DestroyedEntityStopsItsSound) {
 TEST(AudioSystem, RemovedSourceStopsItsMusic) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     const Entity boss = createSource(
         world, {.source = MusicRef{3}, .loop = true, .playing = true});
-    AudioSystem audio(engine);
+    AudioSystem audio;
     audio.update(world);
     ASSERT_TRUE(engine.isMusicPlaying(3));
 
@@ -257,9 +256,9 @@ TEST(AudioSystem, RemovedSourceStopsItsMusic) {
 TEST(AudioSystem, SceneMusicStartsAndStops) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     world.addResource<SceneMusic>() = {.music = 1, .playing = true};
-    AudioSystem audio(engine);
+    AudioSystem audio;
 
     audio.update(world);
     EXPECT_TRUE(engine.isMusicPlaying(1));
@@ -272,9 +271,9 @@ TEST(AudioSystem, SceneMusicStartsAndStops) {
 TEST(AudioSystem, ChangingTheSceneMusicStopsTheOldTrack) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     world.addResource<SceneMusic>() = {.music = 1, .playing = true};
-    AudioSystem audio(engine);
+    AudioSystem audio;
     audio.update(world);
 
     world.getResource<SceneMusic>().music = 2;
@@ -288,9 +287,9 @@ TEST(AudioSystem, ChangingTheSceneMusicStopsTheOldTrack) {
 TEST(AudioSystem, RemovingTheSceneMusicStopsIt) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     world.addResource<SceneMusic>() = {.music = 1, .playing = true};
-    AudioSystem audio(engine);
+    AudioSystem audio;
     audio.update(world);
 
     world.removeResource<SceneMusic>();
@@ -302,10 +301,13 @@ TEST(AudioSystem, RemovingTheSceneMusicStopsIt) {
 TEST(AudioSystem, FinishedSceneMusicResetsPlaying) {
     FakeAudioEngine engine;
     World world;
-    world.addResource<AudioListener>();
+    world.addResource<AudioListener>(engine);
     world.addResource<SceneMusic>() = {
-        .music = 1, .loop = false, .playing = true};
-    AudioSystem audio(engine);
+        .music = 1,
+        .loop = false,
+        .playing = true,
+    };
+    AudioSystem audio;
     audio.update(world);
 
     engine.stopMusic(1);
