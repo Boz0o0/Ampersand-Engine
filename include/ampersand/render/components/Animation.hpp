@@ -25,4 +25,13 @@ struct Animation {
     float elapsed{};
 };
 
+/**
+ * @brief Checks if a non-looping Animation reached its last frame
+ *
+ * @param animation Animation to check.
+ * @return true if `loop` is false and the whole animation was played. A
+ * looping animation never finishes.
+ */
+[[nodiscard]] bool isFinished(const Animation& animation);
+
 }  // namespace ampersand::render

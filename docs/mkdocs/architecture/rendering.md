@@ -1,74 +1,141 @@
-# 2D rendering
+# Render
 
-The render module exposes an SFML-backed renderer through `IRenderer`. It
-supports textured sprites, basic shapes, text, a 2D view, and 3D transforms.
+The render module draws the entities in a window. The game only adds
+components: the `RenderSystem` draws them through an `IRenderer`
+(`SfmlRenderer` here), so the game never calls SFML itself. The server does not
+need this module.
 
-## Frame flow
+## Concepts
 
-Open a renderer, load textures and fonts, then submit draw calls between
-`beginFrame` and `endFrame`. Draw commands are collected for that frame and
-rendered by ascending Z position; commands at the same Z keep their submission
-order. The default view uses window pixel coordinates. Set a custom
-`View` for world-space camera movement or call `resetView` to restore the
-window-sized view. Set the view before submitting that frame's draw commands.
-Every draw call takes an `ampersand::core::Transform`. Its X and Y position,
-scale, rotation around Z, and origin affect 2D geometry; Z position determines
-draw order and must be finite. The renderer currently draws 2D content.
+| Name              | Kind      | What it does                                                                  |
+| ----------------- | --------- | ----------------------------------------------------------------------------- |
+| `Sprite`          | component | image to draw: `texture`, `source` (part of the texture), `color` (tint)      |
+| `Text`            | component | text to draw: `font`, `value`, `size`, `color`                                |
+| `Animation`       | component | list of frames played on the `Sprite`, `isFinished` (see [Animation](#animation)) |
+| `Clock`           | resource  | `dt` of the frame in seconds, filled by the game (from `core`)                |
+| `Camera`          | resource  | part of the world shown in the window (see [Camera](#camera)), optional       |
+| `ClearColor`      | resource  | background color of the window, optional (black without it)                  |
+| `AnimationSystem` | system    | moves every `Animation` forward and writes its frame in `Sprite::source`      |
+| `RenderSystem`    | system    | draws one whole frame: clear, camera, every `Sprite` and `Text`, display      |
+| `IRenderer`       | interface | the window: open, events, load textures and fonts, draw (`SfmlRenderer`)     |
+
+The systems only use the entities that also have a `Transform` (and a `Sprite`
+for the `AnimationSystem`). The `AnimationSystem` throws `ResourceNotFound`
+without a `Clock`.
+
+The `z` of the `Transform` is the draw order: the bigger `z` is drawn on top.
+
+## Example
 
 ```cpp
-ampersand::render::SfmlRenderer renderer;
-renderer.open({{1280, 720}, "Demo"});
+namespace render = ampersand::render;
 
-const auto texture = renderer.loadTexture("assets/ship.png");
+render::SfmlRenderer renderer;
+renderer.open({.size = {1280, 720}, .title = "R-Type"});
+const auto ships = renderer.loadTexture("assets/ships.png");
 const auto font = renderer.loadFont("assets/font.ttf");
-const ampersand::render::Sprite ship{
-    texture, {0, 0, 32, 32}};
 
-ampersand::core::Transform transform;
-transform.position = {200.0F, 180.0F, 10.0F};
-transform.scale = {2.0F, 2.0F, 1.0F};
-transform.rotationDegrees = {0.0F, 0.0F, 15.0F};
-transform.origin = {16.0F, 16.0F, 0.0F};
+world.addResource<ampersand::core::Clock>();
+world.addResource<render::ClearColor>().value = {.r = 8, .g = 8, .b = 24};
 
-renderer.beginFrame({12, 16, 28});
-renderer.draw(ship, transform);
-ampersand::core::Transform backgroundTransform;
-renderer.draw(ampersand::render::Rectangle{{100.0F, 40.0F}, {40, 180, 80}},
-              backgroundTransform);
-renderer.drawText(font, "Ready", 24, {255, 255, 255},
-                  ampersand::core::Transform{});
-renderer.endFrame();
+const ecs::Entity ship = world.create();
+world.add(ship, ampersand::core::Transform{});
+world.add(ship, render::Sprite{.texture = ships, .color = {.r = 255, .g = 80, .b = 80}});
+world.add(ship, render::Animation{.frames = {{0, 0, 33, 17}, {33, 0, 33, 17}}});
+
+const ecs::Entity score = world.create();
+world.add(score, ampersand::core::Transform{});
+world.add(score, render::Text{.font = font, .value = "0000"});
+
+render::AnimationSystem animation;
+render::RenderSystem draw(renderer);
+
+while (renderer.isOpen()) {
+    while (const auto event = renderer.pollEvent()) {
+        if (std::holds_alternative<render::Closed>(*event)) renderer.close();
+    }
+    world.getResource<ampersand::core::Clock>().dt = frameTime();
+    animation.update(world);
+    draw.update(world);  // always last: it displays the frame
+}
 ```
 
-For a camera, `View` specifies its world-space center and visible size:
+## Sprites
+
+A texture is loaded once and gets an id (`TextureId`, `FontId` for fonts).
+Components only keep this id, so many entities share the same image. A failed
+load returns `0`, and an entity with an unknown id is not drawn.
+
+`source` is the part of the texture to draw, in pixels. It lets one image (a
+spritesheet) hold many sprites. An empty `source` draws the whole texture.
+
+```
+ships.png
+x: 0     33    66
+   +-----+-----+-----+  y: 0
+   |  ▶  | ▶▶  | ▶▶▶ |   blue ship
+   +-----+-----+-----+  y: 17
+   |  ▶  | ▶▶  | ▶▶▶ |   red ship
+   +-----+-----+-----+
+
+Sprite{.texture = ships, .source = {33, 17, 33, 17}}  → red ship, 2nd frame
+```
+
+`color` is multiplied with the image: white (the default) keeps the image as is.
+With a white or grey image, one texture gives a ship of each color, one per
+player.
+
+## Animation
+
+`frames` is the list of the `source` rects to show, one after the other, each
+during `frameDuration` seconds. They can be anywhere on the texture, in any
+order.
+
+- `loop = true` (default): starts again after the last frame.
+- `loop = false`: stays on the last frame (an explosion that the game destroys
+  after).
+- Set `elapsed` to `0` to start again from the first frame.
+
+The engine only plays an `Animation`: what comes next is decided by the game.
+`isFinished(animation)` is true once a non-looping animation was fully played,
+so a system of the game can switch back to another one:
 
 ```cpp
-renderer.setView({{320.0F, 180.0F}, {640.0F, 360.0F}});
+// when the ship is hit
+world.get<render::Animation>(ship) = hitAnimation();  // loop = false
+world.add(ship, Hit{});                               // a component of the game
+
+// a system of the game, every frame
+std::vector<ecs::Entity> done;
+for (const ecs::Entity entity : world.owners<Hit>()) {
+    if (render::isFinished(world.get<render::Animation>(entity))) done.push_back(entity);
+}
+for (const ecs::Entity entity : done) {  // not inside the loop: owners() is the real list
+    world.get<render::Animation>(entity) = idleAnimation();
+    world.remove<Hit>(entity);
+}
 ```
 
-`Rectangle`, `Circle`, and `Line` provide basic primitives. Rectangles and
-circles support an optional outline through their `outline` and
-`outlineThickness` fields.
+## Camera
 
-## Sprite animation
+The `Camera` is the rectangle of the world shown in the window: `center` is the
+world point in the middle of the window, `size` the width and height shown.
+Without it, one world unit is one pixel of the window.
 
-`SpriteAnimation` advances a linear sequence of sprite frames when `update` is
-called with elapsed seconds. It loops continuously; retrieve `currentFrame()`
-and pass it to the renderer as an ordinary sprite.
+For R-Type, set it once to a fixed size. Every client then shows the same part
+of the world, whatever the size of its window:
 
 ```cpp
-using ampersand::core::math::Rect;
-using ampersand::render::Sprite;
-using ampersand::render::SpriteAnimation;
-
-SpriteAnimation animation(
-    {Sprite{texture, Rect<std::int32_t>{0, 0, 32, 32}},
-     Sprite{texture, Rect<std::int32_t>{32, 0, 32, 32}}},
-    0.12F);
-
-animation.update(deltaSeconds);
-renderer.draw(animation.currentFrame(), transform);
+world.addResource<render::Camera>() = {.center = {960.0F, 540.0F},
+                                       .size = {1920.0F, 1080.0F}};
 ```
 
-The frame list must be non-empty and the frame duration must be finite and
-positive. Negative or non-finite elapsed times are rejected.
+To follow a player, change `center` every frame. To zoom, change `size`. If the
+window does not have the same ratio as `size`, the image is stretched.
+
+## Drawing by hand
+
+`IRenderer` can also draw without the ECS: `beginFrame`, then `draw` (with a
+`Sprite`, a `Text` or a `Rectangle`, `Circle` or `Line`), then `endFrame`. The
+`RenderSystem` already does `beginFrame` and `endFrame`, so use one or the
+other, not both in the same frame.

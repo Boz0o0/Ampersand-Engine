@@ -17,6 +17,7 @@ using ampersand::core::ecs::ResourceNotFound;
 using ampersand::core::ecs::World;
 using ampersand::render::Animation;
 using ampersand::render::AnimationSystem;
+using ampersand::render::isFinished;
 using ampersand::render::Sprite;
 
 /** @brief Three 16x16 frames side by side, half a second each. */
@@ -143,4 +144,27 @@ TEST(AnimationSystem, ThrowsWithoutClock) {
     World world;
 
     EXPECT_THROW(AnimationSystem{}.update(world), ResourceNotFound);
+}
+
+TEST(AnimationSystem, NonLoopingAnimationFinishesAfterItsLastFrame) {
+    World world;
+    world.addResource<Clock>();
+    Animation explosion = threeFrames();
+    explosion.loop = false;
+    const Entity boom = createAnimated(world, explosion);
+
+    step(world, 1.0F);
+    EXPECT_FALSE(isFinished(world.get<Animation>(boom)));
+    step(world, 0.5F);
+    EXPECT_TRUE(isFinished(world.get<Animation>(boom)));
+}
+
+TEST(AnimationSystem, LoopingAnimationNeverFinishes) {
+    World world;
+    world.addResource<Clock>();
+    const Entity ship = createAnimated(world, threeFrames());
+
+    step(world, 100.0F);
+
+    EXPECT_FALSE(isFinished(world.get<Animation>(ship)));
 }
