@@ -5,7 +5,7 @@ For why we split it this way, see [Design decisions](../decisions.md#separation-
 
 The render module depends on input because its window event stream includes
 keyboard events defined by the input module.
-For the renderer API and usage, see [2D rendering](rendering.md).
+For the renderer API and usage, see [Render](rendering.md).
 
 | Module   | CMake target        | Option                     | Sources        | Tests            |
 | -------- | ------------------- | -------------------------- | -------------- | ---------------- |

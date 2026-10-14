@@ -14,7 +14,7 @@ It is split into independent modules (core, audio, input, network, physics, rend
 
 ## Modules
 
-- **[Render](architecture/rendering.md)**: renderer lifecycle, views, transforms, drawing primitives, and sprite animation.
+- **[Render](architecture/rendering.md)**: sprites, text, animation and camera, drawn by a `RenderSystem`.
 
 ## Used by
 

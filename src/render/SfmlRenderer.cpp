@@ -49,16 +49,16 @@ std::optional<Event> SfmlRenderer::pollEvent() {
     return std::nullopt;
 }
 
-void SfmlRenderer::setView(const View& view) {
-    if (!std::isfinite(view.center.x) || !std::isfinite(view.center.y) ||
-        !std::isfinite(view.size.x) || !std::isfinite(view.size.y) ||
-        view.size.x <= 0.0F || view.size.y <= 0.0F) {
+void SfmlRenderer::setView(const Camera& camera) {
+    if (!std::isfinite(camera.center.x) || !std::isfinite(camera.center.y) ||
+        !std::isfinite(camera.size.x) || !std::isfinite(camera.size.y) ||
+        camera.size.x <= 0.0F || camera.size.y <= 0.0F) {
         throw std::invalid_argument(
-            "View center and size must be finite, and "
-            "view size must be positive");
+            "Camera center and size must be finite, and "
+            "camera size must be positive");
     }
-    this->window_.setView(
-        sf::View({view.center.x, view.center.y}, {view.size.x, view.size.y}));
+    this->window_.setView(sf::View({camera.center.x, camera.center.y},
+                                   {camera.size.x, camera.size.y}));
     this->customView_ = true;
 }
 
@@ -105,6 +105,7 @@ void SfmlRenderer::draw(const Sprite& sprite,
                     sf::IntRect({sprite.source.x, sprite.source.y},
                                 {sprite.source.width, sprite.source.height}));
             }
+            renderedSprite.setColor(toSfColor(sprite.color));
             applyTransform(renderedSprite, transform);
             this->window_.draw(renderedSprite);
         },
@@ -150,8 +151,8 @@ void SfmlRenderer::draw(const Line& line, const core::Transform& transform) {
             const sf::Color color = toSfColor(line.color);
             const std::array<sf::Vertex, 2> vertices{
                 {
-                    {{line.start.x, line.start.y}, color},
-                    {{line.end.x, line.end.y}, color},
+                    {.position = {line.start.x, line.start.y}, .color = color},
+                    {.position = {line.end.x, line.end.y}, .color = color},
                 },
             };
             this->window_.draw(vertices.data(), vertices.size(),
@@ -161,18 +162,16 @@ void SfmlRenderer::draw(const Line& line, const core::Transform& transform) {
     });
 }
 
-void SfmlRenderer::drawText(FontId fontId, const std::string& text,
-                            unsigned int characterSize, Color color,
-                            const core::Transform& transform) {
-    const auto ownedText = std::make_shared<const std::string>(text);
+void SfmlRenderer::draw(const Text& text, const core::Transform& transform) {
+    const auto ownedText = std::make_shared<const Text>(text);
     this->drawCommands_.push_back({
         layerFor(transform),
-        [this, fontId, ownedText, characterSize, color, transform] {
-            const auto font = this->fonts_.find(fontId);
+        [this, ownedText, transform] {
+            const auto font = this->fonts_.find(ownedText->font);
             if (font == this->fonts_.end()) return;
 
-            sf::Text drawable(font->second, *ownedText, characterSize);
-            drawable.setFillColor(toSfColor(color));
+            sf::Text drawable(font->second, ownedText->value, ownedText->size);
+            drawable.setFillColor(toSfColor(ownedText->color));
             applyTransform(drawable, transform);
             this->window_.draw(drawable);
         },
@@ -180,10 +179,7 @@ void SfmlRenderer::drawText(FontId fontId, const std::string& text,
 }
 
 void SfmlRenderer::endFrame() {
-    std::stable_sort(this->drawCommands_.begin(), this->drawCommands_.end(),
-                     [](const DrawCommand& left, const DrawCommand& right) {
-                         return left.layer < right.layer;
-                     });
+    std::ranges::stable_sort(this->drawCommands_, {}, &DrawCommand::layer);
     for (const DrawCommand& command : this->drawCommands_) command.draw();
     this->drawCommands_.clear();
     this->window_.display();

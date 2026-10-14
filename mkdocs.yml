@@ -37,7 +37,7 @@ nav:
       - ECS: architecture/ecs.md
       - Physics: architecture/physics.md
       - Modules: architecture/modules.md
-      - 2D rendering: architecture/rendering.md
+      - Render: architecture/rendering.md
       - Audio: architecture/audio.md
   - Design decisions: decisions.md
   - R-Type:

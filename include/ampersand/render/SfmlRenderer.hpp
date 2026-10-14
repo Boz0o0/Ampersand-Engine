@@ -4,7 +4,6 @@
 #include <ampersand/render/IRenderer.hpp>
 #include <cstdint>
 #include <functional>
-#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -52,7 +51,7 @@ public:
      */
     std::optional<Event> pollEvent() override;
 
-    void setView(const View& view) override;
+    void setView(const Camera& camera) override;
     void resetView() override;
 
     /**
@@ -78,9 +77,7 @@ public:
               const core::Transform& transform) override;
     void draw(const Circle& circle, const core::Transform& transform) override;
     void draw(const Line& line, const core::Transform& transform) override;
-    void drawText(FontId font, const std::string& text,
-                  unsigned int characterSize, Color color,
-                  const core::Transform& transform) override;
+    void draw(const Text& text, const core::Transform& transform) override;
 
     /**
      * @brief Displays the rendered content on the active window.
