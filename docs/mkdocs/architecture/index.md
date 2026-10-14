@@ -12,6 +12,7 @@ The engine is made of two layers:
 - **Physics** moves entities, makes them fall and finds the ones that touch. See [Physics](physics.md).
 - **Render** draws the entities with a `Sprite` or a `Text`, plays their animations and handles the camera. See [Render](rendering.md).
 - **Audio** provides sound effects and music through an SFML-backed engine, with an `AudioSource` component and an `AudioSystem` driving them. See [Audio](audio.md).
+- **Net** sends and receives UDP datagrams through a `UdpSocket`, without knowing the game protocol. See [Networking](networking.md).
 
 ## Module dependencies
 
