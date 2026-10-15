@@ -2,8 +2,12 @@
 
 #include <ampersand/net/UdpSocket.hpp>
 #include <array>
+#include <chrono>
 #include <cstddef>
+#include <optional>
+#include <span>
 #include <string>
+#include <thread>
 #include <utility>
 
 using ampersand::net::Endpoint;
@@ -12,10 +16,28 @@ using ampersand::net::UdpSocket;
 
 namespace {
 
+// receive() never blocks, so poll until the datagram crosses the loopback.
+std::optional<std::size_t> receiveWithin(UdpSocket& socket,
+                                         std::span<std::byte> buffer,
+                                         Endpoint& from) {
+    const auto deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(1);
+    while (std::chrono::steady_clock::now() < deadline) {
+        if (const auto length = socket.receive(buffer, from)) {
+            return length;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return std::nullopt;
+}
+
 std::string receiveString(UdpSocket& socket, Endpoint& from) {
     std::array<std::byte, 1024> buffer{};
-    const std::size_t length = socket.receive(buffer, from);
-    return {reinterpret_cast<const char*>(buffer.data()), length};
+    const auto length = receiveWithin(socket, buffer, from);
+    if (!length) {
+        return {};
+    }
+    return {reinterpret_cast<const char*>(buffer.data()), *length};
 }
 
 }  // namespace
@@ -61,7 +83,7 @@ TEST(UdpSocket, SendsRawBytes) {
     client.send(data, {.address = "127.0.0.1", .port = server.localPort()});
     std::array<std::byte, 8> buffer{};
     Endpoint sender;
-    ASSERT_EQ(server.receive(buffer, sender), data.size());
+    ASSERT_EQ(receiveWithin(server, buffer, sender), data.size());
     EXPECT_EQ(buffer[0], data[0]);
     EXPECT_EQ(buffer[1], data[1]);
     EXPECT_EQ(buffer[2], data[2]);
@@ -74,7 +96,14 @@ TEST(UdpSocket, TruncatesDatagramsBiggerThanTheBuffer) {
     client.send("hello", {.address = "127.0.0.1", .port = server.localPort()});
     std::array<std::byte, 2> buffer{};
     Endpoint sender;
-    EXPECT_EQ(server.receive(buffer, sender), buffer.size());
+    EXPECT_EQ(receiveWithin(server, buffer, sender), buffer.size());
+}
+
+TEST(UdpSocket, ReceiveReturnsImmediatelyWhenNothingArrived) {
+    UdpSocket socket;
+    std::array<std::byte, 8> buffer{};
+    Endpoint sender;
+    EXPECT_EQ(socket.receive(buffer, sender), std::nullopt);
 }
 
 TEST(UdpSocket, IsMovable) {
