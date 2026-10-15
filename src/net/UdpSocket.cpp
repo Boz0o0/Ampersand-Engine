@@ -32,6 +32,7 @@ UdpSocket::UdpSocket(std::uint16_t port) : impl_(std::make_unique<Impl>()) {
     try {
         this->impl_->socket.open(asio::ip::udp::v4());
         this->impl_->socket.bind({asio::ip::udp::v4(), port});
+        this->impl_->socket.non_blocking(true);
     } catch (const asio::system_error& e) {
         throw NetError("cannot bind UDP port " + std::to_string(port) + ": " +
                        e.what());
@@ -58,7 +59,7 @@ void UdpSocket::send(std::span<const std::byte> data, const Endpoint& target) {
     asio::error_code error;
     this->impl_->socket.send_to(asio::buffer(data.data(), data.size()),
                                 toAsio(target), 0, error);
-    if (error) {
+    if (error && error != asio::error::would_block) {
         throw NetError("cannot send to " + target.toString() + ": " +
                        error.message());
     }
@@ -68,11 +69,15 @@ void UdpSocket::send(std::string_view data, const Endpoint& target) {
     this->send(std::as_bytes(std::span(data)), target);
 }
 
-std::size_t UdpSocket::receive(std::span<std::byte> buffer, Endpoint& from) {
+std::optional<std::size_t> UdpSocket::receive(std::span<std::byte> buffer,
+                                              Endpoint& from) {
     asio::ip::udp::endpoint sender;
     asio::error_code error;
     const std::size_t length = this->impl_->socket.receive_from(
         asio::buffer(buffer.data(), buffer.size()), sender, 0, error);
+    if (error == asio::error::would_block) {
+        return std::nullopt;
+    }
     if (error && error != asio::error::message_size) {
         throw NetError("cannot receive: " + error.message());
     }

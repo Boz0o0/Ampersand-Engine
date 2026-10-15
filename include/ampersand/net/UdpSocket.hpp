@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -41,11 +42,12 @@ struct Endpoint {
 };
 
 /**
- * @brief A blocking IPv4 UDP socket that sends and receives raw datagrams.
+ * @brief A non-blocking IPv4 UDP socket that sends and receives raw datagrams.
  *
- * It knows nothing about the game protocol: it only moves bytes between
- * endpoints. Asio is hidden behind it, so code using the socket does not
- * need to include it.
+ * No call ever waits for the network, so the socket can be polled once per
+ * frame from the game loop. It knows nothing about the game protocol: it
+ * only moves bytes between endpoints. Asio is hidden behind it, so code using
+ * the socket does not need to include it.
  */
 class UdpSocket {
 public:
@@ -80,6 +82,9 @@ public:
     /**
      * @brief Sends one datagram to an endpoint.
      *
+     * If the system send buffer is full, the datagram is dropped, as if it
+     * had been lost on the network.
+     *
      * @param data Bytes to send.
      * @param target Destination.
      * @throws NetError If the datagram cannot be sent.
@@ -90,16 +95,19 @@ public:
     void send(std::string_view data, const Endpoint& target);
 
     /**
-     * @brief Waits for one datagram and copies it into a buffer.
+     * @brief Takes one pending datagram, if any, and copies it into a buffer.
      *
-     * Bytes beyond the buffer size are lost, as with any UDP socket.
+     * Returns immediately when nothing has arrived. Bytes beyond the buffer
+     * size are lost, as with any UDP socket.
      *
      * @param buffer Where to store the received bytes.
-     * @param from Filled with the sender's endpoint.
-     * @return The number of bytes written into the buffer.
+     * @param from Filled with the sender's endpoint when a datagram is read.
+     * @return The number of bytes written into the buffer, or std::nullopt if
+     *         no datagram was waiting.
      * @throws NetError If the receive fails.
      */
-    std::size_t receive(std::span<std::byte> buffer, Endpoint& from);
+    std::optional<std::size_t> receive(std::span<std::byte> buffer,
+                                       Endpoint& from);
 
     /** @brief The local port the socket is bound to. */
     [[nodiscard]] std::uint16_t localPort() const;
