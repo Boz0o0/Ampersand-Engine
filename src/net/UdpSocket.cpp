@@ -28,11 +28,11 @@ struct UdpSocket::Impl {
 
 UdpSocket::UdpSocket() : UdpSocket(0) {}
 
-UdpSocket::UdpSocket(std::uint16_t port) : impl_(std::make_unique<Impl>()) {
+UdpSocket::UdpSocket(std::uint16_t port) : _impl(std::make_unique<Impl>()) {
     try {
-        this->impl_->socket.open(asio::ip::udp::v4());
-        this->impl_->socket.bind({asio::ip::udp::v4(), port});
-        this->impl_->socket.non_blocking(true);
+        this->_impl->socket.open(asio::ip::udp::v4());
+        this->_impl->socket.bind({asio::ip::udp::v4(), port});
+        this->_impl->socket.non_blocking(true);
     } catch (const asio::system_error& e) {
         throw NetError("cannot bind UDP port " + std::to_string(port) + ": " +
                        e.what());
@@ -44,10 +44,10 @@ UdpSocket::UdpSocket(UdpSocket&&) noexcept = default;
 UdpSocket& UdpSocket::operator=(UdpSocket&&) noexcept = default;
 
 UdpSocket::Impl& UdpSocket::impl() const {
-    if (!this->impl_) {
+    if (!this->_impl) {
         throw NetError("socket has been moved from");
     }
-    return *this->impl_;
+    return *this->_impl;
 }
 
 Endpoint UdpSocket::resolve(const std::string& host, std::uint16_t port) {

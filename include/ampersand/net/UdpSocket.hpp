@@ -119,7 +119,7 @@ public:
 
 private:
     struct Impl;
-    std::unique_ptr<Impl> impl_;
+    std::unique_ptr<Impl> _impl;
 
     /** @throws NetError If the socket has been moved from. */
     [[nodiscard]] Impl& impl() const;
