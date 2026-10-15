@@ -40,6 +40,7 @@ nav:
       - Render: architecture/rendering.md
       - Audio: architecture/audio.md
       - Networking: architecture/networking.md
+      - Input: architecture/input.md
   - Design decisions: decisions.md
   - R-Type:
       - Documentation ↗: https://boz0o0.github.io/R-Type/
