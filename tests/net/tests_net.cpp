@@ -113,6 +113,29 @@ TEST(UdpSocket, IsMovable) {
     EXPECT_EQ(second.localPort(), port);
 }
 
+TEST(UdpSocket, MovedFromSocketThrows) {
+    UdpSocket first;
+    const UdpSocket second(std::move(first));
+    std::array<std::byte, 8> buffer{};
+    Endpoint sender;
+
+    // NOLINTBEGIN(bugprone-use-after-move): checking the moved-from state
+    EXPECT_THROW((void)first.localPort(), NetError);
+    EXPECT_THROW(first.send("hello", {.address = "127.0.0.1",
+                                      .port = second.localPort()}),
+                 NetError);
+    EXPECT_THROW((void)first.receive(buffer, sender), NetError);
+    // NOLINTEND(bugprone-use-after-move)
+}
+
+TEST(UdpSocket, MoveAssignmentKeepsTheSocket) {
+    UdpSocket first;
+    const auto port = first.localPort();
+    UdpSocket second;
+    second = std::move(first);
+    EXPECT_EQ(second.localPort(), port);
+}
+
 TEST(UdpSocket, ThrowsWhenThePortIsTaken) {
     const UdpSocket first;
     EXPECT_THROW(UdpSocket{first.localPort()}, NetError);

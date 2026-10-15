@@ -66,6 +66,7 @@ public:
 
     UdpSocket(const UdpSocket&) = delete;
     UdpSocket& operator=(const UdpSocket&) = delete;
+    /** @brief Moves the socket; any call on the moved-from one throws. */
     UdpSocket(UdpSocket&&) noexcept;
     UdpSocket& operator=(UdpSocket&&) noexcept;
 
@@ -109,12 +110,19 @@ public:
     std::optional<std::size_t> receive(std::span<std::byte> buffer,
                                        Endpoint& from);
 
-    /** @brief The local port the socket is bound to. */
+    /**
+     * @brief The local port the socket is bound to.
+     *
+     * @throws NetError If the port cannot be read.
+     */
     [[nodiscard]] std::uint16_t localPort() const;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
+
+    /** @throws NetError If the socket has been moved from. */
+    [[nodiscard]] Impl& impl() const;
 };
 
 }  // namespace ampersand::net
