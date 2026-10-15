@@ -3,7 +3,7 @@
 The engine is split into modules, each built as its own static library. A game
 only links the modules it uses, and a module that is turned off is not built
 (nor its dependencies downloaded).
-For why we split it this way, see [Design decisions](../decisions.md#modules).
+For why we split it this way, see [Design decisions](../decisions.md#separation-of-modules).
 
 | Module  | CMake target        | Option                     | Needs           | Sources        | Tests            |
 | ------- | ------------------- | -------------------------- | --------------- | -------------- | ---------------- |
