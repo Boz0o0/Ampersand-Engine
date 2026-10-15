@@ -23,6 +23,7 @@ systems of the game read it. An `Event` is one of:
 | `MousePressed`  | `button`, `position`  |
 | `MouseReleased` | `button`, `position`  |
 | `MouseMoved`    | `position`            |
+| `FocusLost`     |                       |
 
 ## Reading the input
 
@@ -85,8 +86,9 @@ returns the next input event, or `std::nullopt` when there is none left.
 Each frame, `update` empties `events`, then calls the poll function until it
 returns `std::nullopt`, adds each event and keeps `keysDown`, `buttonsDown` and
 `mouse` up to date. A press of a key or a button that is already held is
-ignored (the keyboard repeats a held key). It throws `ResourceNotFound` if the
-World has no `InputManager`.
+ignored (the keyboard repeats a held key). `FocusLost` releases each held key
+and button, adding their `KeyReleased` and `MouseReleased`. It throws
+`ResourceNotFound` if the World has no `InputManager`.
 
 With the render module, the poll function reads the window of the `Renderer`
 resource (see [Render](rendering.md#window)). It also receives the other events
@@ -109,6 +111,8 @@ std::optional<input::Event> pollWindow(ecs::World& world) {
             return std::get<input::MouseReleased>(*event);
         } else if (std::holds_alternative<input::MouseMoved>(*event)) {
             return std::get<input::MouseMoved>(*event);
+        } else if (std::holds_alternative<input::FocusLost>(*event)) {
+            return input::FocusLost{};
         }
     }
     return std::nullopt;
@@ -134,7 +138,7 @@ others.
 | Rule        | Value                                                                                          |
 | ----------- | ---------------------------------------------------------------------------------------------- |
 | Keys        | `A`-`Z`, `Num0`-`Num9`, arrows, `Space`, `Enter`, `Escape`, `Tab`, `Backspace`, left and right `Shift`, `Control`, `Alt`. Any other key is `Unknown` |
-| Letters     | follow the layout of the keyboard: on AZERTY, the key at the place of the QWERTY `W` is `Z`  |
+| Letters     | a key is a physical position on the keyboard, named after QWERTY: on AZERTY, the key labelled `Z` is `Key::W` |
 | Mouse       | `Left`, `Right` and `Middle` buttons (others are `Unknown`), position in window pixels: without a `Camera`, the same as world units |
 | Wheel       | not reported                                                                                   |
-| Focus       | a key held while the window loses the focus stays in `keysDown` until its next release        |
+| Focus       | losing the focus releases every held key and button, so a key still held when the focus comes back must be pressed again |
