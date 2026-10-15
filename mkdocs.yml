@@ -39,6 +39,7 @@ nav:
       - Modules: architecture/modules.md
       - Render: architecture/rendering.md
       - Audio: architecture/audio.md
+      - Networking: architecture/networking.md
       - Input: architecture/input.md
   - Design decisions: decisions.md
   - R-Type:
