@@ -2,7 +2,7 @@ name: release
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
 
 permissions:
   contents: write
@@ -12,8 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Check the version
         run: |
@@ -23,28 +21,8 @@ jobs:
             echo "::error::tag $GITHUB_REF_NAME does not match project(VERSION $cmake_version) in CMakeLists.txt"
             exit 1
           fi
-          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
-            echo "::error::CHANGELOG.md has no section [$version]"
-            exit 1
-          fi
-
-      - name: Write the release notes
-        run: |
-          version="${GITHUB_REF_NAME#v}"
-          awk -v header="## [$version]" '
-            index($0, header) == 1 { found = 1; next }
-            found && /^## \[/ { exit }
-            found && /^\[[^]]*\]: / { exit }
-            found { print }
-          ' CHANGELOG.md > notes.md
-          previous=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
-          if [ -n "$previous" ]; then
-            printf '\n**Full changelog**: %s/%s/compare/%s...%s\n' \
-              "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$previous" "$GITHUB_REF_NAME" >> notes.md
-          fi
-          cat notes.md
 
       - name: Create the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+        uses: taiki-e/create-gh-release-action@v1
+        with:
+          changelog: CHANGELOG.md
