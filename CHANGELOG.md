@@ -24,6 +24,11 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+### Changed
+
+- README: fixed the organisation section (`include/` folder)
+- Getting started: use the engine with FetchContent (`v0.1.0`).
+
 ## [0.1.0] - 2026-10-16
 
 First release, with the very base of the engine.
