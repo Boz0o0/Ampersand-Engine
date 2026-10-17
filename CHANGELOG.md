@@ -24,6 +24,10 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+### Added
+
+- **Net**: `BinaryWriter` and `BinaryReader` for big-endian serialization of integers, finite floats, enums and length-prefixed strings, with bounds and input validation.
+
 ### Changed
 
 - README: fixed the organisation section (`include/` folder)
