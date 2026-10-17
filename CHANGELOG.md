@@ -24,9 +24,10 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
-### Added
+### Changed
 
-- **Net**: `BinaryWriter` and `BinaryReader`, to write values in big-endian into a byte buffer and read them back with bounds checks.
+- README: fixed the organisation section (`include/` folder)
+- Getting started: use the engine with FetchContent (`v0.1.0`).
 
 ## [0.1.0] - 2026-10-16
 
