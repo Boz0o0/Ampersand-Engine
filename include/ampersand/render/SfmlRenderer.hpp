@@ -86,11 +86,10 @@ public:
 
 private:
     struct DrawCommand {
-        float layer{};
+        std::int32_t layer{};
         std::function<void()> draw;
     };
 
-    [[nodiscard]] static float layerFor(const core::Transform& transform);
     static void applyTransform(sf::Transformable& drawable,
                                const core::Transform& transform);
     void updateDefaultView();

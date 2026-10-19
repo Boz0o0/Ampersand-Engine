@@ -17,6 +17,7 @@ struct Sprite {
     core::math::Rect<std::int32_t> source;
     /** @brief Tint multiplied with the texture (white = original image). */
     Color color{.r = 255, .g = 255, .b = 255};
+    std::int32_t layer{};
 };
 
 }  // namespace ampersand::render
