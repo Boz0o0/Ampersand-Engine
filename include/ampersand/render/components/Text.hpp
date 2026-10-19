@@ -16,7 +16,7 @@ struct Text {
     /** @brief Character size, in pixels. */
     unsigned int size{24};
     Color color{.r = 255, .g = 255, .b = 255};
-    std::int32_t layer{};
+    std::int32_t layer{0};
 };
 
 }  // namespace ampersand::render

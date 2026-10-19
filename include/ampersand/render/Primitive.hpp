@@ -14,7 +14,7 @@ struct Rectangle {
     Color fill{};
     Color outline{};
     float outlineThickness{};
-    std::int32_t layer{};
+    std::int32_t layer{0};
 };
 
 /**
@@ -25,7 +25,7 @@ struct Circle {
     Color fill{};
     Color outline{};
     float outlineThickness{};
-    std::int32_t layer{};
+    std::int32_t layer{0};
 };
 
 /**
@@ -35,7 +35,7 @@ struct Line {
     core::math::Vec2f start;
     core::math::Vec2f end;
     Color color{};
-    std::int32_t layer{};
+    std::int32_t layer{0};
 };
 
 }  // namespace ampersand::render

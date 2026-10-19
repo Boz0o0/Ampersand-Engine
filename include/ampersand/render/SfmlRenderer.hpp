@@ -86,7 +86,7 @@ public:
 
 private:
     struct DrawCommand {
-        std::int32_t layer{};
+        std::int32_t layer{0};
         std::function<void()> draw;
     };
 
