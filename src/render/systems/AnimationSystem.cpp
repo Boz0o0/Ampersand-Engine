@@ -5,7 +5,7 @@
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/systems/AnimationSystem.hpp>
 #include <cmath>
-#include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 
 namespace ampersand::render {
@@ -14,7 +14,7 @@ void AnimationSystem::update(core::ecs::World& world) {
     const float deltaTime = world.getResource<core::Clock>().dt;
     for (const core::ecs::Entity entity : world.owners<Animation>()) {
         auto& animation = world.get<Animation>(entity);
-        if (!world.has<Sprite>(entity) || animation.frames.empty()) {
+        if (!world.has<Sprite>(entity) || animation.count <= 0) {
             continue;
         }
         if (!std::isfinite(animation.frameDuration) ||
@@ -22,19 +22,26 @@ void AnimationSystem::update(core::ecs::World& world) {
             throw std::invalid_argument(
                 "Animation frameDuration must be finite and positive");
         }
-        const float totalDuration = animation.frameDuration *
-                                    static_cast<float>(animation.frames.size());
+        if (animation.columns <= 0) {
+            throw std::invalid_argument("Animation columns must be positive");
+        }
+        const float totalDuration =
+            animation.frameDuration * static_cast<float>(animation.count);
         animation.elapsed += deltaTime;
         if (animation.loop) {
             animation.elapsed = std::fmod(animation.elapsed, totalDuration);
         } else {
             animation.elapsed = std::min(animation.elapsed, totalDuration);
         }
-        const auto frame =
-            std::min(static_cast<std::size_t>(animation.elapsed /
-                                              animation.frameDuration),
-                     animation.frames.size() - 1);
-        world.get<Sprite>(entity).source = animation.frames[frame];
+        const std::int32_t frame =
+            animation.first +
+            std::min(static_cast<std::int32_t>(animation.elapsed /
+                                               animation.frameDuration),
+                     animation.count - 1);
+        world.get<Sprite>(entity).source = {
+            (frame % animation.columns) * animation.frameWidth,
+            (frame / animation.columns) * animation.frameHeight,
+            animation.frameWidth, animation.frameHeight};
     }
 }
 

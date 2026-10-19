@@ -7,18 +7,18 @@ The server does not need this module.
 
 ## Concepts
 
-| Name              | Kind      | What it does                                                                  |
-| ----------------- | --------- | ----------------------------------------------------------------------------- |
-| `Sprite`          | component | image to draw: `texture`, `source` (part of the texture), `color` (tint)      |
-| `Text`            | component | text to draw: `font`, `value`, `size`, `color`                                |
-| `Animation`       | component | list of frames played on the `Sprite`, `isFinished` (see [Animation](#animation)) |
-| `Renderer`        | resource  | the `IRenderer` and its window: `size`, `title`, `isOpen` (see [Window](#window)) |
-| `Clock`           | resource  | `dt` of the frame in seconds, filled by the game (from `core`)                |
-| `Camera`          | resource  | part of the world shown in the window (see [Camera](#camera)), optional       |
-| `ClearColor`      | resource  | background color of the window, optional (black without it)                  |
-| `AnimationSystem` | system    | moves every `Animation` forward and writes its frame in `Sprite::source`      |
-| `RenderSystem`    | system    | draws one whole frame: clear, camera, every `Sprite` and `Text`, display      |
-| `IRenderer`       | interface | the window: open, events, load textures and fonts, draw (`SfmlRenderer`)     |
+| Name              | Kind      | What it does                                                                                    |
+| ----------------- | --------- | ----------------------------------------------------------------------------------------------- |
+| `Sprite`          | component | image to draw: `texture`, `source` (part of the texture), `color` (tint)                        |
+| `Text`            | component | text to draw: `font`, `value`, `size`, `color`                                                  |
+| `Animation`       | component | frames of a spritesheet grid played on the `Sprite`, `isFinished` (see [Animation](#animation)) |
+| `Renderer`        | resource  | the `IRenderer` and its window: `size`, `title`, `isOpen` (see [Window](#window))               |
+| `Clock`           | resource  | `dt` of the frame in seconds, filled by the game (from `core`)                                  |
+| `Camera`          | resource  | part of the world shown in the window (see [Camera](#camera)), optional                         |
+| `ClearColor`      | resource  | background color of the window, optional (black without it)                                     |
+| `AnimationSystem` | system    | moves every `Animation` forward and writes its frame in `Sprite::source`                        |
+| `RenderSystem`    | system    | draws one whole frame: clear, camera, every `Sprite` and `Text`, display                        |
+| `IRenderer`       | interface | the window: open, events, load textures and fonts, draw (`SfmlRenderer`)                        |
 
 The systems only use the entities that also have a `Transform` (and a `Sprite`
 for the `AnimationSystem`). The `RenderSystem` throws `ResourceNotFound`
@@ -43,7 +43,7 @@ world.addResource<render::ClearColor>().value = {.r = 8, .g = 8, .b = 24};
 const ecs::Entity ship = world.create();
 world.add(ship, ampersand::core::Transform{});
 world.add(ship, render::Sprite{.texture = ships, .color = {.r = 255, .g = 80, .b = 80}});
-world.add(ship, render::Animation{.frames = {{0, 0, 33, 17}, {33, 0, 33, 17}}});
+world.add(ship, render::Animation{.frameWidth = 33, .frameHeight = 17, .columns = 5, .count = 2});
 
 const ecs::Entity score = world.create();
 world.add(score, ampersand::core::Transform{});
@@ -117,9 +117,20 @@ player.
 
 ## Animation
 
-`frames` is the list of the `source` rects to show, one after the other, each
-during `frameDuration` seconds. They can be anywhere on the texture, in any
-order.
+The texture is a grid of frames of the same size (`frameWidth` x
+`frameHeight`, `columns` frames per row). The frames are numbered from left to
+right, then top to bottom, starting at 0 on the top left. The animation shows
+`count` frames starting at frame `first`, each during `frameDuration` seconds,
+and goes on the next row by itself when a row is full.
+
+```
+       col 0   col 1   col 2   col 3
+row 0 |  0   |  1   |  2   |  3   |
+row 1 |  4   |  5   |  6   |  7   |
+
+Animation{.frameWidth = 32, .frameHeight = 32, .columns = 4, .count = 3, .first = 2}
+→ plays frames 2, 3, 4
+```
 
 - `loop = true` (default): starts again after the last frame.
 - `loop = false`: stays on the last frame (an explosion that the game destroys
@@ -172,10 +183,10 @@ so use one or the other, not both in the same frame.
 
 ## Limits
 
-| Rule       | Value                                                                                    |
-| ---------- | ---------------------------------------------------------------------------------------- |
-| Dimensions | 2D only: `z` is the draw order, not a depth                                              |
-| Components | `Sprite` and `Text` only: shapes (`Rectangle`, `Circle`, `Line`) are drawn by hand       |
-| Camera     | one for the whole window, stretched if the window does not have the ratio of its `size`  |
-| Assets     | a failed load returns `0`, and an entity with an unknown id is not drawn                 |
-| Window     | one per `Renderer`; only `isOpen` acts on it, `size` and `title` are read-only           |
+| Rule       | Value                                                                                   |
+| ---------- | --------------------------------------------------------------------------------------- |
+| Dimensions | 2D only: `z` is the draw order, not a depth                                             |
+| Components | `Sprite` and `Text` only: shapes (`Rectangle`, `Circle`, `Line`) are drawn by hand      |
+| Camera     | one for the whole window, stretched if the window does not have the ratio of its `size` |
+| Assets     | a failed load returns `0`, and an entity with an unknown id is not drawn                |
+| Window     | one per `Renderer`; only `isOpen` acts on it, `size` and `title` are read-only          |

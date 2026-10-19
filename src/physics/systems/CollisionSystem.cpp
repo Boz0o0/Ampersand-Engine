@@ -28,10 +28,11 @@ void CollisionSystem::update(core::ecs::World& world) {
             continue;
         }
         const auto& transform = world.get<core::Transform>(entity);
-        boxes.push_back(
-            {.entity = entity,
-             .bounds = worldBounds(transform, world.get<BoxCollider>(entity)),
-             .z = transform.position.z});
+        boxes.push_back({
+            .entity = entity,
+            .bounds = worldBounds(transform, world.get<BoxCollider>(entity)),
+            .z = transform.position.z,
+        });
     }
     for (std::size_t first = 0; first < boxes.size(); first++) {
         for (std::size_t second = first + 1; second < boxes.size(); second++) {

@@ -7,7 +7,6 @@
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/systems/AnimationSystem.hpp>
 #include <stdexcept>
-#include <utility>
 
 namespace {
 
@@ -23,7 +22,10 @@ using ampersand::render::Sprite;
 /** @brief Three 16x16 frames side by side, half a second each. */
 Animation threeFrames() {
     return {
-        .frames = {{0, 0, 16, 16}, {16, 0, 16, 16}, {32, 0, 16, 16}},
+        .frameWidth = 16,
+        .frameHeight = 16,
+        .columns = 3,
+        .count = 3,
         .frameDuration = 0.5F,
     };
 }
@@ -31,7 +33,7 @@ Animation threeFrames() {
 Entity createAnimated(World& world, Animation animation) {
     const Entity entity = world.create();
     world.add(entity, Sprite{.texture = 1});
-    world.add(entity, std::move(animation));
+    world.add(entity, animation);
     return entity;
 }
 

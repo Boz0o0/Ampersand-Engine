@@ -24,6 +24,15 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+### Added
+
+- **Render**: `layer` field (default 0) on every drawable: `Sprite`, `Text`, `Rectangle`, `Circle` and `Line`.
+
+### Changed
+
+- **Render**: `Animation` plays a spritesheet grid (`frameWidth`, `frameHeight`, `columns`, `count`, `first`) instead of a list of `frames`.
+- **Render**: draw order is the `layer` of the drawable instead of the `z` of the `Transform`.
+
 ## [0.2.0] - 2026-10-18
 
 Binary serialization for the network module.

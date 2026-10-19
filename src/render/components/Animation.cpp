@@ -4,8 +4,8 @@ namespace ampersand::render {
 
 bool isFinished(const Animation& animation) {
     return !animation.loop &&
-           animation.elapsed >= animation.frameDuration *
-                                    static_cast<float>(animation.frames.size());
+           animation.elapsed >=
+               animation.frameDuration * static_cast<float>(animation.count);
 }
 
 }  // namespace ampersand::render
