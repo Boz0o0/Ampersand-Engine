@@ -11,7 +11,7 @@ The server does not need this module.
 | ----------------- | --------- | ----------------------------------------------------------------------------- |
 | `Sprite`          | component | image to draw: `texture`, `source` (part of the texture), `color` (tint), `layer` (draw order) |
 | `Text`            | component | text to draw: `font`, `value`, `size`, `color`, `layer` (draw order)          |
-| `Animation`       | component | list of frames played on the `Sprite`, `isFinished` (see [Animation](#animation)) |
+| `Animation`       | component | list of frames played on the `Sprite`, `isFinished`, `framesFromGrid` (see [Animation](#animation)) |
 | `Renderer`        | resource  | the `IRenderer` and its window: `size`, `title`, `isOpen` (see [Window](#window)) |
 | `Clock`           | resource  | `dt` of the frame in seconds, filled by the game (from `core`)                |
 | `Camera`          | resource  | part of the world shown in the window (see [Camera](#camera)), optional       |
@@ -127,6 +127,19 @@ order.
 - `loop = false`: stays on the last frame (an explosion that the game destroys
   after).
 - Set `elapsed` to `0` to start again from the first frame.
+
+When every frame of a spritesheet has the same size, `framesFromGrid` builds the
+list instead of writing each rect. Frames are read left to right, then top to
+bottom:
+
+```cpp
+// 8 frames of 33x17, 4 per row, 1 pixel between them, starting at (0, 34)
+world.add(ship, render::Animation{.frames = render::framesFromGrid({
+    .frameSize = {33, 17}, .columns = 4, .count = 8, .gap = {1, 1}, .offset = {0, 34}})});
+```
+
+`gap` and `offset` default to `{0, 0}`. The list is empty if `columns` or
+`count` is not positive.
 
 The engine only plays an `Animation`: what comes next is decided by the game.
 `isFinished(animation)` is true once a non-looping animation was fully played,

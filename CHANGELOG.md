@@ -27,6 +27,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 ### Added
 
 - **Render**: `layer` field (default 0) on every drawable: `Sprite`, `Text`, `Rectangle`, `Circle` and `Line`.
+- **Render**: `framesFromGrid` helper and `FrameGrid` to build `Animation::frames` from a spritesheet grid of same-sized frames.
 
 ### Changed
 
