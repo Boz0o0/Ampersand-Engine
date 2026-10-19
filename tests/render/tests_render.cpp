@@ -21,6 +21,8 @@ TEST(RenderComponents, SpriteAndTextDefaultToWhite) {
     EXPECT_EQ(text.color.r, 255);
     EXPECT_EQ(text.color.a, 255);
     EXPECT_EQ(text.size, 24U);
+    EXPECT_EQ(sprite.layer, 0);
+    EXPECT_EQ(text.layer, 0);
 }
 
 TEST(RenderResources, ClearColorDefaultsToOpaqueBlack) {

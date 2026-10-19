@@ -89,7 +89,7 @@ void SfmlRenderer::beginFrame(Color clear) {
 void SfmlRenderer::draw(const Sprite& sprite,
                         const core::Transform& transform) {
     this->drawCommands_.push_back({
-        .layer = layerFor(transform),
+        .layer = sprite.layer,
         .draw =
             [this, sprite, transform] {
                 const auto texture = this->textures_.find(sprite.texture);
@@ -111,7 +111,7 @@ void SfmlRenderer::draw(const Sprite& sprite,
 void SfmlRenderer::draw(const Rectangle& rectangle,
                         const core::Transform& transform) {
     this->drawCommands_.push_back({
-        .layer = layerFor(transform),
+        .layer = rectangle.layer,
         .draw =
             [this, rectangle, transform] {
                 sf::RectangleShape shape({rectangle.size.x, rectangle.size.y});
@@ -127,7 +127,7 @@ void SfmlRenderer::draw(const Rectangle& rectangle,
 void SfmlRenderer::draw(const Circle& circle,
                         const core::Transform& transform) {
     this->drawCommands_.push_back({
-        .layer = layerFor(transform),
+        .layer = circle.layer,
         .draw =
             [this, circle, transform] {
                 sf::CircleShape shape(circle.radius);
@@ -142,7 +142,7 @@ void SfmlRenderer::draw(const Circle& circle,
 
 void SfmlRenderer::draw(const Line& line, const core::Transform& transform) {
     this->drawCommands_.push_back({
-        .layer = layerFor(transform),
+        .layer = line.layer,
         .draw =
             [this, line, transform] {
                 sf::Transformable transformable;
@@ -170,7 +170,7 @@ void SfmlRenderer::draw(const Line& line, const core::Transform& transform) {
 void SfmlRenderer::draw(const Text& text, const core::Transform& transform) {
     const auto ownedText = std::make_shared<const Text>(text);
     this->drawCommands_.push_back({
-        .layer = layerFor(transform),
+        .layer = text.layer,
         .draw =
             [this, ownedText, transform] {
                 const auto font = this->fonts_.find(ownedText->font);
@@ -190,14 +190,6 @@ void SfmlRenderer::endFrame() {
     for (const DrawCommand& command : this->drawCommands_) command.draw();
     this->drawCommands_.clear();
     this->window_.display();
-}
-
-float SfmlRenderer::layerFor(const core::Transform& transform) {
-    if (!std::isfinite(transform.position.z)) {
-        throw std::invalid_argument(
-            "Transform Z position must be finite for render ordering");
-    }
-    return transform.position.z;
 }
 
 void SfmlRenderer::applyTransform(sf::Transformable& drawable,

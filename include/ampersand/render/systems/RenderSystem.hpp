@@ -9,7 +9,7 @@ struct Renderer;
 /**
  * @brief Draws one whole frame with the Renderer resource: clears the window,
  * sets the camera, draws every Sprite and Text at its Transform (sorted by
- * z), then displays it.
+ * layer), then displays it.
  */
 class RenderSystem final : public core::ecs::ISystem {
 public:
@@ -25,7 +25,7 @@ public:
      * the ClearColor and Camera resources, if any).
      * @throws ResourceNotFound if the World has no Renderer.
      * @throws std::invalid_argument if the Camera is not finite or its size
-     * is not positive, or if a Transform z is not finite.
+     * is not positive.
      */
     void update(core::ecs::World& world) override;
 
