@@ -9,8 +9,8 @@ The server does not need this module.
 
 | Name              | Kind      | What it does                                                                  |
 | ----------------- | --------- | ----------------------------------------------------------------------------- |
-| `Sprite`          | component | image to draw: `texture`, `source` (part of the texture), `color` (tint)      |
-| `Text`            | component | text to draw: `font`, `value`, `size`, `color`                                |
+| `Sprite`          | component | image to draw: `texture`, `source` (part of the texture), `color` (tint), `layer` (draw order) |
+| `Text`            | component | text to draw: `font`, `value`, `size`, `color`, `layer` (draw order)          |
 | `Animation`       | component | list of frames played on the `Sprite`, `isFinished` (see [Animation](#animation)) |
 | `Renderer`        | resource  | the `IRenderer` and its window: `size`, `title`, `isOpen` (see [Window](#window)) |
 | `Clock`           | resource  | `dt` of the frame in seconds, filled by the game (from `core`)                |
@@ -24,7 +24,9 @@ The systems only use the entities that also have a `Transform` (and a `Sprite`
 for the `AnimationSystem`). The `RenderSystem` throws `ResourceNotFound`
 without a `Renderer`, and the `AnimationSystem` without a `Clock`.
 
-The `z` of the `Transform` is the draw order: the bigger `z` is drawn on top.
+The `layer` of each drawable (`Sprite`, `Text`, `Rectangle`, `Circle`, `Line`)
+is the draw order: the bigger layer is drawn on top (default 0), and the `z` of
+the `Transform` is ignored.
 
 ## Example
 
@@ -174,7 +176,7 @@ so use one or the other, not both in the same frame.
 
 | Rule       | Value                                                                                    |
 | ---------- | ---------------------------------------------------------------------------------------- |
-| Dimensions | 2D only: `z` is the draw order, not a depth                                              |
+| Dimensions | 2D only: the `z` of the `Transform` is ignored, `layer` is the draw order                |
 | Components | `Sprite` and `Text` only: shapes (`Rectangle`, `Circle`, `Line`) are drawn by hand       |
 | Camera     | one for the whole window, stretched if the window does not have the ratio of its `size`  |
 | Assets     | a failed load returns `0`, and an entity with an unknown id is not drawn                 |

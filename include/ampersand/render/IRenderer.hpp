@@ -108,7 +108,7 @@ public:
     virtual void beginFrame(Color clear) = 0;
 
     /**
-     * @brief Draws a sprite; the transform's Z position determines draw order.
+     * @brief Draws a sprite; its layer determines draw order.
      */
     virtual void draw(const Sprite& sprite,
                       const core::Transform& transform) = 0;

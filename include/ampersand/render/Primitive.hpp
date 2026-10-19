@@ -2,6 +2,7 @@
 
 #include <ampersand/core/math/Vec2.hpp>
 #include <ampersand/render/Color.hpp>
+#include <cstdint>
 
 namespace ampersand::render {
 
@@ -13,6 +14,7 @@ struct Rectangle {
     Color fill{};
     Color outline{};
     float outlineThickness{};
+    std::int32_t layer{0};
 };
 
 /**
@@ -23,6 +25,7 @@ struct Circle {
     Color fill{};
     Color outline{};
     float outlineThickness{};
+    std::int32_t layer{0};
 };
 
 /**
@@ -32,6 +35,7 @@ struct Line {
     core::math::Vec2f start;
     core::math::Vec2f end;
     Color color{};
+    std::int32_t layer{0};
 };
 
 }  // namespace ampersand::render
