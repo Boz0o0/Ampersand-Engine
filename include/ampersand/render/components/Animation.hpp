@@ -57,8 +57,9 @@ struct FrameGrid {
  * @brief Cuts a spritesheet grid into frames for Animation::frames
  *
  * @param grid Layout of the frames on the texture.
- * @return `count` rects, in reading order. Empty if `columns` or `count` is
- * not positive.
+ * @return `count` rects, in reading order.
+ * @throws std::invalid_argument if `columns`, `count` or a side of
+ * `frameSize` is not positive.
  */
 [[nodiscard]] std::vector<core::math::Rect<std::int32_t>> framesFromGrid(
     const FrameGrid& grid);

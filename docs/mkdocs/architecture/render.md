@@ -138,8 +138,8 @@ world.add(ship, render::Animation{.frames = render::framesFromGrid({
     .frameSize = {33, 17}, .columns = 4, .count = 8, .gap = {1, 1}, .offset = {0, 34}})});
 ```
 
-`gap` and `offset` default to `{0, 0}`. The list is empty if `columns` or
-`count` is not positive.
+`gap` and `offset` default to `{0, 0}`. It throws `std::invalid_argument` if
+`columns`, `count` or a side of `frameSize` is not positive.
 
 The engine only plays an `Animation`: what comes next is decided by the game.
 `isFinished(animation)` is true once a non-looping animation was fully played,

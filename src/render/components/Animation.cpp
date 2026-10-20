@@ -1,5 +1,6 @@
 #include <ampersand/render/components/Animation.hpp>
 #include <cstddef>
+#include <stdexcept>
 
 namespace ampersand::render {
 
