@@ -33,12 +33,9 @@ public:
     explicit InputSystem(Poll poll);
 
     /**
-     * @brief Empties the events of the InputManager, then calls the poll
-     * function with the World until it returns std::nullopt, adding each event
-     * and keeping keysDown, buttonsDown and mouse up to date.
-     *
-     * A press of a key or button already held is ignored (the keyboard
-     * repeats a held key).
+     * @brief Starts a new frame of the InputManager, then calls the poll
+     * function with the World until it returns std::nullopt, applying each
+     * event to the InputManager.
      *
      * @param world World holding the InputManager resource.
      * @throws ResourceNotFound if the World has no InputManager.
@@ -46,27 +43,6 @@ public:
     void update(core::ecs::World& world) override;
 
 private:
-    /** @brief Holds the key, and adds the event if it was not held yet. */
-    static void apply(InputManager& manager, const KeyPressed& pressed);
-
-    /** @brief Releases the key and adds the event. */
-    static void apply(InputManager& manager, const KeyReleased& released);
-
-    /**
-     * @brief Moves the mouse, holds the button, and adds the event if it was
-     * not held yet.
-     */
-    static void apply(InputManager& manager, const MousePressed& pressed);
-
-    /** @brief Moves the mouse, releases the button and adds the event. */
-    static void apply(InputManager& manager, const MouseReleased& released);
-
-    /** @brief Moves the mouse and adds the event. */
-    static void apply(InputManager& manager, const MouseMoved& moved);
-
-    /** @brief Releases each held key and button, adding their events. */
-    static void apply(InputManager& manager, const FocusLost& lost);
-
     Poll _poll;
 };
 
