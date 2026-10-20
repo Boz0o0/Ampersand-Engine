@@ -15,6 +15,7 @@ For why we chose this design, see [Design decisions](../decisions.md#ecs).
 | **Pool**      | The storage of one component type: all the `Transform`s together, packed.      |
 | **World**     | Owns everything: entities, their rows, the pools and the resources.            |
 | **System**    | Logic: a class with `update(World&)` that loops over entities.                 |
+| **Scheduler** | Runs the systems in order, once per frame, and fills the `Clock`.              |
 | **Resource**  | An object that exists once per world and belongs to no entity (clock, score…). |
 
 Everything is in the `ampersand::core::ecs` namespace. Include
@@ -25,8 +26,9 @@ Everything is in the `ampersand::core::ecs` namespace. Include
 
 ```cpp
 #include <ampersand/core/components/Transform.hpp>
+#include <ampersand/core/ecs/Scheduler.hpp>
 #include <ampersand/core/ecs/World.hpp>
-#include <ampersand/core/resources/Clock.hpp>
+#include <ampersand/core/time/FrameTimer.hpp>
 #include <ampersand/physics/components/Velocity.hpp>
 #include <ampersand/physics/systems/MovementSystem.hpp>
 
@@ -36,16 +38,17 @@ namespace physics = ampersand::physics;
 
 int main() {
     ecs::World world;  // 10 000 entities at most by default
-    world.addResource<core::Clock>();  // a resource
 
     const ecs::Entity ship = world.create();  // an entity
     world.add(ship, core::Transform{});  // its components
     world.add(ship, physics::Velocity{.value = {120.0F, 0.0F}});
 
-    physics::MovementSystem movement;  // a system
+    ecs::Scheduler scheduler(world);  // adds the Clock resource
+    scheduler.add<physics::MovementSystem>();  // a system
+
+    core::FrameTimer timer;  // a frame counts as 0.1 s at most
     while (running) {
-        world.getResource<core::Clock>().dt = frameTime();
-        movement.update(world);  // moves the ship
+        scheduler.update(timer.tick());  // moves the ship
     }
 }
 ```
@@ -185,8 +188,8 @@ writes in the rows.
 
 ## Systems
 
-A system inherits `ISystem` and implements `update(World&)`. The game creates
-its systems once and calls `update` in its own loop, in the order it wants.
+A system inherits `ISystem` and implements `update(World&)`. The game gives its
+systems to a [Scheduler](#scheduler), or creates them and calls `update` itself.
 `owners<T>()` gives the entities that have a `T`, and the system checks the other
 components it needs with `has`:
 
@@ -247,6 +250,62 @@ single read in the entity's row.
 
         The entity moved into the current slot comes from the end of the list,
         so it was already visited.
+
+## Scheduler
+
+The `Scheduler` owns the systems and runs them **in the order they were added**,
+once per frame. Before the systems, it sets the `Clock` resource: `dt` is the
+time given to `update`, and `elapsed` grows by `dt`.
+
+| Call                 | Effect                                                         | Throws                  |
+| -------------------- | -------------------------------------------------------------- | ----------------------- |
+| `Scheduler(world)`   | adds a `Clock` to the World if it has none                     | never                   |
+| `add<T>(args...)`    | builds the system `T` after the others and returns a reference | what `T` throws         |
+| `update(deltaTime)`  | sets the `Clock`, then runs every system in order              | `std::invalid_argument` if `deltaTime` is negative or not finite, and what the systems throw |
+
+The order matters: a system sees what the systems before it did in the same
+frame (move, then test the collisions, then apply the damage).
+
+```cpp
+ecs::Scheduler scheduler(world);  // the World must outlive the Scheduler
+scheduler.add<input::InputSystem>(poll);
+scheduler.add<physics::MovementSystem>();
+scheduler.add<physics::CollisionSystem>();
+scheduler.add<render::RenderSystem>();
+```
+
+The time comes from the game, so the same loop works on both sides:
+
+=== "Client (real time)"
+
+    ```cpp
+    core::FrameTimer timer;
+    while (world.getResource<render::Renderer>().isOpen) {
+        scheduler.update(timer.tick());
+    }
+    ```
+
+    `FrameTimer::tick()` returns the seconds since its previous call (0 the
+    first time), at most the value given to its constructor (`kDefaultMaxDt`,
+    0.1 s, if none). After a long frame (window moved, slow machine), the game
+    slows down instead of jumping.
+
+=== "Server (fixed step)"
+
+    ```cpp
+    constexpr float kTick = 1.0F / 60.0F;
+    while (running) {
+        scheduler.update(kTick);
+        sleepUntilNextTick();
+    }
+    ```
+
+    Every update moves the game by the same time, so the same inputs give the
+    same result.
+
+!!! warning
+    Do not call `add` from a system: the list of systems would change while the
+    Scheduler loops on it.
 
 ## Resources
 
