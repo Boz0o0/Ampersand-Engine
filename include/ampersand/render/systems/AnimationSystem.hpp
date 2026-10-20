@@ -4,24 +4,40 @@
 
 namespace ampersand::render {
 
+struct Animation;
+class AnimationStateMachine;
+
 /**
- * @brief Advances every Animation with the dt of the Clock resource and
- * shows its current frame on the entity's Sprite.
+ * @brief Updates every AnimationStateMachine, then advances every Animation
+ * with the dt of the Clock resource and shows its current frame on the
+ * entity's Sprite.
  */
 class AnimationSystem final : public core::ecs::ISystem {
 public:
     /**
-     * @brief Adds dt to each Animation's elapsed time, then writes the
-     * current frame into the Sprite::source of the same entity.
+     * @brief Runs each AnimationStateMachine (adding an Animation to its
+     * entity if missing), then adds dt to each Animation's elapsed time and
+     * writes the current frame into the Sprite::source of the same entity.
      *
      * Entities without a Sprite, and animations without frames, are skipped.
      *
      * @param world World holding the entities and the Clock resource.
      * @throws ResourceNotFound if the World has no Clock.
      * @throws std::invalid_argument if a frameDuration is not finite and
-     * positive.
+     * positive, or if a state machine has to play a state it does not have.
      */
     void update(core::ecs::World& world) override;
+
+private:
+    /**
+     * @brief Ends the finished action, applies the first matching transition
+     * if no action plays, then loads the clip to play into `animation` if it
+     * changed.
+     *
+     * @throws std::invalid_argument if the clip to play is not in `states`.
+     */
+    static void updateStateMachine(AnimationStateMachine& machine,
+                                   Animation& animation);
 };
 
 }  // namespace ampersand::render

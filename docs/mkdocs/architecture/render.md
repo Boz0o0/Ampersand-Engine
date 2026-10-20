@@ -7,18 +7,19 @@ The server does not need this module.
 
 ## Concepts
 
-| Name              | Kind      | What it does                                                                  |
-| ----------------- | --------- | ----------------------------------------------------------------------------- |
-| `Sprite`          | component | image to draw: `texture`, `source` (part of the texture), `color` (tint), `layer` (draw order) |
-| `Text`            | component | text to draw: `font`, `value`, `size`, `color`, `layer` (draw order)          |
-| `Animation`       | component | list of frames played on the `Sprite`, `isFinished`, `framesFromGrid` (see [Animation](#animation)) |
-| `Renderer`        | resource  | the `IRenderer` and its window: `size`, `title`, `isOpen` (see [Window](#window)) |
-| `Clock`           | resource  | `dt` of the frame in seconds, filled by the game (from `core`)                |
-| `Camera`          | resource  | part of the world shown in the window (see [Camera](#camera)), optional       |
-| `ClearColor`      | resource  | background color of the window, optional (black without it)                  |
-| `AnimationSystem` | system    | moves every `Animation` forward and writes its frame in `Sprite::source`      |
-| `RenderSystem`    | system    | draws one whole frame: clear, camera, every `Sprite` and `Text`, display      |
-| `IRenderer`       | interface | the window: open, events, load textures and fonts, draw (`SfmlRenderer`)     |
+| Name                    | Kind      | What it does                                                                                                                |
+| ----------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `Sprite`                | component | image to draw: `texture`, `source` (part of the texture), `color` (tint), `layer` (draw order)                              |
+| `Text`                  | component | text to draw: `font`, `value`, `size`, `color`, `layer` (draw order)                                                        |
+| `Animation`             | component | list of frames played on the `Sprite`, `isFinished`, `framesFromGrid` (see [Animation](#animation))                         |
+| `AnimationStateMachine` | component | picks the clip of the `Animation` from named states, transitions and one-shot actions (see [State machine](#state-machine)) |
+| `Renderer`              | resource  | the `IRenderer` and its window: `size`, `title`, `isOpen` (see [Window](#window))                                           |
+| `Clock`                 | resource  | `dt` of the frame in seconds, filled by the game (from `core`)                                                              |
+| `Camera`                | resource  | part of the world shown in the window (see [Camera](#camera)), optional                                                     |
+| `ClearColor`            | resource  | background color of the window, optional (black without it)                                                                 |
+| `AnimationSystem`       | system    | runs every `AnimationStateMachine`, then moves every `Animation` forward and writes its frame in `Sprite::source`           |
+| `RenderSystem`          | system    | draws one whole frame: clear, camera, every `Sprite` and `Text`, display                                                    |
+| `IRenderer`             | interface | the window: open, events, load textures and fonts, draw (`SfmlRenderer`)                                                    |
 
 The systems only use the entities that also have a `Transform` (and a `Sprite`
 for the `AnimationSystem`). The `RenderSystem` throws `ResourceNotFound`
@@ -141,8 +142,7 @@ world.add(ship, render::Animation{.frames = render::framesFromGrid({
 `gap` and `offset` default to `{0, 0}`. It throws `std::invalid_argument` if
 `columns`, `count` or a side of `frameSize` is not positive.
 
-The engine only plays an `Animation`: what comes next is decided by the game.
-`isFinished(animation)` is true once a non-looping animation was fully played,
+Alone, an `Animation` only plays: what comes next is decided by the game (or by a [state machine](#state-machine)). `isFinished(animation)` is true once a non-looping animation was fully played,
 so a system of the game can switch back to another one:
 
 ```cpp
@@ -160,6 +160,55 @@ for (const ecs::Entity entity : done) {  // not inside the loop: owners() is the
     world.remove<Hit>(entity);
 }
 ```
+
+## State machine
+
+An `AnimationStateMachine` holds every clip of an entity by name, and the
+`AnimationSystem` copies the one to play into the entity's `Animation` (added
+if missing). The game only writes `params`, and the machine switches the clips:
+
+```cpp
+render::AnimationStateMachine machine{{{"idle", idleClip()},
+                                       {"run", runClip()},
+                                       {"jump", jumpClip()},
+                                       {"attack", attackClip()}},
+                                      "idle"};  // initial base state
+machine.transitions = {
+    {.from = "*", .to = "jump",
+     .condition = [](const render::AnimationParams& p) { return p.bools.at("jumping"); }},
+    {.from = "idle", .to = "run",
+     .condition = [](const render::AnimationParams& p) { return p.floats.at("speed") > 0.0F; }},
+    {.from = "run", .to = "idle",
+     .condition = [](const render::AnimationParams& p) { return p.floats.at("speed") == 0.0F; }},
+};
+machine.params.bools["jumping"] = false;
+machine.params.floats["speed"] = 0.0F;
+world.add(player, std::move(machine));
+
+// gameplay, every frame
+auto& animator = world.get<render::AnimationStateMachine>(player);
+animator.params.floats["speed"] = std::abs(velocity.x);
+if (attackPressed) animator.playOnce("attack");
+```
+
+- **Base state** (`current()`): follows the transitions. They are checked in
+  order and the first one whose `from` is the current state (or `"*"` for any
+  state) and whose `condition` returns true wins, even if it leads to the
+  current state: the order of the list is the priority. At most one transition
+  per update. `setCurrent(state)` moves there directly.
+- **Action** (`playOnce(state)`): plays a state once, without looping, on top
+  of the base state, then gives it back. The transitions are paused while it
+  plays. A new action replaces the playing one, and the same action again
+  restarts it. `isPlayingAction()` is true until its last frame was shown for
+  its whole duration.
+- Each time the clip to play changes, it starts again from its first frame.
+  After editing `states` while the game runs, call `reload()` to load the
+  playing clip again.
+- The entity's `Animation` belongs to the machine: do not write it by hand, it is replaced at the next clip change. If it is removed, the `AnimationSystem` adds it back and loads the playing clip again.
+
+The constructor, `setCurrent` and `playOnce` throw `std::invalid_argument` for
+a state that is not in `states`, and so does the `AnimationSystem` for a
+transition to an unknown state (the base state is then left as it was).
 
 ## Camera
 
@@ -187,10 +236,11 @@ so use one or the other, not both in the same frame.
 
 ## Limits
 
-| Rule       | Value                                                                                    |
-| ---------- | ---------------------------------------------------------------------------------------- |
-| Dimensions | 2D only: the `z` of the `Transform` is ignored, `layer` is the draw order                |
-| Components | `Sprite` and `Text` only: shapes (`Rectangle`, `Circle`, `Line`) are drawn by hand       |
-| Camera     | one for the whole window, stretched if the window does not have the ratio of its `size`  |
-| Assets     | a failed load returns `0`, and an entity with an unknown id is not drawn                 |
-| Window     | one per `Renderer`; only `isOpen` acts on it, `size` and `title` are read-only           |
+| Rule       | Value                                                                                            |
+| ---------- | ------------------------------------------------------------------------------------------------ |
+| Dimensions | 2D only: the `z` of the `Transform` is ignored, `layer` is the draw order                        |
+| Components | `Sprite` and `Text` only: shapes (`Rectangle`, `Circle`, `Line`) are drawn by hand               |
+| Animation  | one clip at a time per entity: no blending between two clips, a switch shows the new one at once |
+| Camera     | one for the whole window, stretched if the window does not have the ratio of its `size`          |
+| Assets     | a failed load returns `0`, and an entity with an unknown id is not drawn                         |
+| Window     | one per `Renderer`; only `isOpen` acts on it, `size` and `title` are read-only                   |
