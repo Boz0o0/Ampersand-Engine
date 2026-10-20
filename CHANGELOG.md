@@ -29,10 +29,17 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Render**: `layer` field (default 0) on every drawable: `Sprite`, `Text`, `Rectangle`, `Circle` and `Line`.
 - **Core**: `Scheduler`, which runs the systems in the order they were added and fills the `Clock`, and `FrameTimer`, which measures the real time of a frame, at most a given value.
 - **Render**: `framesFromGrid` helper and `FrameGrid` to build `Animation::frames` from a spritesheet grid of same-sized frames.
+- **Input**: controllers: `JoystickButton` and `JoystickAxis`, `JoystickButtonPressed`, `JoystickButtonReleased` and `JoystickMoved` events, kept per controller and read with `getJoystickButton`, `getJoystickButtonDown`, `getJoystickButtonUp` and `getJoystickAxis`.
+- **Input**: `get` functions on `InputManager` for keys and mouse buttons (`getKey`, `getKeyDown`, `getKeyUp`, `getMouseButton`...) and for any `Binding` (`getBinding`, `getBindingDown`, `getBindingUp`).
+- **Input**: action map: named axes (`setAxis`, `getAxisRaw`) from a positive and a negative `Binding` and an optional controller axis with a dead zone and inversion, and named virtual buttons (`setButton`, `getButton`, `getButtonDown`, `getButtonUp`).
+- **Render**: SFML conversion of the controller events to input events.
+- **Tests**: unit tests of the `InputManager` (bindings, axes, virtual buttons, controllers) and of the controller events through the `InputSystem`.
 
 ### Changed
 
 - **Render**: draw order is the `layer` of the drawable instead of the `z` of the `Transform`.
+- **Input**: the event handling moved from the `InputSystem` to `InputManager::beginFrame` and `InputManager::apply`.
+- **Input**: Changed the keys name to standard define in [unity's doc](https://docs.unity3d.com/Manual/class-InputManager.html).
 
 ## [0.2.0] - 2026-10-18
 
