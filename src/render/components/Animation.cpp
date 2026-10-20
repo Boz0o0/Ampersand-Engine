@@ -12,8 +12,10 @@ bool isFinished(const Animation& animation) {
 std::vector<core::math::Rect<std::int32_t>> framesFromGrid(
     const FrameGrid& grid) {
     std::vector<core::math::Rect<std::int32_t>> frames;
-    if (grid.columns <= 0 || grid.count <= 0) {
-        return frames;
+    if (grid.columns <= 0 || grid.count <= 0 || grid.frameSize.x <= 0 ||
+        grid.frameSize.y <= 0) {
+        throw std::invalid_argument(
+            "FrameGrid must have positive columns, count, and frameSize");
     }
     frames.reserve(static_cast<std::size_t>(grid.count));
     for (std::int32_t i = 0; i < grid.count; ++i) {
