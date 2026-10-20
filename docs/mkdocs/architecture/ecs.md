@@ -16,6 +16,7 @@ For why we chose this design, see [Design decisions](../decisions.md#ecs).
 | **World**     | Owns everything: entities, their rows, the pools and the resources.            |
 | **System**    | Logic: a class with `update(World&)` that loops over entities.                 |
 | **Scheduler** | Runs the systems in order, once per frame, and fills the `Clock`.              |
+| **Event**     | A message sent by a system to the systems after it, in an `EventQueue`.        |
 | **Resource**  | An object that exists once per world and belongs to no entity (clock, score…). |
 
 Everything is in the `ampersand::core::ecs` namespace. Include
@@ -306,6 +307,50 @@ The time comes from the game, so the same loop works on both sides:
 !!! warning
     Do not call `add` from a system: the list of systems would change while the
     Scheduler loops on it.
+
+## Event queues
+
+A system tells the others that something happened (an entity died, an entity
+spawned) by sending an **event** in an `EventQueue<T>`. The game defines the
+event type, the engine only gives the queue:
+
+```cpp
+struct Died {
+    ecs::Entity entity;
+};
+
+scheduler.addEventQueue<Died>();  // an EventQueue<Died> resource, emptied each frame
+scheduler.add<DamageSystem>();    // sends
+scheduler.add<ScoreSystem>();     // reads
+
+// in DamageSystem::update
+world.getResource<ecs::EventQueue<Died>>().send({.entity = enemy});
+
+// in ScoreSystem::update
+for (const Died& died : world.getResource<ecs::EventQueue<Died>>().read()) {
+    score += 100;
+}
+```
+
+| Call                          | Effect                                                   | Throws                  |
+| ----------------------------- | -------------------------------------------------------- | ----------------------- |
+| `scheduler.addEventQueue<T>()` | adds the `EventQueue<T>` resource and returns it        | `ResourceAlreadyExists` |
+| `send(event)`                 | adds the event after the others                          | never                   |
+| `read()`                      | the events sent since the last clear, in order           | never                   |
+| `clear()`                     | removes every event (the Scheduler does it)              | never                   |
+
+An event lives **one frame**: the Scheduler empties the queues after the last
+system. So:
+
+- a system reads the events of the systems **before** it in the same frame;
+- a system **before** the sender never reads its events: put the readers after
+  the senders;
+- an event sent between two frames (by the game, outside `update`) is read
+  during the next frame;
+- if a system throws, the frame stops and the queues are not emptied.
+
+Without a Scheduler, add the resource with `world.addResource<ecs::EventQueue<T>>()`
+and call `clear()` at the end of each frame.
 
 ## Resources
 
