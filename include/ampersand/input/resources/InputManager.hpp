@@ -37,7 +37,7 @@ struct Axis {
     /** @brief Controller axis read too, if any. */
     std::optional<JoystickAxis> joystick;
     /** @brief Positions of the controller axis closer to 0 than this are 0. */
-    float dead = 0.2F;
+    float dead{0.2F};
     /** @brief Whether the position of the controller axis is negated. */
     bool invertJoystick = false;
 };

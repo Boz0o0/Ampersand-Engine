@@ -2,23 +2,22 @@
 
 The input module gives the keyboard, mouse and controllers of the frame in
 one resource: what is held, what was pressed and released, and where the mouse
-is. It does not
-know the window, so it runs with any source of events (the window of the
+is. It does not know the window, so it runs with any source of events (the window of the
 render module, a replay, a test).
 
 ## Concepts
 
-| Name           | Kind     | What it does                                                                  |
-| -------------- | -------- | ----------------------------------------------------------------------------- |
-| `InputManager` | resource | the state of the frame, read with the `get` functions (or `keysDown()`, `keysPressed()`, `mouse()`...), the axes and buttons of the game (`setAxis`, `setButton`), and `beginFrame` / `apply` used by the `InputSystem` |
-| `Event`        | type     | what the poll function gives the `InputSystem`: one of `KeyPressed`, `KeyReleased`, `MousePressed`, `MouseReleased`, `MouseMoved`, `JoystickButtonPressed`, `JoystickButtonReleased`, `JoystickMoved`, `FocusLost` |
-| `KeyCode`      | enum     | a key, by its **physical position** on the keyboard (see [Limits](#limits))  |
-| `MouseButton`  | enum     | a mouse button: `Left`, `Right`, `Middle`                                     |
-| `JoystickButton` | enum   | a controller button, by index: `Button0` to `Button31`                       |
-| `JoystickAxis` | enum     | a controller axis: `X`, `Y`, `Z`, `R`, `U`, `V`, `PovX`, `PovY`               |
-| `Binding`      | type     | a `KeyCode`, a `MouseButton`, a `JoystickButton`, or nothing (`std::monostate`), used by the axes and virtual buttons |
-| `Axis`         | struct   | a `positive` and a `negative` binding, and an optional controller axis, read by name with `getAxisRaw` |
-| `InputSystem`  | system   | fills the `InputManager` with the events given by a poll function            |
+| Name             | Kind     | What it does                                                                                                                                                                                                            |
+| ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `InputManager`   | resource | the state of the frame, read with the `get` functions (or `keysDown()`, `keysPressed()`, `mouse()`...), the axes and buttons of the game (`setAxis`, `setButton`), and `beginFrame` / `apply` used by the `InputSystem` |
+| `Event`          | type     | what the poll function gives the `InputSystem`: one of `KeyPressed`, `KeyReleased`, `MousePressed`, `MouseReleased`, `MouseMoved`, `JoystickButtonPressed`, `JoystickButtonReleased`, `JoystickMoved`, `FocusLost`      |
+| `KeyCode`        | enum     | a key, by its **physical position** on the keyboard (see [Limits](#limits))                                                                                                                                             |
+| `MouseButton`    | enum     | a mouse button: `Left`, `Right`, `Middle`                                                                                                                                                                               |
+| `JoystickButton` | enum     | a controller button, by index: `Button0` to `Button31`                                                                                                                                                                  |
+| `JoystickAxis`   | enum     | a controller axis: `X`, `Y`, `Z`, `R`, `U`, `V`, `PovX`, `PovY`                                                                                                                                                         |
+| `Binding`        | type     | a `KeyCode`, a `MouseButton`, a `JoystickButton`, or nothing (`std::monostate`), used by the axes and virtual buttons                                                                                                   |
+| `Axis`           | struct   | a `positive` and a `negative` binding, and an optional controller axis, read by name with `getAxisRaw`                                                                                                                  |
+| `InputSystem`    | system   | fills the `InputManager` with the events given by a poll function                                                                                                                                                       |
 
 The `InputSystem` throws `ResourceNotFound` if the World has no `InputManager`.
 
@@ -63,10 +62,10 @@ const auto& manager = world.getResource<input::InputManager>();
 
 **Keys, mouse buttons and controller buttons:**
 
-| Function                                  | True when                         |
-| ----------------------------------------- | --------------------------------- |
-| `getKey(key)` / `getMouseButton(button)`  | it is held                        |
-| `getKeyDown(key)` / `getMouseButtonDown(button)` | it was pressed during this frame |
+| Function                                         | True when                         |
+| ------------------------------------------------ | --------------------------------- |
+| `getKey(key)` / `getMouseButton(button)`         | it is held                        |
+| `getKeyDown(key)` / `getMouseButtonDown(button)` | it was pressed during this frame  |
 | `getKeyUp(key)` / `getMouseButtonUp(button)`     | it was released during this frame |
 
 The controller buttons have the same three functions: `getJoystickButton`,
@@ -188,13 +187,13 @@ at the start of each frame.
 
 ## Limits
 
-| Rule    | Value                                                                                          |
-| ------- | ---------------------------------------------------------------------------------------------- |
-| Keys    | `A`-`Z`, `Alpha0`-`Alpha9`, `UpArrow`, `DownArrow`, `LeftArrow`, `RightArrow`, `Space`, `Return`, `Escape`, `Tab`, `Backspace`, `LeftShift`, `RightShift`, `LeftControl`, `RightControl`, `LeftAlt`, `RightAlt`. Any other key is `None` |
-| Letters | a key is a physical position, named after QWERTY: on AZERTY, the key labelled `Z` is `KeyCode::W`, so `WASD` is the same place on every keyboard |
-| Mouse   | `Left`, `Right` and `Middle` buttons (others are `None`), position in window pixels: without a `Camera`, the same as world units |
-| Wheel   | not reported                                                                                   |
-| Order   | the order of the inputs inside a frame is not kept: only what is held, pressed and released    |
-| Axes    | raw only (`getAxisRaw`): no smoothing or sensitivity, a dead zone for the controller axis only |
+| Rule       | Value                                                                                                                                                                                                                                                                                  |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Keys       | `A`-`Z`, `Alpha0`-`Alpha9`, `UpArrow`, `DownArrow`, `LeftArrow`, `RightArrow`, `Space`, `Return`, `Escape`, `Tab`, `Backspace`, `LeftShift`, `RightShift`, `LeftControl`, `RightControl`, `LeftAlt`, `RightAlt`. Any other key is `None`                                               |
+| Letters    | a key is a physical position, named after QWERTY: on AZERTY, the key labelled `Z` is `KeyCode::W`, so `WASD` is the same place on every keyboard                                                                                                                                       |
+| Mouse      | `Left`, `Right` and `Middle` buttons (others are `None`), position in window pixels: without a `Camera`, the same as world units                                                                                                                                                       |
+| Wheel      | not reported                                                                                                                                                                                                                                                                           |
+| Order      | the order of the inputs inside a frame is not kept: only what is held, pressed and released                                                                                                                                                                                            |
+| Axes       | raw only (`getAxisRaw`): no smoothing or sensitivity, a dead zone for the controller axis only                                                                                                                                                                                         |
 | Controller | buttons by index (`Button0`-`Button31`, others are `None`): which button is behind an index depends on the controller. The state is kept per controller, but read as one: a button is held if any controller holds it, an axis is the position farthest from `0` among the controllers |
-| Focus   | losing the focus releases every held key and mouse button, so a key still held when the focus comes back must be pressed again. The controllers are not touched: SFML still reports them without the focus |
+| Focus      | losing the focus releases every held key and mouse button, so a key still held when the focus comes back must be pressed again. The controllers are not touched: SFML still reports them without the focus                                                                             |

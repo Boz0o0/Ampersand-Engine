@@ -14,6 +14,10 @@ using ampersand::core::ecs::World;
 using ampersand::input::Event;
 using ampersand::input::InputManager;
 using ampersand::input::InputSystem;
+using ampersand::input::JoystickAxis;
+using ampersand::input::JoystickButton;
+using ampersand::input::JoystickButtonPressed;
+using ampersand::input::JoystickMoved;
 using ampersand::input::KeyCode;
 using ampersand::input::KeyPressed;
 using ampersand::input::KeyReleased;
@@ -186,4 +190,29 @@ TEST(InputSystem, FollowsTheMouse) {
 
     EXPECT_EQ(manager.mouse().x, 5);
     EXPECT_EQ(manager.mouse().y, 6);
+}
+
+TEST(InputSystem, AppliesTheJoystickEvents) {
+    World world;
+    const auto& manager = world.addResource<InputManager>();
+    world.addResource<PendingEvents>();
+
+    runFrame(world, {
+                        JoystickButtonPressed{
+                            .joystick = 0,
+                            .button = JoystickButton::Button2,
+                        },
+                        JoystickMoved{
+                            .joystick = 0,
+                            .axis = JoystickAxis::X,
+                            .position = 0.5F,
+                        },
+                    });
+    EXPECT_TRUE(manager.getJoystickButtonDown(JoystickButton::Button2));
+    EXPECT_FLOAT_EQ(manager.getJoystickAxis(JoystickAxis::X), 0.5F);
+
+    runFrame(world, {});
+    EXPECT_FALSE(manager.getJoystickButtonDown(JoystickButton::Button2));
+    EXPECT_TRUE(manager.getJoystickButton(JoystickButton::Button2));
+    EXPECT_FLOAT_EQ(manager.getJoystickAxis(JoystickAxis::X), 0.5F);
 }
