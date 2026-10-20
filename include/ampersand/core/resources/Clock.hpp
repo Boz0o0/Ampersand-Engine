@@ -3,7 +3,8 @@
 namespace ampersand::core {
 
 /**
- * @brief Time of the game loop, filled by the game every frame.
+ * @brief Time of the game loop, filled every frame by the Scheduler (or by
+ * the game if it runs its systems itself but not advised).
  */
 struct Clock {
     /** @brief Seconds since the previous frame. */
