@@ -28,6 +28,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 - **Render**: `layer` field (default 0) on every drawable: `Sprite`, `Text`, `Rectangle`, `Circle` and `Line`.
 - **Core**: `Scheduler`, which runs the systems in the order they were added and fills the `Clock`, and `FrameTimer`, which measures the real time of a frame, at most a given value.
+- **Render**: `framesFromGrid` helper and `FrameGrid` to build `Animation::frames` from a spritesheet grid of same-sized frames.
 
 ### Changed
 

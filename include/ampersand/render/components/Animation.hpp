@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ampersand/core/math/Rect.hpp>
+#include <ampersand/core/math/Vec2.hpp>
 #include <cstdint>
 #include <vector>
 
@@ -33,5 +34,34 @@ struct Animation {
  * looping animation never finishes.
  */
 [[nodiscard]] bool isFinished(const Animation& animation);
+
+/**
+ * @brief Layout of same-sized frames on a spritesheet, read by framesFromGrid.
+ *
+ * Frames are read left to right, then top to bottom, starting at `offset`.
+ */
+struct FrameGrid {
+    /** @brief Width and height of one frame, in pixels. */
+    core::math::Vec2<std::int32_t> frameSize;
+    /** @brief Frames per row. */
+    std::int32_t columns{1};
+    /** @brief Total number of frames (the last row can be incomplete). */
+    std::int32_t count{1};
+    /** @brief Empty pixels between two frames, horizontally and vertically. */
+    core::math::Vec2<std::int32_t> gap;
+    /** @brief Top-left corner of the first frame on the texture. */
+    core::math::Vec2<std::int32_t> offset;
+};
+
+/**
+ * @brief Cuts a spritesheet grid into frames for Animation::frames
+ *
+ * @param grid Layout of the frames on the texture.
+ * @return `count` rects, in reading order.
+ * @throws std::invalid_argument if `columns`, `count` or a side of
+ * `frameSize` is not positive.
+ */
+[[nodiscard]] std::vector<core::math::Rect<std::int32_t>> framesFromGrid(
+    const FrameGrid& grid);
 
 }  // namespace ampersand::render
