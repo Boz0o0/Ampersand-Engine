@@ -196,6 +196,11 @@ inline std::optional<Event> toEvent(const sf::Event::JoystickMoved& moved) {
                                 .position = moved.position / 100.0F};
 }
 
+inline std::optional<Event> toEvent(
+    const sf::Event::JoystickDisconnected& disconnected) {
+    return input::JoystickDisconnected{disconnected.joystickId};
+}
+
 inline std::optional<Event> toEvent(const sf::Event::FocusLost& /*lost*/) {
     return input::FocusLost{};
 }

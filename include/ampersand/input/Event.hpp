@@ -186,6 +186,14 @@ struct JoystickMoved {
 };
 
 /**
+ * @brief Event triggered when a controller is disconnected.
+ */
+struct JoystickDisconnected {
+    /** @brief Index of the controller. */
+    unsigned int joystick;
+};
+
+/**
  * @brief Event triggered when the window loses the focus: its keys and mouse
  * buttons are no longer reported until it gets it back. The controllers still
  * are.

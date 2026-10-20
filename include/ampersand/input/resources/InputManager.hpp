@@ -12,9 +12,10 @@
 namespace ampersand::input {
 
 /** @brief Any input event. */
-using Event = std::variant<KeyPressed, KeyReleased, MousePressed, MouseReleased,
-                           MouseMoved, JoystickButtonPressed,
-                           JoystickButtonReleased, JoystickMoved, FocusLost>;
+using Event =
+    std::variant<KeyPressed, KeyReleased, MousePressed, MouseReleased,
+                 MouseMoved, JoystickButtonPressed, JoystickButtonReleased,
+                 JoystickMoved, JoystickDisconnected, FocusLost>;
 
 /**
  * @brief A key, a mouse button or a controller button, used by the axes and
@@ -234,6 +235,12 @@ private:
 
     /** @brief Moves the controller axis. */
     void handle(const JoystickMoved& moved);
+
+    /**
+     * @brief Forgets the held buttons and the axes of the controller: its
+     * axes are 0 again. Its buttons are not marked released.
+     */
+    void handle(const JoystickDisconnected& disconnected);
 
     /**
      * @brief Releases each held key and mouse button, marking them released.

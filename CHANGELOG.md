@@ -38,6 +38,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 - **Render**: draw order is the `layer` of the drawable instead of the `z` of the `Transform`.
 - **Input**: the event handling moved from the `InputSystem` to `InputManager::beginFrame` and `InputManager::apply`.
+- **Input**: Changed the keys name to standard define in [unity's doc](https://docs.unity3d.com/Manual/class-InputManager.html).
 
 ## [0.2.0] - 2026-10-18
 

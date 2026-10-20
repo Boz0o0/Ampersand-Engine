@@ -10,7 +10,7 @@ render module, a replay, a test).
 | Name             | Kind     | What it does                                                                                                                                                                                                            |
 | ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `InputManager`   | resource | the state of the frame, read with the `get` functions (or `keysDown()`, `keysPressed()`, `mouse()`...), the axes and buttons of the game (`setAxis`, `setButton`), and `beginFrame` / `apply` used by the `InputSystem` |
-| `Event`          | type     | what the poll function gives the `InputSystem`: one of `KeyPressed`, `KeyReleased`, `MousePressed`, `MouseReleased`, `MouseMoved`, `JoystickButtonPressed`, `JoystickButtonReleased`, `JoystickMoved`, `FocusLost`      |
+| `Event`          | type     | what the poll function gives the `InputSystem`: one of `KeyPressed`, `KeyReleased`, `MousePressed`, `MouseReleased`, `MouseMoved`, `JoystickButtonPressed`, `JoystickButtonReleased`, `JoystickMoved`, `JoystickDisconnected`, `FocusLost` |
 | `KeyCode`        | enum     | a key, by its **physical position** on the keyboard (see [Limits](#limits))                                                                                                                                             |
 | `MouseButton`    | enum     | a mouse button: `Left`, `Right`, `Middle`                                                                                                                                                                               |
 | `JoystickButton` | enum     | a controller button, by index: `Button0` to `Button31`                                                                                                                                                                  |
@@ -131,7 +131,10 @@ Each frame, `update` calls `beginFrame` on the `InputManager` (it empties the
   repeats a held key);
 - the keys and buttons that are `None` are ignored: they are never held;
 - `FocusLost` releases every held key and mouse button (they are in the
-  `Released` sets of the frame). The controllers are not touched.
+  `Released` sets of the frame). The controllers are not touched;
+- `JoystickDisconnected` forgets the held buttons and the axes of the
+  controller: its axes are 0 again, and its buttons are no longer held (they
+  are not in the `Released` sets).
 
 With the render module, the poll function reads the window of the `Renderer`
 resource (see [Render](render.md#window)). It also receives the other events of

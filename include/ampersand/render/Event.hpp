@@ -25,6 +25,7 @@ using Event =
     std::variant<Closed, Resized, input::KeyPressed, input::KeyReleased,
                  input::MousePressed, input::MouseReleased, input::MouseMoved,
                  input::JoystickButtonPressed, input::JoystickButtonReleased,
-                 input::JoystickMoved, input::FocusLost>;
+                 input::JoystickMoved, input::JoystickDisconnected,
+                 input::FocusLost>;
 
 }  // namespace ampersand::render

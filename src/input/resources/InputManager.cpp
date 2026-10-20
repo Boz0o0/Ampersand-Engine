@@ -204,6 +204,11 @@ void InputManager::handle(const JoystickMoved& moved) {
     _joystickAxes[moved.joystick][moved.axis] = moved.position;
 }
 
+void InputManager::handle(const JoystickDisconnected& disconnected) {
+    _joystickButtonsDown.erase(disconnected.joystick);
+    _joystickAxes.erase(disconnected.joystick);
+}
+
 void InputManager::handle(const FocusLost& /*lost*/) {
     _keysReleased.insert(_keysDown.begin(), _keysDown.end());
     _buttonsReleased.insert(_buttonsDown.begin(), _buttonsDown.end());
