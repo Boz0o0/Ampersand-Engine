@@ -2,6 +2,7 @@
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/core/resources/Clock.hpp>
 #include <ampersand/render/components/Animation.hpp>
+#include <ampersand/render/components/AnimationStateMachine.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/systems/AnimationSystem.hpp>
 #include <cmath>
@@ -12,6 +13,15 @@ namespace ampersand::render {
 
 void AnimationSystem::update(core::ecs::World& world) {
     const float deltaTime = world.getResource<core::Clock>().dt;
+    for (const core::ecs::Entity entity :
+         world.owners<AnimationStateMachine>()) {
+        if (!world.has<Animation>(entity)) {
+            world.add(entity, Animation{});
+            world.get<AnimationStateMachine>(entity).reload();
+        }
+        world.get<AnimationStateMachine>(entity).update(
+            world.get<Animation>(entity));
+    }
     for (const core::ecs::Entity entity : world.owners<Animation>()) {
         auto& animation = world.get<Animation>(entity);
         if (!world.has<Sprite>(entity) || animation.frames.empty()) {
