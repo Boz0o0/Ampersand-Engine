@@ -1,3 +1,4 @@
+#include <ampersand/core/ecs/CommandQueue.hpp>
 #include <ampersand/core/ecs/Scheduler.hpp>
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/core/resources/Clock.hpp>
@@ -10,6 +11,11 @@ Scheduler::Scheduler(World& world) : _world(world) {
     if (!_world.hasResource<Clock>()) {
         _world.addResource<Clock>();
     }
+    if (!_world.hasResource<CommandQueue>()) {
+        _world.addResource<CommandQueue>();
+    }
+    _endOfFrame.emplace_back(
+        [](World& world) { world.getResource<CommandQueue>().apply(world); });
 }
 
 void Scheduler::update(float deltaTime) {
