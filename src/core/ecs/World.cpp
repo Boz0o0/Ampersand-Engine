@@ -2,6 +2,8 @@
 #include <ampersand/core/ecs/World.hpp>
 #include <cstddef>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace ampersand::core::ecs {
 
@@ -17,6 +19,8 @@ std::string describe(Entity entity) {
 World::World(std::uint32_t maxEntities) : _maxEntities(maxEntities) {
     _versions.reserve(maxEntities);
     _rows.reserve(maxEntities);
+    _parents.reserve(maxEntities);
+    _children.reserve(maxEntities);
 }
 
 Entity World::create() {
@@ -31,11 +35,16 @@ Entity World::create() {
     const auto index = static_cast<std::uint32_t>(_versions.size());
     _versions.push_back(1);
     _rows.emplace_back();  // every cell is 0
+    _parents.emplace_back();
+    _children.emplace_back();
     return {.index = index, .version = _versions[index]};
 }
 
 void World::destroy(Entity entity) {
     requireAlive(entity, "destroy");
+    setParent(entity, Entity{});
+    const auto orphans = std::move(_children[entity.index]);
+    _children[entity.index].clear();
     // Remove every component of the entity
     for (std::size_t column = 0; column < kMaxComponents; column++) {
         if (_rows[entity.index][column] != 0) {
@@ -48,6 +57,39 @@ void World::destroy(Entity entity) {
         version = 1;
     }
     _free.push(entity.index);
+    for (const auto child : orphans) {
+        if (alive(child)) {
+            destroy(child);
+        }
+    }
+}
+
+void World::setParent(Entity child, Entity parent) {
+    requireAlive(child, "setParent");
+    if (parent != Entity{}) {
+        requireAlive(parent, "setParent");
+    }
+    auto& current = _parents[child.index];
+    if (current == parent) {
+        return;
+    }
+    if (alive(current)) {
+        std::erase(_children[current.index], child);
+    }
+    current = parent;
+    if (parent != Entity{}) {
+        _children[parent.index].push_back(child);
+    }
+}
+
+Entity World::parent(Entity entity) const {
+    requireAlive(entity, "parent");
+    return _parents[entity.index];
+}
+
+const std::vector<Entity>& World::children(Entity entity) const {
+    requireAlive(entity, "children");
+    return _children[entity.index];
 }
 
 void World::removeFromPool(Entity entity, std::size_t column) {

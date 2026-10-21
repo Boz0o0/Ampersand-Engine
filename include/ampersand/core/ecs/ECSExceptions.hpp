@@ -24,7 +24,8 @@ public:
 /**
  * @brief Thrown when an entity handle is dead, null or out of range.
  *
- * Raised by add, get, remove and destroy (a double destroy included).
+ * Raised by add, get, remove, destroy (a double destroy included), setParent,
+ * parent and children.
  */
 class InvalidEntity : public ECSError {
 public:

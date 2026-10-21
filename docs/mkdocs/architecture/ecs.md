@@ -13,7 +13,7 @@ For why we chose this design, see [Design decisions](../decisions.md#ecs).
 | **Entity**    | A handle (`index` + `version`). It has no data or behaviour of its own.        |
 | **Component** | A plain data struct (`Transform`, `Health`, `Sprite`…) attached to an entity.  |
 | **Pool**      | The storage of one component type: all the `Transform`s together, packed.      |
-| **World**     | Owns everything: entities, their rows, the pools and the resources.            |
+| **World**     | Owns everything: entities, their rows and parents, the pools and the resources. |
 | **System**    | Logic: a class with `update(World&)` that loops over entities.                 |
 | **Scheduler** | Runs the systems in order, once per frame, and fills the `Clock`.              |
 | **Event**     | A message sent by a system to the systems after it, in an `EventQueue`.        |
@@ -84,7 +84,7 @@ graph TD
 | Call         | Effect                                                      | Throws               |
 | ------------ | ----------------------------------------------------------- | -------------------- |
 | `create()`   | new entity, with no component                               | `EntityLimitReached` |
-| `destroy(e)` | removes all its components, then frees its row              | `InvalidEntity`      |
+| `destroy(e)` | removes all its components, frees its row, then destroys its children ([Hierarchy](#hierarchy)) | `InvalidEntity` |
 | `alive(e)`   | `true` if the handle still designates a live entity         | never                |
 
 ### The handle
@@ -352,6 +352,37 @@ system. So:
 Without a Scheduler, add the resource with `world.addResource<ecs::EventQueue<T>>()`
 and call `clear()` at the end of each frame.
 
+## Hierarchy
+
+An entity can be the **child** of another one, like a turret on a ship. The
+World stores the links itself, next to the version of each row: there is no
+component to add. It is only a link: the `Transform` of every entity stays in
+world space.
+
+```cpp
+world.setParent(turret, ship);
+
+world.parent(turret);                          // ship
+for (const auto child : world.children(ship)) { /* turret */ }
+
+world.setParent(turret, ecs::Entity{});        // turret is a root again
+world.destroy(ship);                           // ship and all its children
+```
+
+| Call                       | Effect                                                                                       | Throws          |
+| -------------------------- | -------------------------------------------------------------------------------------------- | --------------- |
+| `setParent(child, parent)` | removes `child` from its old parent and adds it to `parent` (a null `Entity` makes it a root) | `InvalidEntity` |
+| `parent(e)`                | the parent, or a null `Entity` for a root                                                    | `InvalidEntity` |
+| `children(e)`              | the direct children, in the order they were attached (empty if none)                         | `InvalidEntity` |
+| `destroy(e)`               | also removes `e` from its parent and destroys its children                                   | `InvalidEntity` |
+
+!!! warning
+    - `children(e)` is the World's own list: inside a loop over it, do not
+      `setParent` or `destroy` a child. Loop over a copy instead.
+    - `destroy` may destroy other entities (the children): inside a loop over
+      `owners<T>()`, destroy after the loop.
+    - Do not make an entity its own ancestor.
+
 ## Resources
 
 | Call                       | Effect                                                 | Throws                  |
@@ -417,6 +448,6 @@ log them and keep running.
 | ----------------- | ------------------------------------------------------------------------------------------- |
 | Component types   | 64 at most (`kMaxComponents` in `ECSConfig.hpp`)                                            |
 | Entities          | 10 000 per world by default (`kDefaultMaxEntities`), or `World(maxEntities)`                |
-| Memory            | rows and versions are reserved at construction (about 2.6 MB for 10 000 entities)           |
+| Memory            | rows, versions and parent links are reserved at construction (about 2.9 MB for 10 000 entities) |
 | Threads           | a World is used by **one thread**. Several worlds can run in different threads.            |
 | Library           | component and resource numbers are global to the program, so the engine must be a **static** library |
