@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <ampersand/render/components/AnimationStateMachine.hpp>
 #include <stdexcept>
 #include <utility>
@@ -28,6 +29,36 @@ bool AnimationStateMachine::isPlayingAction() const {
 }
 
 void AnimationStateMachine::reload() { _playing.clear(); }
+
+void AnimationStateMachine::update(Animation& animation) {
+    if (_action && _playing == *_action && isFinished(animation)) {
+        _action.reset();
+        _playing.clear();
+    }
+    if (!_action) {
+        const auto transition = std::ranges::find_if(
+            transitions, [this](const AnimationTransition& candidate) {
+                return (candidate.from == _current || candidate.from == "*") &&
+                       candidate.condition && candidate.condition(params);
+            });
+        if (transition != transitions.end()) {
+            setCurrent(transition->to);
+        }
+    }
+    const std::string& wanted = _action.value_or(_current);
+    if (wanted == _playing) {
+        return;
+    }
+    const auto clip = states.find(wanted);
+    if (clip == states.end()) {
+        throw std::invalid_argument("AnimationStateMachine has no state '" +
+                                    wanted + "'");
+    }
+    animation = clip->second;
+    animation.elapsed = 0.0F;
+    animation.loop = animation.loop && !_action;
+    _playing = wanted;
+}
 
 void AnimationStateMachine::requireState(const std::string& state) const {
     if (!states.contains(state)) {

@@ -19,8 +19,8 @@ void AnimationSystem::update(core::ecs::World& world) {
             world.add(entity, Animation{});
             world.get<AnimationStateMachine>(entity).reload();
         }
-        updateStateMachine(world.get<AnimationStateMachine>(entity),
-                           world.get<Animation>(entity));
+        world.get<AnimationStateMachine>(entity).update(
+            world.get<Animation>(entity));
     }
     for (const core::ecs::Entity entity : world.owners<Animation>()) {
         auto& animation = world.get<Animation>(entity);
@@ -46,41 +46,6 @@ void AnimationSystem::update(core::ecs::World& world) {
                      animation.frames.size() - 1);
         world.get<Sprite>(entity).source = animation.frames[frame];
     }
-}
-
-void AnimationSystem::updateStateMachine(AnimationStateMachine& machine,
-                                         Animation& animation) {
-    if (machine._action && machine._playing == *machine._action &&
-        isFinished(animation)) {
-        machine._action.reset();
-        machine._playing.clear();
-    }
-    if (!machine._action) {
-        const auto transition = std::ranges::find_if(
-            machine.transitions,
-            [&machine](const AnimationTransition& candidate) {
-                return (candidate.from == machine._current ||
-                        candidate.from == "*") &&
-                       candidate.condition &&
-                       candidate.condition(machine.params);
-            });
-        if (transition != machine.transitions.end()) {
-            machine.setCurrent(transition->to);
-        }
-    }
-    const std::string& wanted = machine._action.value_or(machine._current);
-    if (wanted == machine._playing) {
-        return;
-    }
-    const auto clip = machine.states.find(wanted);
-    if (clip == machine.states.end()) {
-        throw std::invalid_argument("AnimationStateMachine has no state '" +
-                                    wanted + "'");
-    }
-    animation = clip->second;
-    animation.elapsed = 0.0F;
-    animation.loop = animation.loop && !machine._action;
-    machine._playing = wanted;
 }
 
 }  // namespace ampersand::render

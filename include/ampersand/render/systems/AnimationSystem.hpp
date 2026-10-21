@@ -4,9 +4,6 @@
 
 namespace ampersand::render {
 
-struct Animation;
-class AnimationStateMachine;
-
 /**
  * @brief Updates every AnimationStateMachine, then advances every Animation
  * with the dt of the Clock resource and shows its current frame on the
@@ -27,17 +24,6 @@ public:
      * positive, or if a state machine has to play a state it does not have.
      */
     void update(core::ecs::World& world) override;
-
-private:
-    /**
-     * @brief Ends the finished action, applies the first matching transition
-     * if no action plays, then loads the clip to play into `animation` if it
-     * changed.
-     *
-     * @throws std::invalid_argument if the clip to play is not in `states`.
-     */
-    static void updateStateMachine(AnimationStateMachine& machine,
-                                   Animation& animation);
 };
 
 }  // namespace ampersand::render

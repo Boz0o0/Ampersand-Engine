@@ -31,8 +31,6 @@ struct AnimationTransition {
     std::function<bool(const AnimationParams&)> condition;
 };
 
-class AnimationSystem;
-
 /**
  * @brief Picks which clip the entity's Animation plays, driven by the
  * AnimationSystem.
@@ -40,8 +38,8 @@ class AnimationSystem;
  * The base state (current) follows the transitions. An action started with
  * playOnce overrides it, plays once, then gives the base state back. While an
  * action plays, the transitions are paused. When the playing clip changes,
- * the AnimationSystem copies it into the entity's Animation (added if
- * missing) and restarts it.
+ * update copies it into the entity's Animation (added if missing
+ * by the AnimationSystem) and restarts it.
  */
 class AnimationStateMachine {
 public:
@@ -86,9 +84,22 @@ public:
      */
     [[nodiscard]] bool isPlayingAction() const;
 
-    /** @brief Makes the AnimationSystem load the playing clip again from
+    /** @brief Makes the next update load the playing clip again from
      * `states`, from its first frame. */
     void reload();
+
+    /**
+     * @brief Ends the finished action, applies the first matching transition
+     * if no action plays, then loads the clip to play into `animation` if it
+     * changed
+     *
+     * Called by the AnimationSystem once per frame.
+     *
+     * @param animation Animation of the same entity, overwritten (and
+     * restarted) when the playing clip changes.
+     * @throws std::invalid_argument if the clip to play is not in `states`.
+     */
+    void update(Animation& animation);
 
     /** @brief Clips by state name. Call reload after editing the playing
      * one. */
@@ -99,8 +110,6 @@ public:
     AnimationParams params;
 
 private:
-    friend class AnimationSystem;
-
     void requireState(const std::string& state) const;
 
     std::string _current;
