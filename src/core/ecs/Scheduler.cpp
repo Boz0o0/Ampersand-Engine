@@ -23,6 +23,9 @@ void Scheduler::update(float deltaTime) {
     for (const auto& system : _systems) {
         system->update(_world);
     }
+    for (const auto& work : _endOfFrame) {
+        work(_world);
+    }
 }
 
 }  // namespace ampersand::core::ecs

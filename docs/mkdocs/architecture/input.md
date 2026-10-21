@@ -171,9 +171,8 @@ others.
 
 ## Events of the other modules
 
-The engine has no event bus. An event is data of the frame in a resource of the
-World: the module that produces it fills the resource, and the systems that run
-after it read it. The `Pressed` and `Released` sets of the `InputManager`
+An event is data of the frame in a resource of the World: the module that
+produces it fills the resource, and the systems that run after it read it. The `Pressed` and `Released` sets of the `InputManager`
 follow this rule, and so does the `Collisions` resource of
 [Physics](physics.md):
 
@@ -184,9 +183,8 @@ void PlayerSystem::update(ecs::World& world) {
 }
 ```
 
-The game adds its own events the same way, with a resource of its own
-(`struct EnemyDeaths { std::vector<ecs::Entity> entities; };`) that it empties
-at the start of each frame.
+The game adds its own events with an `EventQueue`, emptied at the end of each
+frame by the Scheduler (see [ECS](ecs.md#event-queues)).
 
 ## Limits
 
