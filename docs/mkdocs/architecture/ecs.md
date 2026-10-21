@@ -17,6 +17,7 @@ For why we chose this design, see [Design decisions](../decisions.md#ecs).
 | **System**    | Logic: a class with `update(World&)` that loops over entities.                 |
 | **Scheduler** | Runs the systems in order, once per frame, and fills the `Clock`.              |
 | **Event**     | A message sent by a system to the systems after it, in an `EventQueue`.        |
+| **Command**   | A change to the World recorded by a system, applied at the end of the frame.   |
 | **Resource**  | An object that exists once per world and belongs to no entity (clock, score…). |
 
 Everything is in the `ampersand::core::ecs` namespace. Include
@@ -221,7 +222,20 @@ single read in the entity's row.
     the loop **skips** it, and an `add` can reallocate the list (**undefined
     behaviour**).
 
-    Two safe ways to destroy entities in a system:
+    Three safe ways to destroy entities in a system:
+
+    === "With the CommandQueue"
+
+        ```cpp
+        auto& commands = world.getResource<ecs::CommandQueue>();
+        for (const ecs::Entity enemy : world.owners<Enemy>()) {
+            if (world.get<Health>(enemy).points <= 0) {
+                commands.destroy(enemy);  // destroyed at the end of the frame
+            }
+        }
+        ```
+
+        See [Command queue](#command-queue).
 
     === "After the loop"
 
@@ -260,7 +274,7 @@ time given to `update`, and `elapsed` grows by `dt`.
 
 | Call                 | Effect                                                         | Throws                  |
 | -------------------- | -------------------------------------------------------------- | ----------------------- |
-| `Scheduler(world)`   | adds a `Clock` to the World if it has none                     | never                   |
+| `Scheduler(world)`   | adds a `Clock` and a `CommandQueue` to the World if it has none | never                  |
 | `add<T>(args...)`    | builds the system `T` after the others and returns a reference | what `T` throws         |
 | `update(deltaTime)`  | sets the `Clock`, then runs every system in order              | `std::invalid_argument` if `deltaTime` is negative or not finite, and what the systems throw |
 
@@ -351,6 +365,44 @@ system. So:
 
 Without a Scheduler, add the resource with `world.addResource<ecs::EventQueue<T>>()`
 and call `clear()` at the end of each frame.
+
+## Command queue
+
+A **command** is a change to the World (destroy an entity...) that a system
+records in the `CommandQueue` resource instead of doing it at once. The
+Scheduler adds the queue and applies its commands, in the order they were
+recorded, at the end of each frame. So a system can change the World while it
+loops over `owners<T>()`:
+
+```cpp
+// in DamageSystem::update
+for (const ecs::Entity enemy : world.owners<Enemy>()) {
+    if (world.get<Health>(enemy).points <= 0) {
+        world.getResource<ecs::CommandQueue>().destroy(enemy);
+    }
+}
+```
+
+| Call              | Effect                                                     | Throws |
+| ----------------- | ---------------------------------------------------------- | ------ |
+| `destroy(e)`      | records the destruction of `e`                             | never  |
+| `apply(world)`    | runs the commands in order, then empties the queue         | never  |
+
+`destroy` skips an entity that is already dead when the queue is applied, so
+two systems can destroy the same entity in the same frame.
+
+Every command follows the same rules:
+
+- a command changes nothing until the end of the frame: the systems after the
+  one that records it still see the World as it was (a destroyed entity is
+  still alive, to read its position, add to the score...);
+- at the end of a frame, the Scheduler applies the `CommandQueue`, **then**
+  empties the event queues;
+- a command recorded between two frames is applied at the end of the next one;
+- if a system throws, the frame stops and the queue is not applied.
+
+Without a Scheduler, add the resource with `world.addResource<ecs::CommandQueue>()`
+and call `apply(world)` at the end of each frame.
 
 ## Resources
 
