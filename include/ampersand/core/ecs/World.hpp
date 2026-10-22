@@ -68,11 +68,13 @@ public:
      * @brief Makes an entity the child of another one, or a root.
      *
      * Removes the child from the children of its old parent and adds it to
-     * the ones of the new parent. Do not make an entity its own ancestor.
+     * the ones of the new parent.
      *
      * @param child Entity to attach.
      * @param parent New parent, or a null Entity to make the child a root.
      * @throws InvalidEntity if the child or the parent is dead.
+     * @throws HierarchyCycle if the parent is the child or one of its
+     * descendants.
      */
     void setParent(Entity child, Entity parent);
 

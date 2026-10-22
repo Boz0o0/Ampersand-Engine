@@ -69,6 +69,12 @@ void World::setParent(Entity child, Entity parent) {
     if (parent != Entity{}) {
         requireAlive(parent, "setParent");
     }
+    for (auto ancestor = parent; ancestor != Entity{};
+         ancestor = _parents[ancestor.index]) {
+        if (ancestor == child) {
+            throw HierarchyCycle(describe(child) + " in setParent");
+        }
+    }
     auto& current = _parents[child.index];
     if (current == parent) {
         return;

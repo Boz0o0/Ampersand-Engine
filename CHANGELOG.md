@@ -30,7 +30,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Core**: `Scheduler`, which runs the systems in the order they were added and fills the `Clock`, and `FrameTimer`, which measures the real time of a frame, at most a given value.
 - **Render**: `AnimationStateMachine` component, run by the `AnimationSystem`: named clips, ordered transitions on `params` (`"*"` for any state) and one-shot actions with `playOnce`.
 - **Core**: `EventQueue<T>`, events sent by a system to the systems after it, and `Scheduler::addEventQueue<T>()`, which empties the queue at the end of every frame.
-- **Core**: parent and children of entities, stored in the `World`: `setParent`, `parent` and `children`, and `destroy` destroys the children of the entity.
+- **Core**: parent and children of entities, stored in the `World`: `setParent`, `parent` and `children`, `destroy` destroys the children of the entity, and `setParent` throws `HierarchyCycle` instead of creating a cycle.
 - **Render**: `framesFromGrid` helper and `FrameGrid` to build `Animation::frames` from a spritesheet grid of same-sized frames.
 - **Input**: controllers: `JoystickButton` and `JoystickAxis`, `JoystickButtonPressed`, `JoystickButtonReleased` and `JoystickMoved` events, kept per controller and read with `getJoystickButton`, `getJoystickButtonDown`, `getJoystickButtonUp` and `getJoystickAxis`.
 - **Input**: `get` functions on `InputManager` for keys and mouse buttons (`getKey`, `getKeyDown`, `getKeyUp`, `getMouseButton`...) and for any `Binding` (`getBinding`, `getBindingDown`, `getBindingUp`).

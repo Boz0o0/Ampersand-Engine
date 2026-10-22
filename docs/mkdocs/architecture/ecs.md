@@ -65,6 +65,8 @@ graph TD
     W[World] --> R["Rows<br/>1 per entity × 64 cells"]
     W --> V["Versions<br/>1 per row"]
     W --> F["Free rows<br/>FIFO queue"]
+    W --> PA["Parents<br/>1 per row"]
+    W --> CH["Children<br/>1 list per row"]
     W --> P["Pools<br/>1 per component type, 64 max"]
     W --> RS["Resources<br/>1 per resource type, no limit"]
     P --> P1["e.g. ComponentPool&lt;Transform&gt;<br/>_data + _owners"]
@@ -76,6 +78,8 @@ graph TD
 | Rows      | `_rows`      | `std::vector<std::array<std::uint32_t, kMaxComponents>>`      |
 | Versions  | `_versions`  | `std::vector<std::uint32_t>`                                  |
 | Free rows | `_free`      | `std::queue<std::uint32_t>`                                   |
+| Parents   | `_parents`   | `std::vector<Entity>`                                         |
+| Children  | `_children`  | `std::vector<std::vector<Entity>>`                            |
 | Pools     | `_pools`     | `std::array<std::unique_ptr<IComponentPool>, kMaxComponents>` |
 | Resources | `_resources` | `std::vector<std::unique_ptr<IResource>>`                     |
 
@@ -360,28 +364,45 @@ component to add. It is only a link: the `Transform` of every entity stays in
 world space.
 
 ```cpp
-world.setParent(turret, ship);
+const ecs::Entity ship = world.create();
+const ecs::Entity turret = world.create();
+world.setParent(turret, ship);  // the turret is mounted on the ship
 
-world.parent(turret);                          // ship
-for (const auto child : world.children(ship)) { /* turret */ }
+// The Transform stays in world space: move the children with their parent
+for (const auto child : world.children(ship)) {
+    world.get<core::Transform>(child).position.x += 10.0F;
+}
 
-world.setParent(turret, ecs::Entity{});        // turret is a root again
-world.destroy(ship);                           // ship and all its children
+// A bullet hit the turret: find the ship it is mounted on
+const ecs::Entity owner = world.parent(turret);
+if (owner != ecs::Entity{}) {
+    world.destroy(owner);  // destroys the ship and the turret
+}
 ```
 
-| Call                       | Effect                                                                                       | Throws          |
-| -------------------------- | -------------------------------------------------------------------------------------------- | --------------- |
-| `setParent(child, parent)` | removes `child` from its old parent and adds it to `parent` (a null `Entity` makes it a root) | `InvalidEntity` |
-| `parent(e)`                | the parent, or a null `Entity` for a root                                                    | `InvalidEntity` |
-| `children(e)`              | the direct children, in the order they were attached (empty if none)                         | `InvalidEntity` |
-| `destroy(e)`               | also removes `e` from its parent and destroys its children                                   | `InvalidEntity` |
+A child can also be detached before its parent is destroyed:
+
+```cpp
+world.setParent(turret, ecs::Entity{});  // the turret falls off: it is a root
+world.destroy(ship);                     // the turret survives
+```
+
+| Call                       | Effect                                                                                                                                                                             | Throws                            |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `setParent(child, parent)` | Makes `child` a child of `parent`: removes it from the children of its old parent and adds it after the other children of `parent`. With a null `Entity` as `parent`, `child` becomes a root. | `InvalidEntity`, `HierarchyCycle` |
+| `parent(e)`                | Returns the parent of `e`, or a null `Entity` if `e` is a root.                                                                                                                    | `InvalidEntity`                   |
+| `children(e)`              | Returns the direct children of `e` (not their children), in the order they were attached. Empty if `e` has none.                                                                  | `InvalidEntity`                   |
+| `destroy(e)`               | Removes `e` from the children of its parent, then destroys `e` and all its descendants.                                                                                            | `InvalidEntity`                   |
+
+`setParent` throws `HierarchyCycle` if `parent` is `child` itself or one of its
+descendants, since an entity cannot be its own ancestor. The World is left
+unchanged.
 
 !!! warning
     - `children(e)` is the World's own list: inside a loop over it, do not
       `setParent` or `destroy` a child. Loop over a copy instead.
     - `destroy` may destroy other entities (the children): inside a loop over
       `owners<T>()`, destroy after the loop.
-    - Do not make an entity its own ancestor.
 
 ## Resources
 
@@ -441,6 +462,7 @@ log them and keep running.
 | `ComponentLimitReached`  | first use of a 65th component type                                 |
 | `ResourceAlreadyExists`  | `addResource` of a type the World already has                      |
 | `ResourceNotFound`       | `getResource` or `removeResource` of a type the World does not have |
+| `HierarchyCycle`         | `setParent` with the child itself or one of its descendants as parent |
 
 ## Limits
 
