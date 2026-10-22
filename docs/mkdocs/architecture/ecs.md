@@ -378,10 +378,20 @@ loops over `owners<T>()`:
 // in DamageSystem::update
 for (const ecs::Entity enemy : world.owners<Enemy>()) {
     if (world.get<Health>(enemy).points <= 0) {
+        world.getResource<ecs::EventQueue<Died>>().send({.entity = enemy});
         world.getResource<ecs::CommandQueue>().destroy(enemy);
     }
 }
+
+// in ExplosionSystem::update, after DamageSystem: the entity can still be used
+for (const Died& died : world.getResource<ecs::EventQueue<Died>>().read()) {
+    spawnExplosion(world, world.get<ecs::Transform>(died.entity).position);
+}
 ```
+
+The event and the command work together: the event tells the other systems
+what happened, the command does the change at the end of the frame.
+
 
 | Call              | Effect                                                     | Throws |
 | ----------------- | ---------------------------------------------------------- | ------ |
