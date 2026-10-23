@@ -24,6 +24,10 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-23
+
+Frame loop with the `Scheduler`, event and command queues, controllers and action map for the input, layers and animation state machine for the render.
+
 ### Added
 
 - **Render**: `layer` field (default 0) on every drawable: `Sprite`, `Text`, `Rectangle`, `Circle` and `Line`.
@@ -73,6 +77,7 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Boz0o0/Ampersand-Engine/releases/tag/v0.1.0
