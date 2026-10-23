@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ampersand/core/ecs/CommandQueue.hpp>
 #include <ampersand/core/ecs/EventQueue.hpp>
 #include <ampersand/core/ecs/ISystem.hpp>
 #include <ampersand/core/ecs/World.hpp>
@@ -12,16 +13,16 @@ namespace ampersand::core::ecs {
 
 /**
  * @brief Runs the systems of a World in the order they were added, one frame
- * at a time, keeps the Clock resource up to date and empties the event queues
- * at the end of each frame.
+ * at a time, keeps the Clock resource up to date, then applies the
+ * CommandQueue and empties the event queues at the end of each frame.
  *
  * The World must outlive the Scheduler.
  */
 class Scheduler {
 public:
     /**
-     * @brief Creates a Scheduler with no system, and adds a Clock resource to
-     * the World if it has none.
+     * @brief Creates a Scheduler with no system, and adds a Clock and a
+     * CommandQueue resource to the World if it has none.
      *
      * @param world World given to every system.
      */
@@ -66,10 +67,11 @@ public:
 
     /**
      * @brief Runs one frame: sets the Clock (dt = deltaTime, elapsed +=
-     * deltaTime), runs every system in order, then empties the event queues.
+     * deltaTime), runs every system in order, applies the CommandQueue, then
+     * empties the event queues.
      *
      * An exception thrown by a system stops the frame and goes to the caller:
-     * the event queues are not emptied.
+     * the CommandQueue is not applied and the event queues are not emptied.
      *
      * @param deltaTime Seconds since the previous frame.
      * @throws std::invalid_argument if deltaTime is negative or not finite.
