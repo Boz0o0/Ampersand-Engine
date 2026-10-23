@@ -8,17 +8,18 @@ For why we chose this design, see [Design decisions](../decisions.md#ecs).
 
 ## Concepts
 
-| Concept       | What it is                                                                     |
-| ------------- | ------------------------------------------------------------------------------ |
-| **Entity**    | A handle (`index` + `version`). It has no data or behaviour of its own.        |
-| **Component** | A plain data struct (`Transform`, `Health`, `Sprite`…) attached to an entity.  |
-| **Pool**      | The storage of one component type: all the `Transform`s together, packed.      |
+| Concept       | What it is                                                                      |
+| ------------- | ------------------------------------------------------------------------------- |
+| **Entity**    | A handle (`index` + `version`). It has no data or behaviour of its own.         |
+| **Component** | A plain data struct (`Transform`, `Health`, `Sprite`…) attached to an entity.   |
+| **Pool**      | The storage of one component type: all the `Transform`s together, packed.       |
 | **World**     | Owns everything: entities, their rows and parents, the pools and the resources. |
-| **System**    | Logic: a class with `update(World&)` that loops over entities.                 |
-| **Scheduler** | Runs the systems in order, once per frame, and fills the `Clock`.              |
-| **Event**     | A message sent by a system to the systems after it, in an `EventQueue`.        |
-| **Resource**  | An object that exists once per world and belongs to no entity (clock, score…). |
-| **Hierarchy** | Parent/child links between entities (a turret on a ship), kept by the World.   |
+| **System**    | Logic: a class with `update(World&)` that loops over entities.                  |
+| **Scheduler** | Runs the systems in order, once per frame, and fills the `Clock`.               |
+| **Event**     | A message sent by a system to the systems after it, in an `EventQueue`.         |
+| **Command**   | A change to the World recorded by a system, applied at the end of the frame.    |
+| **Resource**  | An object that exists once per world and belongs to no entity (clock, score…).  |
+| **Hierarchy** | Parent/child links between entities (a turret on a ship), kept by the World.    |
 
 Everything is in the `ampersand::core::ecs` namespace. Include
 `<ampersand/core/ecs/World.hpp>` to use the ECS, and
@@ -86,11 +87,11 @@ graph TD
 
 ## Entities
 
-| Call         | Effect                                                      | Throws               |
-| ------------ | ----------------------------------------------------------- | -------------------- |
-| `create()`   | new entity, with no component                               | `EntityLimitReached` |
-| `destroy(e)` | removes all its components, frees its row, then destroys its children ([Hierarchy](#hierarchy)) | `InvalidEntity` |
-| `alive(e)`   | `true` if the handle still designates a live entity         | never                |
+| Call         | Effect                                                                                          | Throws               |
+| ------------ | ----------------------------------------------------------------------------------------------- | -------------------- |
+| `create()`   | new entity, with no component                                                                   | `EntityLimitReached` |
+| `destroy(e)` | removes all its components, frees its row, then destroys its children ([Hierarchy](#hierarchy)) | `InvalidEntity`      |
+| `alive(e)`   | `true` if the handle still designates a live entity                                             | never                |
 
 ### The handle
 
@@ -108,19 +109,19 @@ version is the current version of its row.
 
 Example: a homing missile keeps the handle of its target.
 
-| Step                              | Version of row 42 | Handles                                         |
-| --------------------------------- | ----------------- | ----------------------------------------------- |
-| An enemy is created in row 42     | 1                 | enemy = `{42, 1}`, stored by the missile        |
-| The enemy is destroyed            | **2**             | `{42, 1}` is dead                               |
-| A power-up is created in row 42   | 2                 | power-up = `{42, 2}`                            |
-| The missile checks its target     | 2                 | `{42, 1}` ≠ `{42, 2}` → dead, not the power-up  |
+| Step                            | Version of row 42 | Handles                                        |
+| ------------------------------- | ----------------- | ---------------------------------------------- |
+| An enemy is created in row 42   | 1                 | enemy = `{42, 1}`, stored by the missile       |
+| The enemy is destroyed          | **2**             | `{42, 1}` is dead                              |
+| A power-up is created in row 42 | 2                 | power-up = `{42, 2}`                           |
+| The missile checks its target   | 2                 | `{42, 1}` ≠ `{42, 2}` → dead, not the power-up |
 
 The same check protects the network code from late packets (a `DESTROY 42`
 arriving after a new entity took row 42).
 
 !!! tip "The null entity"
-    Versions start at 1, so `Entity{}` (`{0, 0}`) is never alive. Use it as
-    "no entity", for example in a `Target` component that has no target yet.
+Versions start at 1, so `Entity{}` (`{0, 0}`) is never alive. Use it as
+"no entity", for example in a `Target` component that has no target yet.
 
 ### Free rows
 
@@ -172,7 +173,8 @@ Rows                                   ComponentPool<Transform>
 
 The row plays the role of a signature (a cell that is not 0 is a set bit) and
 also gives the position, so there is nothing else to keep in sync. Thanks to the
-+ 1, a new row filled with zeros is an entity with no component.
+
+- 1, a new row filled with zeros is an entity with no component.
 
 ### Removing a component
 
@@ -220,13 +222,26 @@ move than have a position), and check the others with `has`: each check is a
 single read in the entity's row.
 
 !!! warning "Changing a pool while looping on it"
-    `owners<T>()` is the pool's own list, not a copy. Inside a loop on
-    `owners<T>()`, do **not** `remove<T>`, `add<T>` or `destroy` an entity that
-    has a `T`: the swap-and-pop moves the last entity into the current slot and
-    the loop **skips** it, and an `add` can reallocate the list (**undefined
-    behaviour**).
+`owners<T>()` is the pool's own list, not a copy. Inside a loop on
+`owners<T>()`, do **not** `remove<T>`, `add<T>` or `destroy` an entity that
+has a `T`: the swap-and-pop moves the last entity into the current slot and
+the loop **skips** it, and an `add` can reallocate the list (**undefined
+behaviour**).
 
-    Two safe ways to destroy entities in a system:
+    Three safe ways to destroy entities in a system:
+
+    === "With the CommandQueue"
+
+        ```cpp
+        auto& commands = world.getResource<ecs::CommandQueue>();
+        for (const ecs::Entity enemy : world.owners<Enemy>()) {
+            if (world.get<Health>(enemy).points <= 0) {
+                commands.destroy(enemy);  // destroyed at the end of the frame
+            }
+        }
+        ```
+
+        See [Command queue](#command-queue).
 
     === "After the loop"
 
@@ -263,11 +278,11 @@ The `Scheduler` owns the systems and runs them **in the order they were added**,
 once per frame. Before the systems, it sets the `Clock` resource: `dt` is the
 time given to `update`, and `elapsed` grows by `dt`.
 
-| Call                 | Effect                                                         | Throws                  |
-| -------------------- | -------------------------------------------------------------- | ----------------------- |
-| `Scheduler(world)`   | adds a `Clock` to the World if it has none                     | never                   |
-| `add<T>(args...)`    | builds the system `T` after the others and returns a reference | what `T` throws         |
-| `update(deltaTime)`  | sets the `Clock`, then runs every system in order              | `std::invalid_argument` if `deltaTime` is negative or not finite, and what the systems throw |
+| Call                | Effect                                                          | Throws                                                                                       |
+| ------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `Scheduler(world)`  | adds a `Clock` and a `CommandQueue` to the World if it has none | never                                                                                        |
+| `add<T>(args...)`   | builds the system `T` after the others and returns a reference  | what `T` throws                                                                              |
+| `update(deltaTime)` | sets the `Clock`, then runs every system in order               | `std::invalid_argument` if `deltaTime` is negative or not finite, and what the systems throw |
 
 The order matters: a system sees what the systems before it did in the same
 frame (move, then test the collisions, then apply the damage).
@@ -310,8 +325,8 @@ The time comes from the game, so the same loop works on both sides:
     same result.
 
 !!! warning
-    Do not call `add` from a system: the list of systems would change while the
-    Scheduler loops on it.
+Do not call `add` from a system: the list of systems would change while the
+Scheduler loops on it.
 
 ## Event queues
 
@@ -337,12 +352,12 @@ for (const Died& died : world.getResource<ecs::EventQueue<Died>>().read()) {
 }
 ```
 
-| Call                          | Effect                                                   | Throws                  |
-| ----------------------------- | -------------------------------------------------------- | ----------------------- |
-| `scheduler.addEventQueue<T>()` | adds the `EventQueue<T>` resource and returns it        | `ResourceAlreadyExists` |
-| `send(event)`                 | adds the event after the others                          | never                   |
-| `read()`                      | the events sent since the last clear, in order           | never                   |
-| `clear()`                     | removes every event (the Scheduler does it)              | never                   |
+| Call                           | Effect                                           | Throws                  |
+| ------------------------------ | ------------------------------------------------ | ----------------------- |
+| `scheduler.addEventQueue<T>()` | adds the `EventQueue<T>` resource and returns it | `ResourceAlreadyExists` |
+| `send(event)`                  | adds the event after the others                  | never                   |
+| `read()`                       | the events sent since the last clear, in order   | never                   |
+| `clear()`                      | removes every event (the Scheduler does it)      | never                   |
 
 An event lives **one frame**: the Scheduler empties the queues after the last
 system. So:
@@ -356,6 +371,100 @@ system. So:
 
 Without a Scheduler, add the resource with `world.addResource<ecs::EventQueue<T>>()`
 and call `clear()` at the end of each frame.
+
+## Command queue
+
+A **command** is a change to the World (destroy an entity...) that a system
+records in the `CommandQueue` resource instead of doing it at once. The
+Scheduler adds the queue and applies its commands, in the order they were
+recorded, at the end of each frame. So a system can change the World while it
+loops over `owners<T>()`:
+
+```cpp
+// in DamageSystem::update
+for (const ecs::Entity enemy : world.owners<Enemy>()) {
+    if (world.get<Health>(enemy).points <= 0) {
+        world.getResource<ecs::EventQueue<Died>>().send({.entity = enemy});
+        world.getResource<ecs::CommandQueue>().destroy(enemy);
+    }
+}
+
+// in ExplosionSystem::update, after DamageSystem: the entity can still be used
+for (const Died& died : world.getResource<ecs::EventQueue<Died>>().read()) {
+    spawnExplosion(world, world.get<ecs::Transform>(died.entity).position);
+}
+```
+
+The event and the command work together: the event tells the other systems
+what happened, the command does the change at the end of the frame.
+
+| Call           | Effect                                             | Throws |
+| -------------- | -------------------------------------------------- | ------ |
+| `destroy(e)`   | records the destruction of `e`                     | never  |
+| `apply(world)` | runs the commands in order, then empties the queue | never  |
+
+`destroy` skips an entity that is already dead when the queue is applied, so
+two systems can destroy the same entity in the same frame.
+
+Every command follows the same rules:
+
+- a command changes nothing until the end of the frame: the systems after the
+  one that records it still see the World as it was (a destroyed entity is
+  still alive, to read its position, add to the score...);
+- at the end of a frame, the Scheduler applies the `CommandQueue`, **then**
+  empties the event queues;
+- a command recorded between two frames is applied at the end of the next one;
+- if a system throws, the frame stops and the queue is not applied.
+
+Without a Scheduler, add the resource with `world.addResource<ecs::CommandQueue>()`
+and call `apply(world)` at the end of each frame.
+
+## Command queue
+
+A **command** is a change to the World (destroy an entity...) that a system
+records in the `CommandQueue` resource instead of doing it at once. The
+Scheduler adds the queue and applies its commands, in the order they were
+recorded, at the end of each frame. So a system can change the World while it
+loops over `owners<T>()`:
+
+```cpp
+// in DamageSystem::update
+for (const ecs::Entity enemy : world.owners<Enemy>()) {
+    if (world.get<Health>(enemy).points <= 0) {
+        world.getResource<ecs::EventQueue<Died>>().send({.entity = enemy});
+        world.getResource<ecs::CommandQueue>().destroy(enemy);
+    }
+}
+
+// in ExplosionSystem::update, after DamageSystem: the entity can still be used
+for (const Died& died : world.getResource<ecs::EventQueue<Died>>().read()) {
+    spawnExplosion(world, world.get<ecs::Transform>(died.entity).position);
+}
+```
+
+The event and the command work together: the event tells the other systems
+what happened, the command does the change at the end of the frame.
+
+| Call           | Effect                                             | Throws |
+| -------------- | -------------------------------------------------- | ------ |
+| `destroy(e)`   | records the destruction of `e`                     | never  |
+| `apply(world)` | runs the commands in order, then empties the queue | never  |
+
+`destroy` skips an entity that is already dead when the queue is applied, so
+two systems can destroy the same entity in the same frame.
+
+Every command follows the same rules:
+
+- a command changes nothing until the end of the frame: the systems after the
+  one that records it still see the World as it was (a destroyed entity is
+  still alive, to read its position, add to the score...);
+- at the end of a frame, the Scheduler applies the `CommandQueue`, **then**
+  empties the event queues;
+- a command recorded between two frames is applied at the end of the next one;
+- if a system throws, the frame stops and the queue is not applied.
+
+Without a Scheduler, add the resource with `world.addResource<ecs::CommandQueue>()`
+and call `apply(world)` at the end of each frame.
 
 ## Hierarchy
 
@@ -393,31 +502,29 @@ world.setParent(turret, ecs::Entity{});  // the turret falls off: it is a root
 world.destroy(ship);                     // the turret survives
 ```
 
-| Call                       | Effect                                                                               | Throws                            |
-| -------------------------- | ------------------------------------------------------------------------------------ | --------------------------------- |
-| `setParent(child, parent)` | detaches `child` from its old parent and adds it last to `parent` (null: a root)     | `InvalidEntity`, `HierarchyCycle` |
-| `parent(e)`                | returns the parent, or a null `Entity` for a root                                    | `InvalidEntity`                   |
-| `children(e)`              | returns the direct children, in the order they were attached                         | `InvalidEntity`                   |
-| `destroy(e)`               | detaches `e` from its parent, then destroys it and all its descendants               | `InvalidEntity`                   |
+| Call                       | Effect                                                                           | Throws                            |
+| -------------------------- | -------------------------------------------------------------------------------- | --------------------------------- |
+| `setParent(child, parent)` | detaches `child` from its old parent and adds it last to `parent` (null: a root) | `InvalidEntity`, `HierarchyCycle` |
+| `parent(e)`                | returns the parent, or a null `Entity` for a root                                | `InvalidEntity`                   |
+| `children(e)`              | returns the direct children, in the order they were attached                     | `InvalidEntity`                   |
+| `destroy(e)`               | detaches `e` from its parent, then destroys it and all its descendants           | `InvalidEntity`                   |
 
 `setParent` throws `HierarchyCycle` if `parent` is `child` itself or one of its
 descendants, since an entity cannot be its own ancestor. The World is left
 unchanged.
 
-!!! warning
-    - `children(e)` is the World's own list: inside a loop over it, do not
-      `setParent` or `destroy` a child. Loop over a copy instead.
-    - `destroy` may destroy other entities (the children): inside a loop over
-      `owners<T>()`, destroy after the loop.
+!!! warning - `children(e)` is the World's own list: inside a loop over it, do not
+`setParent` or `destroy` a child. Loop over a copy instead. - `destroy` may destroy other entities (the children): inside a loop over
+`owners<T>()`, destroy after the loop.
 
 ## Resources
 
-| Call                       | Effect                                                 | Throws                  |
-| -------------------------- | ------------------------------------------------------ | ----------------------- |
-| `addResource<T>(args...)`  | builds the `T` in the World and returns a reference    | `ResourceAlreadyExists` |
-| `getResource<T>()`         | reference to the resource                              | `ResourceNotFound`      |
-| `hasResource<T>()`         | `true` if the World has a `T`                          | never                   |
-| `removeResource<T>()`      | destroys the resource                                  | `ResourceNotFound`      |
+| Call                      | Effect                                              | Throws                  |
+| ------------------------- | --------------------------------------------------- | ----------------------- |
+| `addResource<T>(args...)` | builds the `T` in the World and returns a reference | `ResourceAlreadyExists` |
+| `getResource<T>()`        | reference to the resource                           | `ResourceNotFound`      |
+| `hasResource<T>()`        | `true` if the World has a `T`                       | never                   |
+| `removeResource<T>()`     | destroys the resource                               | `ResourceNotFound`      |
 
 ```cpp
 auto& score = world.addResource<Score>();
@@ -432,20 +539,20 @@ There is one instance per type and per world. The resource is built directly in
 the World, so types that cannot be copied or moved (window, socket) work.
 
 !!! note "Interfaces"
-    Resources are found by their **exact type**: after
-    `addResource<SfmlAudioEngine>(...)`, `getResource<IAudioEngine>()` throws
-    `ResourceNotFound`. To share an object through its interface, put a
-    reference to the interface in a resource (see`AudioListener` ([Audio](audio.md)) and
-    `Renderer` ([Render](render.md#window))).
+Resources are found by their **exact type**: after
+`addResource<SfmlAudioEngine>(...)`, `getResource<IAudioEngine>()` throws
+`ResourceNotFound`. To share an object through its interface, put a
+reference to the interface in a resource (see`AudioListener` ([Audio](audio.md)) and
+`Renderer` ([Render](render.md#window))).
 
 ## Entities as keys
 
 `Entity` can be used in standard containers:
 
-| Container                                       | Uses                                       |
-| ----------------------------------------------- | ------------------------------------------ |
-| `std::unordered_map<Entity, …>`, `unordered_set` | `std::hash<Entity>` (hash of the index)   |
-| `std::map<Entity, …>`, `std::set`, `std::sort`  | `<=>`: index, then version                 |
+| Container                                        | Uses                                    |
+| ------------------------------------------------ | --------------------------------------- |
+| `std::unordered_map<Entity, …>`, `unordered_set` | `std::hash<Entity>` (hash of the index) |
+| `std::map<Entity, …>`, `std::set`, `std::sort`   | `<=>`: index, then version              |
 
 ```cpp
 std::unordered_set<ecs::Entity> alreadyHit;  // enemies hit by a piercing laser
@@ -459,23 +566,23 @@ handle never finds the data of the new entity.
 Every exception derives from `ECSError`, so a server can catch errors per system,
 log them and keep running.
 
-| Exception                | When                                                               |
-| ------------------------ | ------------------------------------------------------------------ |
-| `InvalidEntity`          | dead, null or out-of-range entity (a double `destroy` included)    |
-| `ComponentAlreadyExists` | `add` of a component the entity already has                        |
-| `ComponentNotFound`      | `get` or `remove` of a component the entity does not have          |
-| `EntityLimitReached`     | `create` when the world is full                                    |
-| `ComponentLimitReached`  | first use of a 65th component type                                 |
-| `ResourceAlreadyExists`  | `addResource` of a type the World already has                      |
-| `ResourceNotFound`       | `getResource` or `removeResource` of a type the World does not have |
+| Exception                | When                                                                  |
+| ------------------------ | --------------------------------------------------------------------- |
+| `InvalidEntity`          | dead, null or out-of-range entity (a double `destroy` included)       |
+| `ComponentAlreadyExists` | `add` of a component the entity already has                           |
+| `ComponentNotFound`      | `get` or `remove` of a component the entity does not have             |
+| `EntityLimitReached`     | `create` when the world is full                                       |
+| `ComponentLimitReached`  | first use of a 65th component type                                    |
+| `ResourceAlreadyExists`  | `addResource` of a type the World already has                         |
+| `ResourceNotFound`       | `getResource` or `removeResource` of a type the World does not have   |
 | `HierarchyCycle`         | `setParent` with the child itself or one of its descendants as parent |
 
 ## Limits
 
-| Rule              | Value                                                                                       |
-| ----------------- | ------------------------------------------------------------------------------------------- |
-| Component types   | 64 at most (`kMaxComponents` in `ECSConfig.hpp`)                                            |
-| Entities          | 10 000 per world by default (`kDefaultMaxEntities`), or `World(maxEntities)`                |
-| Memory            | rows, versions and parent links are reserved at construction (about 2.9 MB for 10 000 entities) |
-| Threads           | a World is used by **one thread**. Several worlds can run in different threads.            |
-| Library           | component and resource numbers are global to the program, so the engine must be a **static** library |
+| Rule            | Value                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| Component types | 64 at most (`kMaxComponents` in `ECSConfig.hpp`)                                                     |
+| Entities        | 10 000 per world by default (`kDefaultMaxEntities`), or `World(maxEntities)`                         |
+| Memory          | rows, versions and parent links are reserved at construction (about 2.9 MB for 10 000 entities)      |
+| Threads         | a World is used by **one thread**. Several worlds can run in different threads.                      |
+| Library         | component and resource numbers are global to the program, so the engine must be a **static** library |

@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 
+#include <ampersand/core/ecs/CommandQueue.hpp>
 #include <ampersand/core/ecs/ECSExceptions.hpp>
+#include <ampersand/core/ecs/Entity.hpp>
 #include <ampersand/core/ecs/EventQueue.hpp>
 #include <ampersand/core/ecs/ISystem.hpp>
 #include <ampersand/core/ecs/Scheduler.hpp>
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/core/resources/Clock.hpp>
+#include <cstddef>
 #include <limits>
 #include <stdexcept>
 #include <vector>
@@ -13,6 +16,8 @@
 namespace {
 
 using ampersand::core::Clock;
+using ampersand::core::ecs::CommandQueue;
+using ampersand::core::ecs::Entity;
 using ampersand::core::ecs::EventQueue;
 using ampersand::core::ecs::ISystem;
 using ampersand::core::ecs::ResourceAlreadyExists;
@@ -78,6 +83,45 @@ public:
 
     /** @brief Values of the events read during the last frame. */
     std::vector<int> seen;
+};
+
+/** @brief Component of the tests. */
+struct Tag {};
+
+/** @brief Destroys, with the CommandQueue, every entity that has a Tag. */
+class DestroyTaggedSystem final : public ISystem {
+public:
+    void update(World& world) override {
+        for (const Entity entity : world.owners<Tag>()) {
+            world.getResource<CommandQueue>().destroy(entity);
+            ++visited;
+        }
+    }
+
+    /** @brief Entities seen by the loop, over every frame. */
+    int visited = 0;
+};
+
+/** @brief Counts the entities that have a Tag, during the last frame. */
+class CountTaggedSystem final : public ISystem {
+public:
+    void update(World& world) override { seen = world.owners<Tag>().size(); }
+
+    std::size_t seen = 0;
+};
+
+/** @brief Destroys an entity, then sends a Hit, to check the end order. */
+class DestroyAndSendSystem final : public ISystem {
+public:
+    explicit DestroyAndSendSystem(Entity entity) : _entity(entity) {}
+
+    void update(World& world) override {
+        world.getResource<CommandQueue>().destroy(_entity);
+        world.getResource<EventQueue<Hit>>().send({.value = 1});
+    }
+
+private:
+    Entity _entity;
 };
 
 }  // namespace
@@ -231,4 +275,74 @@ TEST(Scheduler, KeepsTheEventsWhenASystemThrows) {
 
     EXPECT_THROW(scheduler.update(0.0F), std::runtime_error);
     EXPECT_EQ(queue.read().size(), 1U);
+}
+
+TEST(Scheduler, AddsACommandQueueToTheWorld) {
+    World world;
+
+    const Scheduler scheduler(world);
+
+    EXPECT_TRUE(world.hasResource<CommandQueue>());
+}
+
+TEST(Scheduler, KeepsTheCommandQueueOfTheWorld) {
+    World world;
+    const CommandQueue& commands = world.addResource<CommandQueue>();
+
+    const Scheduler scheduler(world);
+
+    EXPECT_EQ(&commands, &world.getResource<CommandQueue>());
+}
+
+TEST(Scheduler, DestroysAtTheEndOfTheFrame) {
+    World world;
+    Scheduler scheduler(world);
+    for (int index = 0; index < 3; ++index) {
+        world.add(world.create(), Tag{});
+    }
+    const DestroyTaggedSystem& destroyer = scheduler.add<DestroyTaggedSystem>();
+    const CountTaggedSystem& counter = scheduler.add<CountTaggedSystem>();
+
+    scheduler.update(0.0F);
+
+    EXPECT_EQ(destroyer.visited, 3);  // the loop saw every entity
+    EXPECT_EQ(counter.seen, 3U);      // a later system still sees them
+    EXPECT_TRUE(world.owners<Tag>().empty());
+}
+
+TEST(Scheduler, AppliesTheCommandsSentBetweenTwoFramesInTheNextOne) {
+    World world;
+    Scheduler scheduler(world);
+    const Entity entity = world.create();
+    world.getResource<CommandQueue>().destroy(entity);
+
+    EXPECT_TRUE(world.alive(entity));
+    scheduler.update(0.0F);
+
+    EXPECT_FALSE(world.alive(entity));
+}
+
+TEST(Scheduler, AppliesTheCommandsBeforeEmptyingTheEventQueues) {
+    World world;
+    Scheduler scheduler(world);
+    const EventQueue<Hit>& queue = scheduler.addEventQueue<Hit>();
+    const Entity entity = world.create();
+    scheduler.add<DestroyAndSendSystem>(entity);
+
+    scheduler.update(0.0F);
+
+    EXPECT_FALSE(world.alive(entity));
+    EXPECT_TRUE(queue.read().empty());
+}
+
+TEST(Scheduler, DoesNotApplyTheCommandsWhenASystemThrows) {
+    World world;
+    Scheduler scheduler(world);
+    const Entity entity = world.create();
+    world.add(entity, Tag{});
+    scheduler.add<DestroyTaggedSystem>();
+    scheduler.add<ThrowSystem>();
+
+    EXPECT_THROW(scheduler.update(0.0F), std::runtime_error);
+    EXPECT_TRUE(world.alive(entity));
 }
