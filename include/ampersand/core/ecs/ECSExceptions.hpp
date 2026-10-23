@@ -24,7 +24,8 @@ public:
 /**
  * @brief Thrown when an entity handle is dead, null or out of range.
  *
- * Raised by add, get, remove and destroy (a double destroy included).
+ * Raised by add, get, remove, destroy (a double destroy included), setParent,
+ * parent and children.
  */
 class InvalidEntity : public ECSError {
 public:
@@ -108,6 +109,19 @@ public:
      */
     explicit ResourceNotFound(const std::string& details)
         : ECSError("Resource not found: " + details) {}
+};
+
+/** @brief Thrown by setParent when the parent is the child itself or one of
+ * its descendants. */
+class HierarchyCycle : public ECSError {
+public:
+    /**
+     * @brief Creates the error.
+     *
+     * @param details The child and the operation that used it.
+     */
+    explicit HierarchyCycle(const std::string& details)
+        : ECSError("Hierarchy cycle: " + details) {}
 };
 
 }  // namespace ampersand::core::ecs
