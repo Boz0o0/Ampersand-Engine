@@ -18,6 +18,7 @@ For why we chose this design, see [Design decisions](../decisions.md#ecs).
 | **Scheduler** | Runs the systems in order, once per frame, and fills the `Clock`.              |
 | **Event**     | A message sent by a system to the systems after it, in an `EventQueue`.        |
 | **Resource**  | An object that exists once per world and belongs to no entity (clock, score…). |
+| **Hierarchy** | Parent/child links between entities (a turret on a ship), kept by the World.   |
 
 Everything is in the `ampersand::core::ecs` namespace. Include
 `<ampersand/core/ecs/World.hpp>` to use the ECS, and
@@ -366,11 +367,16 @@ world space.
 ```cpp
 const ecs::Entity ship = world.create();
 const ecs::Entity turret = world.create();
+world.add(ship, core::Transform{});
+world.add(turret, core::Transform{});
 world.setParent(turret, ship);  // the turret is mounted on the ship
 
-// The Transform stays in world space: move the children with their parent
-for (const auto child : world.children(ship)) {
-    world.get<core::Transform>(child).position.x += 10.0F;
+// The Transform stays in world space: moving the ship does not move the
+// turret, so move its children by the same offset
+constexpr float kOffset = 10.0F;
+world.get<core::Transform>(ship).position.x += kOffset;
+for (const ecs::Entity child : world.children(ship)) {
+    world.get<core::Transform>(child).position.x += kOffset;
 }
 
 // A bullet hit the turret: find the ship it is mounted on
@@ -387,12 +393,12 @@ world.setParent(turret, ecs::Entity{});  // the turret falls off: it is a root
 world.destroy(ship);                     // the turret survives
 ```
 
-| Call                       | Effect                                                                                                                                                                             | Throws                            |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `setParent(child, parent)` | Makes `child` a child of `parent`: removes it from the children of its old parent and adds it after the other children of `parent`. With a null `Entity` as `parent`, `child` becomes a root. | `InvalidEntity`, `HierarchyCycle` |
-| `parent(e)`                | Returns the parent of `e`, or a null `Entity` if `e` is a root.                                                                                                                    | `InvalidEntity`                   |
-| `children(e)`              | Returns the direct children of `e` (not their children), in the order they were attached. Empty if `e` has none.                                                                  | `InvalidEntity`                   |
-| `destroy(e)`               | Removes `e` from the children of its parent, then destroys `e` and all its descendants.                                                                                            | `InvalidEntity`                   |
+| Call                       | Effect                                                                               | Throws                            |
+| -------------------------- | ------------------------------------------------------------------------------------ | --------------------------------- |
+| `setParent(child, parent)` | detaches `child` from its old parent and adds it last to `parent` (null: a root)     | `InvalidEntity`, `HierarchyCycle` |
+| `parent(e)`                | returns the parent, or a null `Entity` for a root                                    | `InvalidEntity`                   |
+| `children(e)`              | returns the direct children, in the order they were attached                         | `InvalidEntity`                   |
+| `destroy(e)`               | detaches `e` from its parent, then destroys it and all its descendants               | `InvalidEntity`                   |
 
 `setParent` throws `HierarchyCycle` if `parent` is `child` itself or one of its
 descendants, since an entity cannot be its own ancestor. The World is left
