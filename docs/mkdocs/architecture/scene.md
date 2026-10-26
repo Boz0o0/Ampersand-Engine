@@ -130,7 +130,7 @@ backend: the `SceneManager` creates the `SfmlRenderer` and keeps it in the
 | `startScene` |         | name of the scene loaded at the end of `loadConfig`                            |
 | `configRoot` | `""`    | folder every other path is relative to                                         |
 | `scenes`     | `{}`    | scene name → scene file. `setScene(name, path)` adds or replaces one from code |
-| `resources`  | `null`  | resources kept until the next `loadConfig`                                     |
+| `resources`  | `null`  | kept until the next `loadConfig`, see [Engine types](#engine-types)            |
 
 **Scene**: `version`, then `resources` (default `null`) and `entities` (a list,
 default `null`). Any other key (`name`) is ignored.
@@ -158,8 +158,8 @@ The keys of a JSON object are read in **alphabetical order**, not in the
 order of the file (`nlohmann::json` sorts them): the resources of a block
 and the components of an entity. The `entities` and `children` lists keep
 their order. So a loader never needs another key of its own block: the
-`Renderer` a `Sprite` needs comes from the configuration, or from the
-`resources` of the scene, which are loaded before its entities.
+`Renderer` a `Sprite` needs comes from the configuration, loaded before every
+scene.
 
 ## Prefabs
 
@@ -305,19 +305,22 @@ name such as `"X"`, or `null`; an unknown name throws), `dead` and
 A `Sprite` or `Text` needs the `Renderer`, and an `AudioSource` or `SceneMusic`
 needs the `AudioListener`.
 
+`Renderer`, `InputManager` and `AudioListener` are only allowed in the
+`resources` of the **configuration** (`ResourceScope::Config`): the
+`RenderSystem`, `InputSystem` and `AudioSystem` need them in every scene. A scene giving one fails before anything is unloaded:
+
+```text
+Failed to load scene 'level1': Resource 'Renderer' is only allowed in the configuration
+```
+
 ### Backends
 
 `Renderer` and `AudioListener` create the backend named by `"backend"` (only
 `"sfml"` for now) and keep it in the `Backends` resource, under their own key.
 Removing them removes their backend too: the window closes, and their assets
-are forgotten. Put them in the configuration, so the window stays open and the
-textures stay loaded from one scene to the next.
+are forgotten. Since they come from the configuration, the window stays open and the textures stay loaded from one scene to the next.
 
-A new `AudioListener` (from the next `loadConfig`, or from a scene) has a new
-engine, whose ids start again at 1, while the `AudioSystem` keeps the ids of
-the old one: the new `SceneMusic` can be taken for the track already playing
-and never start. Create a new `AudioSystem` after a `loadConfig` that loads an
-`AudioListener` again.
+A new `AudioListener` (from the next `loadConfig`) has a new engine, whose ids start again at 1, while the `AudioSystem` keeps the ids of the old one: the new `SceneMusic` can be taken for the track already playing and never start. Create a new `AudioSystem` after a `loadConfig` that loads an `AudioListener` again.
 
 ### Assets
 
@@ -365,6 +368,13 @@ them. Registering a key again replaces its loader, the built-in ones included.
 | `registerResource<T>(name, load)`      | calls `load(world, data)`                                                                      |
 | `registerResource<T, Data>(name, dep)` | `world.addResource<T>(dep, data.get<Data>())`, for a resource built from an object of the game |
 | `registerResource(name, load, remove)` | calls `load(world, data)`, and `remove(world)` when it is unloaded                             |
+
+Each `registerResource` takes a last, optional `ResourceScope`:
+`ResourceScope::Any` (default) lets the configuration and the scenes give the resource, `ResourceScope::Config` only the configuration, like the `Renderer`.
+
+```cpp
+scenes.registerResource<Settings>("Settings", scene::ResourceScope::Config);
+```
 
 The resources registered with a type `T` are removed with
 `world.removeResource<T>()`. A `dep` is kept by reference: it must outlive the
@@ -418,11 +428,7 @@ Every error is a `std::runtime_error` (`std::invalid_argument` for
 Failed to load scene 'level1': Failed to load component 'Sprite': [json.exception.out_of_range.403] key 'layer' not found
 ```
 
-An unknown scene, a missing file, bad JSON, a bad version, or a missing or
-unknown `startScene` are found before anything is unloaded: the previous scene
-(or configuration) stays as it was. Any other error (a missing field, a key
-with no loader, an asset that cannot be loaded, an unknown backend, input name
-or operator) is found once the previous one is unloaded, so the load is undone:
+An unknown scene, a missing file, bad JSON, a bad version, a missing or unknown `startScene`, or a scene giving a resource only allowed in theconfiguration are found before anything is unloaded: the previous scene (or configuration) stays as it was. Any other error (a missing field, a key with no loader, an asset that cannot be loaded, an unknown backend, input name or operator) is found once the previous one is unloaded, so the load is undone:
 
 - `loadScene` destroys every entity the new scene created (its persistent ones
   too) and removes its resources. The configuration stays, and

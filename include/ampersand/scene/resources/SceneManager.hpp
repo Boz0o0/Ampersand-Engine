@@ -18,6 +18,14 @@ namespace ampersand::scene {
 using nlohmann::json;
 
 /**
+ * @brief Where a key of a "resources" block may be given.
+ */
+enum class ResourceScope : std::uint8_t {
+    Any,     // In the configuration or in a scene
+    Config,  // Only in the configuration: a scene giving it fails
+};
+
+/**
  * @brief Manager for scenes and prefabs. Loads a configuration file that
  * contains the paths to the scenes and prefabs. Can load a scene, instantiate a
  * prefab, and set a scene in the SceneManager scenes map.
@@ -25,7 +33,9 @@ using nlohmann::json;
  * The engine types (resources such as Camera or Renderer, components such as
  * Transform or Sprite) are registered on construction, for the enabled
  * modules (src/scene/loaders). The game only registers its own types with
- * registerResource and registerComponent.
+ * registerResource and registerComponent. Renderer, AudioListener and
+ * InputManager are only allowed in the configuration (ResourceScope::Config):
+ * the systems using them need them in every scene.
  *
  * Configuration format: {"version", "configRoot", "startScene", "scenes":
  * {name: path}, "resources": {...}}. Scene format: {"version", "resources":
@@ -73,6 +83,7 @@ public:
     struct ResourceEntry {
         ResourceLoader load;
         ResourceRemover remove;
+        ResourceScope scope{ResourceScope::Any};
     };
 
     /**
@@ -85,9 +96,11 @@ public:
      * @param name Key of the resource in the "resources" block.
      * @param load Function building the resource from its JSON value.
      * @param remove Function removing it when its scene is unloaded.
+     * @param scope Config if a scene may not give it.
      */
     void registerResource(const std::string& name, ResourceLoader load,
-                          ResourceRemover remove);
+                          ResourceRemover remove,
+                          ResourceScope scope = ResourceScope::Any);
 
     /**
      * @brief Registers resource type T with a custom loader. It is removed
@@ -96,14 +109,19 @@ public:
      * @tparam T Resource type.
      * @param name Key of the resource in the "resources" block.
      * @param load Function building the resource from its JSON value.
+     * @param scope Config if a scene may not give it.
      */
     template <typename T>
-    void registerResource(const std::string& name, ResourceLoader load) {
-        registerResource(name, std::move(load), [](core::ecs::World& world) {
-            if (world.hasResource<T>()) {
-                world.removeResource<T>();
-            }
-        });
+    void registerResource(const std::string& name, ResourceLoader load,
+                          ResourceScope scope = ResourceScope::Any) {
+        registerResource(
+            name, std::move(load),
+            [](core::ecs::World& world) {
+                if (world.hasResource<T>()) {
+                    world.removeResource<T>();
+                }
+            },
+            scope);
     }
 
     /**
@@ -112,13 +130,17 @@ public:
      *
      * @tparam T Resource type.
      * @param name Key of the resource in the "resources" block.
+     * @param scope Config if a scene may not give it.
      */
     template <typename T>
-    void registerResource(const std::string& name) {
-        registerResource<T>(name,
-                            [](core::ecs::World& world, const json& data) {
-                                world.addResource<T>(data.get<T>());
-                            });
+    void registerResource(const std::string& name,
+                          ResourceScope scope = ResourceScope::Any) {
+        registerResource<T>(
+            name,
+            [](core::ecs::World& world, const json& data) {
+                world.addResource<T>(data.get<T>());
+            },
+            scope);
     }
 
     /**
@@ -131,13 +153,17 @@ public:
      * @param name Key of the resource in the "resources" block.
      * @param dep Object given to the constructor of T. Must outlive the
      * SceneManager and the World.
+     * @param scope Config if a scene may not give it.
      */
     template <typename T, typename Data, typename Dep>
-    void registerResource(const std::string& name, Dep& dep) {
-        registerResource<T>(name,
-                            [&dep](core::ecs::World& world, const json& data) {
-                                world.addResource<T>(dep, data.get<Data>());
-                            });
+    void registerResource(const std::string& name, Dep& dep,
+                          ResourceScope scope = ResourceScope::Any) {
+        registerResource<T>(
+            name,
+            [&dep](core::ecs::World& world, const json& data) {
+                world.addResource<T>(dep, data.get<Data>());
+            },
+            scope);
     }
 
     /**
@@ -230,9 +256,10 @@ public:
      * @brief Unloads the current scene (its entities and resources, in
      * reverse order), then loads a scene and sets it as the current scene.
      *
-     * An unknown scene or a file that cannot be read leaves the current scene
-     * as it was. An error after that removes what the new scene loaded, and
-     * leaves no current scene.
+     * An unknown scene, a file that cannot be read, or a resource only
+     * allowed in the configuration leaves the current scene as it was. An error
+     * after that removes what the new scene loaded, and leaves no current
+     * scene.
      *
      * @throws std::runtime_error if the scene is unknown or invalid.
      */
@@ -430,6 +457,14 @@ private:
      */
     void loadResources(core::ecs::World& world, const json& resources,
                        std::vector<std::string>& loaded);
+
+    /**
+     * @brief Checks that the "resources" block of a scene gives no resource
+     * registered with ResourceScope::Config.
+     *
+     * @throws std::runtime_error naming the first one found.
+     */
+    void checkSceneResources(const json& resources) const;
 
     /**
      * @brief Removes the resources, the last loaded first, and empties the

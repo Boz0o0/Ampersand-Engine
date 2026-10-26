@@ -84,7 +84,8 @@ void SceneManager::loadAudioSource(core::ecs::World& world,
 void SceneManager::registerAudio() {
     registerResource(
         "AudioListener", loadAudioListener,
-        [this](core::ecs::World& world) { removeAudioListener(world); });
+        [this](core::ecs::World& world) { removeAudioListener(world); },
+        ResourceScope::Config);
     registerResource<audio::SceneMusic>(
         "SceneMusic", [this](core::ecs::World& world, const json& data) {
             loadSceneMusic(world, data);

@@ -27,9 +27,13 @@ void SceneManager::registerBuiltins() {
 }
 
 void SceneManager::registerResource(const std::string& name,
-                                    ResourceLoader load,
-                                    ResourceRemover remove) {
-    _resources[name] = {.load = std::move(load), .remove = std::move(remove)};
+                                    ResourceLoader load, ResourceRemover remove,
+                                    ResourceScope scope) {
+    _resources[name] = {
+        .load = std::move(load),
+        .remove = std::move(remove),
+        .scope = scope,
+    };
 }
 
 void SceneManager::registerComponent(const std::string& name,
@@ -106,6 +110,7 @@ void SceneManager::loadScene(core::ecs::World& world,
             throw std::runtime_error("Unknown scene");
         }
         const json scene = readFile(path->second);
+        checkSceneResources(scene.value("resources", json{}));
         unloadScene(world);
         _currentScene = sceneName;
         try {
@@ -241,6 +246,20 @@ void SceneManager::loadResources(core::ecs::World& world, const json& resources,
         } catch (const std::exception& e) {
             throw std::runtime_error("Failed to load resource '" + name +
                                      "': " + e.what());
+        }
+    }
+}
+
+void SceneManager::checkSceneResources(const json& resources) const {
+    if (!resources.is_object()) {
+        return;  // loadResources reports a block of the wrong type
+    }
+    for (const auto& [name, data] : resources.items()) {
+        const auto entry = _resources.find(name);
+        if (entry != _resources.end() &&
+            entry->second.scope == ResourceScope::Config) {
+            throw std::runtime_error("Resource '" + name +
+                                     "' is only allowed in the configuration");
         }
     }
 }

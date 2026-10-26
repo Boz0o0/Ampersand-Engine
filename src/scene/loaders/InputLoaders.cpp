@@ -18,7 +18,8 @@ void SceneManager::loadInputManager(core::ecs::World& world, const json& data) {
 }
 
 void SceneManager::registerInput() {
-    registerResource<input::InputManager>("InputManager", loadInputManager);
+    registerResource<input::InputManager>("InputManager", loadInputManager,
+                                          ResourceScope::Config);
 }
 
 }  // namespace ampersand::scene

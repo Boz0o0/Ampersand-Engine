@@ -130,9 +130,10 @@ void SceneManager::loadAnimationStateMachine(core::ecs::World& world,
 void SceneManager::registerRender() {
     registerResource<render::ClearColor>("ClearColor");
     registerResource<render::Camera>("Camera");
-    registerResource("Renderer", loadRenderer, [this](core::ecs::World& world) {
-        removeRenderer(world);
-    });
+    registerResource(
+        "Renderer", loadRenderer,
+        [this](core::ecs::World& world) { removeRenderer(world); },
+        ResourceScope::Config);
     registerComponent<render::Animation>("Animation");
     registerComponent("AnimationStateMachine", loadAnimationStateMachine);
     registerComponent(
