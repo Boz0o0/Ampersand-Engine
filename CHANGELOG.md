@@ -24,6 +24,12 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+### Added
+
+- **Scripting**: new module (`AMPERSAND_MODULE_SCRIPTING`) that runs Lua scripts with sol2 (Lua 5.4.7 and sol2 3.5.0 downloaded by CMake). The `Scripts` component lists the `.lua` files of an entity, and the `ScriptingSystem` gives each script its own `self` table and globals and calls its `start`, `update` and `onDestroy` functions.
+- **Scripting**: errors of a script (missing file, syntax error, error in a function) turn it off without stopping the game, and are sent to the `EventQueue<ScriptError>` resource.
+- **Tests**: unit tests of the `ScriptingSystem` (functions called, instances, globals, list changes, destroyed entities and errors).
+
 ## [0.4.1] - 2026-10-26
 
 ### Added

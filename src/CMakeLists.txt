@@ -18,12 +18,12 @@ function(add_engine_module MODULE)
     )
 endfunction()
 
- if(NOT AMPERSAND_MODULE_CORE)
+if(NOT AMPERSAND_MODULE_CORE)
      if(AMPERSAND_MODULE_AUDIO OR AMPERSAND_MODULE_INPUT OR AMPERSAND_MODULE_NET
-        OR AMPERSAND_MODULE_PHYSICS OR AMPERSAND_MODULE_RENDER OR AMPERSAND_MODULE_SCENE)
+        OR AMPERSAND_MODULE_PHYSICS OR AMPERSAND_MODULE_RENDER OR AMPERSAND_MODULE_SCENE OR AMPERSAND_MODULE_SCRIPTING)
          message(FATAL_ERROR "AMPERSAND_MODULE_CORE must be enabled when another engine module is enabled")
      endif()
- endif()
+endif()
 
 if(AMPERSAND_MODULE_CORE)
     add_engine_module(core)
@@ -85,6 +85,28 @@ if(AMPERSAND_MODULE_RENDER)
     )
 endif()
 
+if (AMPERSAND_MODULE_SCRIPTING)
+    add_engine_module(scripting)
+
+    target_link_libraries(ampersand_scripting
+        PUBLIC
+            ampersand_core
+            sol2::sol2
+            lua_static
+    )
+
+    target_compile_definitions(ampersand_scripting PUBLIC SOL_ALL_SAFETIES_ON=1)
+
+    if(MSVC)
+        target_compile_options(ampersand_scripting PRIVATE /bigobj)
+    endif()
+
+    if (AMPERSAND_MODULE_INPUT)
+        target_link_libraries(ampersand_scripting PRIVATE ampersand_input)
+        target_compile_definitions(ampersand_scripting PRIVATE AMPERSAND_MODULE_INPUT)
+    endif()
+endif()
+
 if (AMPERSAND_MODULE_SCENE)
     add_engine_module(scene)
 
@@ -112,5 +134,10 @@ if (AMPERSAND_MODULE_SCENE)
     if (AMPERSAND_MODULE_INPUT)
         target_link_libraries(ampersand_scene PUBLIC ampersand_input)
         target_compile_definitions(ampersand_scene PUBLIC AMPERSAND_MODULE_INPUT)
+    endif()
+
+    if (AMPERSAND_MODULE_SCRIPTING)
+        target_link_libraries(ampersand_scene PUBLIC ampersand_scripting)
+        target_compile_definitions(ampersand_scene PUBLIC AMPERSAND_MODULE_SCRIPTING)
     endif()
 endif()

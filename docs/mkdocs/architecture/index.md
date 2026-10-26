@@ -24,6 +24,7 @@ Every module works the same way: it gives **components** and **resources**
 | [Audio](audio.md)       | plays the sounds and music of the entities and of the scene         |
 | [Net](net.md)           | sends and receives UDP datagrams, without knowing the game protocol |
 | [Scene](scene.md)       | builds the World from JSON scenes and prefabs, and switches between scenes |
+| [Scripting](scripting.md) | runs the Lua scripts of the entities                              |
 
 ## Module dependencies
 
@@ -40,6 +41,8 @@ graph BT
     scene -.-> physics
     scene -.-> input
     scene -.-> audio
+    scripting[scripting] --> core
+    scene -.-> scripting
 ```
 
 `core` depends on no other module. `render` also depends on `input`, because

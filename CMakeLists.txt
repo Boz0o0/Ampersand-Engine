@@ -17,6 +17,7 @@ option(AMPERSAND_MODULE_NET "Build the Network module" ON)
 option(AMPERSAND_MODULE_PHYSICS "Build the Physics module" ON)
 option(AMPERSAND_MODULE_RENDER "Build the Render module" ON)
 option(AMPERSAND_MODULE_SCENE "Build the Scene module" ON)
+option(AMPERSAND_MODULE_SCRIPTING "Build the Scripting module" ON)
 
 option(AMPERSAND_BUILD_TESTS "Build the engine unit tests" ${PROJECT_IS_TOP_LEVEL})
 
@@ -75,6 +76,39 @@ if (AMPERSAND_MODULE_SCENE)
         NAME nlohmann_json
         GITHUB_REPOSITORY nlohmann/json
         GIT_TAG v3.12.0
+    )
+endif()
+
+if (AMPERSAND_MODULE_SCRIPTING)
+    enable_language(C)
+
+    CPMAddPackage(
+        NAME lua
+        GITHUB_REPOSITORY lua/lua
+        GIT_TAG v5.4.7
+        DOWNLOAD_ONLY YES
+    )
+
+    file(GLOB LUA_SOURCES "${lua_SOURCE_DIR}/*.c")
+    list(REMOVE_ITEM LUA_SOURCES
+        "${lua_SOURCE_DIR}/lua.c"
+        "${lua_SOURCE_DIR}/luac.c"
+        "${lua_SOURCE_DIR}/onelua.c"
+        "${lua_SOURCE_DIR}/ltests.c"
+    )
+
+    add_library(lua_static STATIC ${LUA_SOURCES})
+    target_include_directories(lua_static SYSTEM PUBLIC "${lua_SOURCE_DIR}")
+
+    if(UNIX)
+        target_compile_definitions(lua_static PRIVATE LUA_USE_POSIX)
+        target_link_libraries(lua_static PUBLIC m)
+    endif()
+
+    CPMAddPackage(
+        NAME sol2
+        GITHUB_REPOSITORY ThePhD/sol2
+        GIT_TAG v3.5.0
     )
 endif()
 
