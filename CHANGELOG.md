@@ -26,6 +26,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-26
+
 ### Changed
 
 - **Scene**: `SceneManager::kVersion` is now `2`: every file must give `"version": 2`, a file with `"version": 1` is refused.
@@ -102,7 +104,8 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.2.0...v0.3.0
