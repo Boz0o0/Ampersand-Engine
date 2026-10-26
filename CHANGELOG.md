@@ -27,6 +27,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 ### Added
 
 - **Core**: `has` takes several component types (`has<Transform, Velocity>(e)`): `true` if the entity has all of them.
+- **Core**: `hasAny<A, B>(e)`: `true` if the entity has at least one of the types.
 
 ## [0.4.0] - 2026-10-26
 

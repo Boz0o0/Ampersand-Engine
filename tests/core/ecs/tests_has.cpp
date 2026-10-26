@@ -42,3 +42,30 @@ TEST(Has, FalseForADeadOrNullEntity) {
     EXPECT_FALSE((world.has<Position, Speed>(entity)));
     EXPECT_FALSE((world.has<Position, Speed>(Entity{})));
 }
+
+TEST(HasAny, TrueWhenTheEntityHasOneOfTheTypes) {
+    World world;
+    const auto entity = world.create();
+    world.add(entity, Speed{});
+
+    EXPECT_TRUE(world.hasAny<Speed>(entity));
+    EXPECT_TRUE((world.hasAny<Position, Speed>(entity)));
+}
+
+TEST(HasAny, FalseWhenTheEntityHasNoneOfTheTypes) {
+    World world;
+    const auto entity = world.create();
+    world.add(entity, Enemy{});
+
+    EXPECT_FALSE((world.hasAny<Position, Speed>(entity)));
+}
+
+TEST(HasAny, FalseForADeadOrNullEntity) {
+    World world;
+    const auto entity = world.create();
+    world.add(entity, Position{});
+    world.destroy(entity);
+
+    EXPECT_FALSE((world.hasAny<Position, Speed>(entity)));
+    EXPECT_FALSE((world.hasAny<Position, Speed>(Entity{})));
+}

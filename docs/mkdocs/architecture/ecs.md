@@ -138,6 +138,7 @@ do not wear out the version of the same rows.
 | `get<T>(e)`         | reference to the component                     | `InvalidEntity`, `ComponentNotFound`      |
 | `has<T>(e)`         | `true` if it has a `T` (`false` if it is dead) | never                                     |
 | `has<A, B>(e)`      | `true` if it has an `A` and a `B`              | never                                     |
+| `hasAny<A, B>(e)`   | `true` if it has an `A` or a `B` (or both)     | never                                     |
 | `remove<T>(e)`      | detaches the component                         | `InvalidEntity`, `ComponentNotFound`      |
 | `owners<T>()`       | the entities that have a `T`                   | never                                     |
 

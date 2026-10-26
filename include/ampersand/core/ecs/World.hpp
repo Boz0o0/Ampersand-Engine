@@ -147,6 +147,22 @@ public:
     }
 
     /**
+     * @brief Checks whether an entity has a component of at least one of the
+     * given types.
+     *
+     * @tparam Ts Component types (at least one).
+     * @param entity Entity to check.
+     * @return true if the entity has a component of any type in Ts, false
+     * otherwise.
+     */
+    template <typename... Ts>
+        requires(sizeof...(Ts) > 0)
+    [[nodiscard]] bool hasAny(Entity entity) const {
+        return alive(entity) &&
+               ((_rows[entity.index][componentId<Ts>()] != 0) || ...);
+    }
+
+    /**
      * @brief Removes a component of an entity.
      *
      * The pools last component moves into the freed position, and the row of
