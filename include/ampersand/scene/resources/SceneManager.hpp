@@ -216,6 +216,11 @@ public:
      *
      * Calls the registered loader of each key of the "resources" block.
      *
+     * The file and its "startScene" (a string, listed in "scenes") are
+     * checked before anything is unloaded: if they are wrong, the previous
+     * configuration stays. An error after that unloads everything, so
+     * nothing of the previous or the new configuration stays.
+     *
      * @throws std::runtime_error if the file is invalid, or if a resource has
      * no registered loader.
      */
@@ -224,6 +229,10 @@ public:
     /**
      * @brief Unloads the current scene (its entities and resources, in
      * reverse order), then loads a scene and sets it as the current scene.
+     *
+     * An unknown scene or a file that cannot be read leaves the current scene
+     * as it was. An error after that removes what the new scene loaded, and
+     * leaves no current scene.
      *
      * @throws std::runtime_error if the scene is unknown or invalid.
      */
@@ -447,6 +456,13 @@ private:
      * resources.
      */
     void unloadScene(core::ecs::World& world);
+
+    /**
+     * @brief Undoes a scene that failed halfway: destroys every entity it
+     * created (persistent ones included), removes its resources, and clears
+     * the current scene.
+     */
+    void abortScene(core::ecs::World& world);
 
     /**
      * @brief Destroys every entity and removes every resource loaded by the

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <ranges>
 #include <stdexcept>
+#include <utility>
 
 namespace ampersand::scene {
 
@@ -72,12 +73,25 @@ void SceneManager::loadConfig(core::ecs::World& world,
                               const std::string& path) {
     try {
         const json config = readJson(path);
+        auto configRoot = config.value("configRoot", std::string{});
+        auto scenes =
+            config.value("scenes", std::map<std::string, std::string>{});
+        const auto startScene = config.at("startScene").get<std::string>();
+        if (!scenes.contains(startScene)) {
+            throw std::runtime_error("Unknown start scene '" + startScene +
+                                     "'");
+        }
         unloadConfig(world);
-        _configRoot = config.value("configRoot", std::string{});
-        _scenes = config.value("scenes", std::map<std::string, std::string>{});
-        loadResources(world, config.value("resources", json{}),
-                      _configResources);
-        loadScene(world, config.at("startScene").get<std::string>());
+        try {
+            _configRoot = std::move(configRoot);
+            _scenes = std::move(scenes);
+            loadResources(world, config.value("resources", json{}),
+                          _configResources);
+            loadScene(world, startScene);
+        } catch (...) {
+            unloadConfig(world);
+            throw;
+        }
     } catch (const std::exception& e) {
         throw std::runtime_error("Failed to load configuration '" + path +
                                  "': " + e.what());
@@ -94,8 +108,14 @@ void SceneManager::loadScene(core::ecs::World& world,
         const json scene = readFile(path->second);
         unloadScene(world);
         _currentScene = sceneName;
-        loadResources(world, scene.value("resources", json{}), _sceneResources);
-        loadEntities(world, scene.value("entities", json{}));
+        try {
+            loadResources(world, scene.value("resources", json{}),
+                          _sceneResources);
+            loadEntities(world, scene.value("entities", json{}));
+        } catch (...) {
+            abortScene(world);
+            throw;
+        }
     } catch (const std::exception& e) {
         throw std::runtime_error("Failed to load scene '" + sceneName +
                                  "': " + e.what());
@@ -278,6 +298,21 @@ void SceneManager::unloadScene(core::ecs::World& world) {
     }
     _sceneEntities.clear();
     unloadResources(world, _sceneResources);
+}
+
+void SceneManager::abortScene(core::ecs::World& world) {
+    for (const auto& entity : _sceneEntities) {
+        std::erase(_persistentRoots, entity);
+        std::erase_if(_persistentEntries, [entity](const auto& entry) {
+            return entry.second == entity;
+        });
+        if (world.alive(entity)) {
+            world.destroy(entity);
+        }
+    }
+    _sceneEntities.clear();
+    unloadResources(world, _sceneResources);
+    _currentScene.clear();
 }
 
 void SceneManager::unloadConfig(core::ecs::World& world) {

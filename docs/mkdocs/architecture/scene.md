@@ -213,9 +213,10 @@ unless it is [persistent](#persistent-entities).
    the last loaded first;
 3. loads the resources of the new scene, then its entities.
 
-`loadConfig(world, path)` reads the file, removes everything the previous
-configuration loaded (its scenes, its persistent entities and its resources),
-loads the `resources` of the configuration, then its `startScene`.
+`loadConfig(world, path)` reads the file and checks its `startScene` (a string,
+listed in `scenes`), removes everything the previous configuration loaded (its
+scenes, its persistent entities and its resources), loads the `resources` of
+the configuration, then its `startScene`.
 
 | What                                       | Created by                                | Removed by                                 |
 | ------------------------------------------ | ----------------------------------------- | ------------------------------------------ |
@@ -417,12 +418,17 @@ Every error is a `std::runtime_error` (`std::invalid_argument` for
 Failed to load scene 'level1': Failed to load component 'Sprite': [json.exception.out_of_range.403] key 'layer' not found
 ```
 
-An unknown scene, a missing file, bad JSON or a bad version are found before
-anything is unloaded. Any other error (a missing field, a key with no loader, an
-asset that cannot be loaded, an unknown backend, input name or operator) stops
-the load halfway: what was loaded before it stays, and is removed by the next
-`loadScene`. The entity that failed is destroyed with its children, and
-`getCurrentScene()` already gives the new scene.
+An unknown scene, a missing file, bad JSON, a bad version, or a missing or
+unknown `startScene` are found before anything is unloaded: the previous scene
+(or configuration) stays as it was. Any other error (a missing field, a key
+with no loader, an asset that cannot be loaded, an unknown backend, input name
+or operator) is found once the previous one is unloaded, so the load is undone:
+
+- `loadScene` destroys every entity the new scene created (its persistent ones
+  too) and removes its resources. The configuration stays, and
+  `getCurrentScene()` is empty;
+- `loadConfig` also removes everything its configuration loaded, so the World
+  holds nothing from any configuration (only what the game added itself).
 
 ## Limits
 
