@@ -42,9 +42,15 @@ graph BT
     scene -.-> input
     scene -.-> audio
     scripting[scripting] --> core
+    scripting -.-> input
+    scripting -.-> physics
+    scripting -.-> render
+    scripting -.-> audio
     scene -.-> scripting
 ```
 
 `core` depends on no other module. `render` also depends on `input`, because
 the events of its window include the keyboard and mouse events of `input`.
-`scene` also uses the modules that are turned on (dotted), to read their types.
+`scene` also uses the modules that are turned on (dotted), to read their types,
+and `scripting` uses them to give their components and resources to the Lua
+scripts.

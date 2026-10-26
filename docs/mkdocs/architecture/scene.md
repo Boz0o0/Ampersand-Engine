@@ -350,6 +350,7 @@ name such as `"X"`, or `null`; an unknown name throws), `dead` and
 | `Gravity`               | physics | `scale`                                                                            |
 | `BoxCollider`           | physics | `bounds`                                                                           |
 | `AudioSource`           | audio   | `sound` **or** `music` (a path, exactly one), `volume`, `loop`, `playing`          |
+| `Scripts`               | scripting | `scripts` (list of paths of `.lua` files), see [Scripting](scripting.md)         |
 
 A `Sprite` or `Text` needs the `Renderer`, and an `AudioSource` or `SceneMusic`
 needs the `AudioListener`.

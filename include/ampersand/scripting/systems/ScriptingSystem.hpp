@@ -3,6 +3,7 @@
 #include <ampersand/core/ecs/Entity.hpp>
 #include <ampersand/core/ecs/ISystem.hpp>
 #include <exception>
+#include <functional>
 #include <sol/sol.hpp>
 #include <string>
 #include <unordered_map>
@@ -34,6 +35,28 @@ public:
      */
     void update(core::ecs::World& world) override;
 
+    /**
+     * @brief Lua state shared by every script, to add the bindings of the game
+     * (its components and functions) with the sol2 API.
+     *
+     * Add them before the scripts using them run, and do not reuse the names
+     * of the engine (getTransform, destroy, input, Vec3...): they would
+     * replace them.
+     */
+    sol::state& lua() { return _lua; }
+
+    /**
+     * @brief Runs an action at the end of the current update, after every
+     * script ran.
+     *
+     * For the bindings changing the World too much to run while the scripts
+     * are iterated. If the action throws, the error is sent as a ScriptError
+     * of the script that called the binding.
+     *
+     * @param action Function applied to the World.
+     */
+    void defer(std::function<void(core::ecs::World&)> action);
+
 private:
     /** @brief One script of one entity, with its own `self` table. */
     struct Instance {
@@ -41,6 +64,12 @@ private:
         sol::table self;
         bool started{};
         bool failed{};
+    };
+
+    /** @brief An action given to defer, with the script that asked for it. */
+    struct Deferred {
+        std::string path;
+        std::function<void(core::ecs::World&)> action;
     };
 
     /** @brief Matches the instances of an entity with its Scripts component.
@@ -79,8 +108,14 @@ private:
      * @param hook Name of the function to call.
      * @param deltaTime Time since the last frame.
      */
-    static void run(core::ecs::World& world, Instance& instance,
-                    const std::string& hook, float deltaTime);
+    void run(core::ecs::World& world, Instance& instance,
+             const std::string& hook, float deltaTime);
+
+    /** @brief Applies the actions given to defer, reporting their errors.
+     *
+     * @param world World the actions are applied to.
+     */
+    void applyDeferred(core::ecs::World& world);
 
     /** @brief Sends an error to the EventQueue<ScriptError>, if it exists.
      *
@@ -112,6 +147,16 @@ private:
     /** @brief Binds the input to the Lua state. */
     void bindInput([[maybe_unused]] core::ecs::World& world);
 
+    /** @brief Binds BoxCollider and the bounds helpers, when the physics
+     * module is on. */
+    void bindPhysics([[maybe_unused]] core::ecs::World& world);
+
+    /** @brief Binds the animation table, when the render module is on. */
+    void bindAnimation([[maybe_unused]] core::ecs::World& world);
+
+    /** @brief Binds AudioSource, when the audio module is on. */
+    void bindAudio([[maybe_unused]] core::ecs::World& world);
+
     /** @brief Lua state. Declared first, so it is destroyed last. */
     sol::state _lua;
     /** @brief Bytecode of the compiled script files, by path. */
@@ -120,6 +165,10 @@ private:
     std::unordered_map<core::ecs::Entity, std::vector<Instance>> _instances;
     /** @brief Indicates whether the scripting system has been bound. */
     bool _bound{false};
+    /** @brief Actions given to defer, applied at the end of the update. */
+    std::vector<Deferred> _deferred;
+    /** @brief Path of the script running, empty between two scripts. */
+    std::string _running;
 };
 
 }  // namespace ampersand::scripting

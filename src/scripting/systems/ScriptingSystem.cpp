@@ -3,17 +3,62 @@
 #include <ampersand/core/ecs/CommandQueue.hpp>
 #include <ampersand/core/ecs/EventQueue.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <ampersand/core/math/Rect.hpp>
 #include <ampersand/core/math/Vec3.hpp>
 #include <ampersand/core/resources/Clock.hpp>
 #include <ampersand/scripting/components/Scripts.hpp>
 #include <ampersand/scripting/systems/ScriptingSystem.hpp>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
 #ifdef AMPERSAND_MODULE_INPUT
 #include <ampersand/input/resources/InputManager.hpp>
 #endif
 
+#ifdef AMPERSAND_MODULE_PHYSICS
+#include <ampersand/physics/components/BoxCollider.hpp>
+#endif
+
+#ifdef AMPERSAND_MODULE_RENDER
+#include <ampersand/render/components/AnimationStateMachine.hpp>
+#endif
+
+#ifdef AMPERSAND_MODULE_AUDIO
+#include <ampersand/audio/components/AudioSource.hpp>
+#endif
+
 namespace ampersand::scripting {
+
+void ScriptingSystem::call(Instance& instance, const std::string& hook,
+                           float deltaTime) {
+    if (instance.failed) {
+        return;
+    }
+    sol::optional<sol::protected_function> function = instance.self[hook];
+    if (!function) {
+        return;
+    }
+    sol::protected_function_result result =
+        (*function)(instance.self, deltaTime);
+    if (!result.valid()) {
+        sol::error error = result;
+        instance.failed = true;
+        throw std::runtime_error("Failed to call '" + hook + "' on script '" +
+                                 instance.path + "': " + error.what());
+    }
+}
+
+void ScriptingSystem::run(core::ecs::World& world, Instance& instance,
+                          const std::string& hook, float deltaTime) {
+    _running = instance.path;
+    try {
+        call(instance, hook, deltaTime);
+    } catch (const std::exception& error) {
+        report(world, instance.path, error);
+    }
+    _running.clear();
+}
 
 ScriptingSystem::ScriptingSystem() {
     _lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::string,
@@ -25,6 +70,9 @@ void ScriptingSystem::update(core::ecs::World& world) {
         bindTypes();
         bindWorld(world);
         bindInput(world);
+        bindPhysics(world);
+        bindAnimation(world);
+        bindAudio(world);
         _bound = true;
     }
 
@@ -39,7 +87,11 @@ void ScriptingSystem::update(core::ecs::World& world) {
         }
         it = _instances.erase(it);
     }
-    for (const core::ecs::Entity entity : world.owners<Scripts>()) {
+    const std::vector<core::ecs::Entity> entities = world.owners<Scripts>();
+    for (const core::ecs::Entity entity : entities) {
+        if (!world.alive(entity) || !world.has<Scripts>(entity)) {
+            continue;
+        }
         sync(world, entity, deltaTime);
         for (auto& instance : _instances[entity]) {
             if (!instance.started) {
@@ -47,6 +99,21 @@ void ScriptingSystem::update(core::ecs::World& world) {
                 run(world, instance, "start", deltaTime);
             }
             run(world, instance, "update", deltaTime);
+        }
+    }
+    applyDeferred(world);
+}
+
+void ScriptingSystem::defer(std::function<void(core::ecs::World&)> action) {
+    _deferred.push_back({.path = _running, .action = std::move(action)});
+}
+
+void ScriptingSystem::applyDeferred(core::ecs::World& world) {
+    for (auto& deferred : std::exchange(_deferred, {})) {
+        try {
+            deferred.action(world);
+        } catch (const std::exception& error) {
+            report(world, deferred.path, error);
         }
     }
 }
@@ -75,40 +142,17 @@ void ScriptingSystem::sync(core::ecs::World& world, core::ecs::Entity entity,
 ScriptingSystem::Instance ScriptingSystem::createInstance(
     core::ecs::Entity entity, const std::string& path) {
     sol::protected_function_result result = chunk(path)();
-    if (!result.valid() || result.get_type() != sol::type::table) {
+    if (!result.valid()) {
+        sol::error error = result;
+        throw std::runtime_error("Failed to run script '" + path +
+                                 "': " + error.what());
+    }
+    if (result.get_type() != sol::type::table) {
         throw std::runtime_error("Script '" + path + "' must return a table");
     }
     Instance instance{.path = path, .self = result};
     instance.self["entity"] = entity;
     return instance;
-}
-
-void ScriptingSystem::call(Instance& instance, const std::string& hook,
-                           float deltaTime) {
-    if (instance.failed) {
-        return;
-    }
-    sol::optional<sol::protected_function> function = instance.self[hook];
-    if (!function) {
-        return;
-    }
-    sol::protected_function_result result =
-        (*function)(instance.self, deltaTime);
-    if (!result.valid()) {
-        sol::error error = result;
-        instance.failed = true;
-        throw std::runtime_error("Failed to call '" + hook + "' on script '" +
-                                 instance.path + "': " + error.what());
-    }
-}
-
-void ScriptingSystem::run(core::ecs::World& world, Instance& instance,
-                          const std::string& hook, float deltaTime) {
-    try {
-        call(instance, hook, deltaTime);
-    } catch (const std::exception& error) {
-        report(world, instance.path, error);
-    }
 }
 
 void ScriptingSystem::report(core::ecs::World& world, const std::string& path,
@@ -142,14 +186,21 @@ void ScriptingSystem::bindTypes() {
     _lua.new_usertype<core::ecs::Entity>(
         "Entity", sol::no_constructor, "index",
         sol::readonly(&core::ecs::Entity::index));
-
     _lua.new_usertype<core::math::Vec3f>(
         "Vec3",
         sol::constructors<core::math::Vec3f(),
                           core::math::Vec3f(float, float, float)>(),
         "x", &core::math::Vec3f::x, "y", &core::math::Vec3f::y, "z",
         &core::math::Vec3f::z);
-
+    _lua.new_usertype<core::math::Rect<float>>(
+        "Rect",
+        sol::constructors<core::math::Rect<float>(),
+                          core::math::Rect<float>(float, float, float,
+                                                  float)>(),
+        "x", &core::math::Rect<float>::x, "y", &core::math::Rect<float>::y,
+        "width", &core::math::Rect<float>::width, "height",
+        &core::math::Rect<float>::height, "intersects",
+        &core::math::Rect<float>::intersects);
     _lua.new_usertype<core::Transform>(
         "Transform", sol::no_constructor, "position",
         &core::Transform::position, "scale", &core::Transform::scale,
@@ -162,38 +213,121 @@ void ScriptingSystem::bindWorld(core::ecs::World& world) {
                       [&world](core::ecs::Entity entity) -> core::Transform& {
                           return world.get<core::Transform>(entity);
                       });
-
     _lua.set_function("hasTransform", [&world](core::ecs::Entity entity) {
         return world.has<core::Transform>(entity);
     });
-
     _lua.set_function("destroy", [&world](core::ecs::Entity entity) {
         world.getResource<core::ecs::CommandQueue>().destroy(entity);
+    });
+    _lua.set_function(
+        "getParent",
+        [&world](core::ecs::Entity entity) -> sol::optional<core::ecs::Entity> {
+            const core::ecs::Entity parent = world.parent(entity);
+            if (parent == core::ecs::Entity{}) {
+                return sol::nullopt;
+            }
+            return parent;
+        });
+    _lua.set_function("getChildren", [&world](core::ecs::Entity entity) {
+        return sol::as_table(world.children(entity));
     });
 }
 
 void ScriptingSystem::bindInput([[maybe_unused]] core::ecs::World& world) {
 #ifdef AMPERSAND_MODULE_INPUT
     sol::table inputTable = _lua.create_named_table("input");
-
     inputTable.set_function("getAxis", [&world](const std::string& name) {
         const auto& manager = world.getResource<input::InputManager>();
         return manager.getAxisRaw(name);
     });
-
     inputTable.set_function("getButton", [&world](const std::string& name) {
         const auto& manager = world.getResource<input::InputManager>();
         return manager.getButton(name);
     });
-
     inputTable.set_function("getButtonDown", [&world](const std::string& name) {
         const auto& manager = world.getResource<input::InputManager>();
         return manager.getButtonDown(name);
     });
-
     inputTable.set_function("getButtonUp", [&world](const std::string& name) {
         const auto& manager = world.getResource<input::InputManager>();
         return manager.getButtonUp(name);
+    });
+#endif
+}
+
+void ScriptingSystem::bindPhysics([[maybe_unused]] core::ecs::World& world) {
+#ifdef AMPERSAND_MODULE_PHYSICS
+    _lua.new_usertype<physics::BoxCollider>("BoxCollider", sol::no_constructor,
+                                            "bounds",
+                                            &physics::BoxCollider::bounds);
+    _lua.set_function(
+        "getBoxCollider",
+        [&world](core::ecs::Entity entity) -> physics::BoxCollider& {
+            return world.get<physics::BoxCollider>(entity);
+        });
+    _lua.set_function("hasBoxCollider", [&world](core::ecs::Entity entity) {
+        return world.has<physics::BoxCollider>(entity);
+    });
+    _lua.set_function("getBounds", [&world](core::ecs::Entity entity) {
+        return physics::worldBounds(world.get<core::Transform>(entity),
+                                    world.get<physics::BoxCollider>(entity));
+    });
+    _lua.set_function("getColliders", [&world] {
+        std::vector<core::ecs::Entity> colliders;
+        for (const core::ecs::Entity entity :
+             world.owners<physics::BoxCollider>()) {
+            if (world.has<core::Transform>(entity)) {
+                colliders.push_back(entity);
+            }
+        }
+        return sol::as_table(std::move(colliders));
+    });
+#endif
+}
+
+void ScriptingSystem::bindAnimation([[maybe_unused]] core::ecs::World& world) {
+#ifdef AMPERSAND_MODULE_RENDER
+    sol::table animation = _lua.create_named_table("animation");
+    const auto machine =
+        [&world](core::ecs::Entity entity) -> render::AnimationStateMachine& {
+        return world.get<render::AnimationStateMachine>(entity);
+    };
+    animation.set_function(
+        "setBool",
+        [machine](core::ecs::Entity entity, const std::string& name,
+                  bool value) { machine(entity).params.bools[name] = value; });
+    animation.set_function(
+        "setFloat", [machine](core::ecs::Entity entity, const std::string& name,
+                              float value) {
+            machine(entity).params.floats[name] = value;
+        });
+    animation.set_function("playOnce", [machine](core::ecs::Entity entity,
+                                                 const std::string& action) {
+        machine(entity).playOnce(action);
+    });
+    animation.set_function("isPlayingAction",
+                           [machine](core::ecs::Entity entity) {
+                               return machine(entity).isPlayingAction();
+                           });
+    animation.set_function("getState", [machine](core::ecs::Entity entity) {
+        return machine(entity).current();
+    });
+#endif
+}
+
+void ScriptingSystem::bindAudio([[maybe_unused]] core::ecs::World& world) {
+#ifdef AMPERSAND_MODULE_AUDIO
+    _lua.new_usertype<audio::AudioSource>(
+        "AudioSource", sol::no_constructor, "volume",
+        &audio::AudioSource::volume, "loop", &audio::AudioSource::loop,
+        "playing", &audio::AudioSource::playing);
+    _lua.set_function(
+        "getAudioSource",
+        [&world](core::ecs::Entity entity) -> audio::AudioSource& {
+            return world.get<audio::AudioSource>(entity);
+        });
+    _lua.set_function("hasAudioSource", [&world](core::ecs::Entity entity) {
+        return world.has<audio::AudioSource>(entity);
     });
 #endif
 }

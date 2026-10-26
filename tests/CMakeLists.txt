@@ -26,7 +26,3 @@ add_engine_tests(physics)
 add_engine_tests(render)
 add_engine_tests(scene)
 add_engine_tests(scripting)
-
-if(TARGET test_scripting AND TARGET ampersand_input)
-    target_compile_definitions(test_scripting PRIVATE AMPERSAND_MODULE_INPUT)
-endif()

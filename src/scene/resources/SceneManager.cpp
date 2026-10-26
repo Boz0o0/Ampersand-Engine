@@ -24,6 +24,9 @@ void SceneManager::registerBuiltins() {
 #ifdef AMPERSAND_MODULE_INPUT
     registerInput();
 #endif
+#ifdef AMPERSAND_MODULE_SCRIPTING
+    registerScripting();
+#endif
 }
 
 void SceneManager::registerResource(const std::string& name,

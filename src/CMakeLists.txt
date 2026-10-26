@@ -103,7 +103,22 @@ if (AMPERSAND_MODULE_SCRIPTING)
 
     if (AMPERSAND_MODULE_INPUT)
         target_link_libraries(ampersand_scripting PRIVATE ampersand_input)
-        target_compile_definitions(ampersand_scripting PRIVATE AMPERSAND_MODULE_INPUT)
+        target_compile_definitions(ampersand_scripting PUBLIC AMPERSAND_MODULE_INPUT)
+    endif()
+
+    if (AMPERSAND_MODULE_PHYSICS)
+        target_link_libraries(ampersand_scripting PRIVATE ampersand_physics)
+        target_compile_definitions(ampersand_scripting PUBLIC AMPERSAND_MODULE_PHYSICS)
+    endif()
+
+    if (AMPERSAND_MODULE_RENDER)
+        target_link_libraries(ampersand_scripting PRIVATE ampersand_render)
+        target_compile_definitions(ampersand_scripting PUBLIC AMPERSAND_MODULE_RENDER)
+    endif()
+
+    if (AMPERSAND_MODULE_AUDIO)
+        target_link_libraries(ampersand_scripting PRIVATE ampersand_audio)
+        target_compile_definitions(ampersand_scripting PUBLIC AMPERSAND_MODULE_AUDIO)
     endif()
 endif()
 
