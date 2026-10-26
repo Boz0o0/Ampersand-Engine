@@ -11,16 +11,16 @@ It only creates data: the game still adds the systems that use it.
 
 ## Concepts
 
-| Name              | Kind     | What it does                                                                                                                  |
-| ----------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `SceneManager`    | class    | loads the configuration, the scenes and the prefabs, and knows how to read each component and resource                        |
-| `Backends`        | resource | keeps alive the backends created from the files (`SfmlRenderer`, `SfmlAudioEngine`), added by the `SceneManager`              |
-| `Serializers.hpp` | header   | the JSON conversions of the engine types (`Vec2f`, `Transform`, `Color`, `KeyCode`...)                                        |
-| configuration     | file     | `gameRoot`, `startScene`, the `scenes` by name, and the `resources` kept until the next configuration (see [Files](#files))   |
-| scene             | file     | the `resources` and `entities` of one level, removed when another scene is loaded                                             |
-| prefab            | file     | one entity: its `components` and `children` (see [Prefabs](#prefabs))                                                         |
+| Name              | Kind     | What it does                                                                                                                |
+| ----------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `SceneManager`    | class    | loads the configuration, the scenes and the prefabs, and knows how to read each component and resource                      |
+| `Backends`        | resource | keeps alive the backends created from the files (`SfmlRenderer`, `SfmlAudioEngine`), added by the `SceneManager`            |
+| `Serializers.hpp` | header   | the JSON conversions of the engine types (`Vec2f`, `Transform`, `Color`, `KeyCode`...)                                      |
+| configuration     | file     | `gameRoot`, `startScene`, the `scenes` by name, and the `resources` kept until the next configuration (see [Files](#files)) |
+| scene             | file     | the `resources` and `entities` of one level, removed when another scene is loaded                                           |
+| prefab            | file     | one entity: its `components` and `children` (see [Prefabs](#prefabs))                                                       |
 
-Every file has `"version": 1` (`SceneManager::kVersion`): a file with another
+Every file has `"version": 2` (`SceneManager::kVersion`): a file with another
 version, or none, is refused.
 
 The `SceneManager` only reads the types of the modules that are built: with
@@ -73,7 +73,7 @@ The files of a small game, laid out as in [Game folder](#game-folder).
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "gameRoot": "game/",
   "startScene": "menu",
   "scenes": {
@@ -96,7 +96,7 @@ The files of a small game, laid out as in [Game folder](#game-folder).
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "name": "level1",
   "resources": {
     "ClearColor": { "value": { "r": 8, "g": 8, "b": 24, "a": 255 } },
@@ -116,7 +116,7 @@ The files of a small game, laid out as in [Game folder](#game-folder).
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "name": "Ship",
   "components": {
     "Transform": {
@@ -489,7 +489,7 @@ An unknown scene, a missing file, bad JSON, a bad version, a missing or unknown 
 
 | Rule       | Value                                                                                                              |
 | ---------- | ------------------------------------------------------------------------------------------------------------------ |
-| Version    | only `1`, for every file                                                                                           |
+| Version    | only `2`, for every file                                                                                           |
 | Backends   | only `"sfml"`, for the `Renderer` and the `AudioListener`                                                          |
 | Order      | the keys of an object are read in alphabetical order                                                               |
 | Fields     | every field of a component is mandatory (only `AudioListener`, `SceneMusic` and `InputManager` have optional ones) |

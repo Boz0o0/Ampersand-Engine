@@ -307,7 +307,11 @@ TEST_F(SceneManagerTest, FailedConfigurationLeavesNothing) {
 }
 
 TEST_F(SceneManagerTest, WrongVersionThrows) {
-    std::ofstream(_root / "config.json") << R"({"version": 2})";
+    write("a.json", R"({})");
+    json data =
+        json::parse(R"({"startScene": "a", "scenes": {"a": "a.json"}})");
+    data["version"] = SceneManager::kVersion + 1;
+    std::ofstream(_root / "config.json") << data.dump();
 
     EXPECT_THROW(_scenes.loadConfig(_world, (_root / "config.json").string()),
                  std::runtime_error);

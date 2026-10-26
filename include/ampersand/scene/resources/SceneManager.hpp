@@ -51,7 +51,7 @@ enum class ResourceScope : std::uint8_t {
  */
 class SceneManager {
 public:
-    static constexpr std::int32_t kVersion = 1;  // Version of the SceneManager
+    static constexpr std::int32_t kVersion = 2;  // Version of the SceneManager
 
     /**
      * @brief Creates a SceneManager with the engine types already registered.

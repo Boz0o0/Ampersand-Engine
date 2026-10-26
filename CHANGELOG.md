@@ -28,6 +28,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ### Changed
 
+- **Scene**: `SceneManager::kVersion` is now `2`: every file must give `"version": 2`, a file with `"version": 1` is refused.
 - **Scene**: the configuration gives `gameRoot` (the folder of the game) instead of `configRoot`. The paths of the scenes, prefabs and assets are relative to it.
 - **Docs**: the game folder (`assets/`, `scripts/`, `world/` with `config.json`, `prefabs/` and `scenes/`) is documented in Scene, Getting started and the README.
 - **Docs**: the FetchContent snippets use `GIT_TAG v0.4.1` (they still gave `v0.3.0`), and the release steps above say to update them.
