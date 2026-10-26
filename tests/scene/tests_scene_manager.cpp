@@ -84,7 +84,7 @@ protected:
         json data =
             json::parse(R"({"scenes": {"a": "a.json", "b": "b.json"}})");
         data["version"] = SceneManager::kVersion;
-        data["configRoot"] = _root.string();
+        data["gameRoot"] = _root.string();
         data["resources"] = json::parse(resources);
         if (!startScene.empty()) {
             data["startScene"] = startScene;
