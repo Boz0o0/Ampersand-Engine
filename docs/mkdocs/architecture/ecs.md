@@ -137,6 +137,7 @@ do not wear out the version of the same rows.
 | `add(e, component)` | attaches a component (its type is deduced)     | `InvalidEntity`, `ComponentAlreadyExists` |
 | `get<T>(e)`         | reference to the component                     | `InvalidEntity`, `ComponentNotFound`      |
 | `has<T>(e)`         | `true` if it has a `T` (`false` if it is dead) | never                                     |
+| `has<A, B>(e)`      | `true` if it has an `A` and a `B`              | never                                     |
 | `remove<T>(e)`      | detaches the component                         | `InvalidEntity`, `ComponentNotFound`      |
 | `owners<T>()`       | the entities that have a `T`                   | never                                     |
 

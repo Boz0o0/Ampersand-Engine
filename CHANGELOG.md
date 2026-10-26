@@ -24,6 +24,10 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+### Added
+
+- **Core**: `has` takes several component types (`has<Transform, Velocity>(e)`): `true` if the entity has all of them.
+
 ## [0.4.0] - 2026-10-26
 
 ### Added
