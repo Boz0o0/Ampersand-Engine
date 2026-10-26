@@ -42,6 +42,7 @@ nav:
       - Input: architecture/input.md
       - Audio: architecture/audio.md
       - Net: architecture/net.md
+      - Scene: architecture/scene.md
   - Design decisions: decisions.md
   - Changelog: changelog.md
   - R-Type:

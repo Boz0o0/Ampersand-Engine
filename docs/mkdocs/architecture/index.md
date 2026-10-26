@@ -23,6 +23,7 @@ Every module works the same way: it gives **components** and **resources**
 | [Input](input.md)       | keyboard and mouse events of the frame, what is held, where the mouse is |
 | [Audio](audio.md)       | plays the sounds and music of the entities and of the scene         |
 | [Net](net.md)           | sends and receives UDP datagrams, without knowing the game protocol |
+| [Scene](scene.md)       | builds the World from JSON scenes and prefabs, and switches between scenes |
 
 ## Module dependencies
 
@@ -34,7 +35,13 @@ graph BT
     physics[physics] --> core
     render[render] --> core
     render --> input
+    scene[scene] --> core
+    scene -.-> render
+    scene -.-> physics
+    scene -.-> input
+    scene -.-> audio
 ```
 
 `core` depends on no other module. `render` also depends on `input`, because
 the events of its window include the keyboard and mouse events of `input`.
+`scene` also uses the modules that are turned on (dotted), to read their types.
