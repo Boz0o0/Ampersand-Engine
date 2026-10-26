@@ -85,13 +85,15 @@ void SceneManager::loadConfig(core::ecs::World& world,
             throw std::runtime_error("Unknown start scene '" + startScene +
                                      "'");
         }
+        const json scene =
+            readScene(startScene, configRoot, scenes.at(startScene));
         unloadConfig(world);
         try {
             _configRoot = std::move(configRoot);
             _scenes = std::move(scenes);
             loadResources(world, config.value("resources", json{}),
                           _configResources);
-            loadScene(world, startScene);
+            switchScene(world, startScene, scene);
         } catch (...) {
             unloadConfig(world);
             throw;
@@ -104,13 +106,33 @@ void SceneManager::loadConfig(core::ecs::World& world,
 
 void SceneManager::loadScene(core::ecs::World& world,
                              const std::string& sceneName) {
+    const auto path = _scenes.find(sceneName);
+    if (path == _scenes.end()) {
+        throw std::runtime_error("Failed to load scene '" + sceneName +
+                                 "': Unknown scene");
+    }
+    switchScene(world, sceneName,
+                readScene(sceneName, _configRoot, path->second));
+}
+
+json SceneManager::readScene(const std::string& sceneName,
+                             const std::string& configRoot,
+                             const std::string& path) const {
     try {
-        const auto path = _scenes.find(sceneName);
-        if (path == _scenes.end()) {
-            throw std::runtime_error("Unknown scene");
-        }
-        const json scene = readFile(path->second);
+        json scene =
+            readJson((std::filesystem::path(configRoot) / path).string());
         checkSceneResources(scene.value("resources", json{}));
+        return scene;
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Failed to load scene '" + sceneName +
+                                 "': " + e.what());
+    }
+}
+
+void SceneManager::switchScene(core::ecs::World& world,
+                               const std::string& sceneName,
+                               const json& scene) {
+    try {
         unloadScene(world);
         _currentScene = sceneName;
         try {

@@ -242,10 +242,12 @@ public:
      *
      * Calls the registered loader of each key of the "resources" block.
      *
-     * The file and its "startScene" (a string, listed in "scenes") are
-     * checked before anything is unloaded: if they are wrong, the previous
-     * configuration stays. An error after that unloads everything, so
-     * nothing of the previous or the new configuration stays.
+     * The file, its "startScene" (a string, listed in "scenes") and the file
+     * of the start scene (read from the new configRoot, with no resource only
+     * allowed in the configuration) are checked before anything is unloaded:
+     * if they are wrong, the previous configuration stays. An error after
+     * that unloads everything, so nothing of the previous or the new
+     * configuration stays.
      *
      * @throws std::runtime_error if the file is invalid, or if a resource has
      * no registered loader.
@@ -425,6 +427,26 @@ private:
      * @brief Reads a JSON file relative to configRoot and checks its version.
      */
     [[nodiscard]] json readFile(const std::string& path) const;
+
+    /**
+     * @brief Reads the file of a scene, relative to configRoot, and checks
+     * that it gives no resource only allowed in the configuration.
+     *
+     * @throws std::runtime_error naming the scene if the file is invalid.
+     */
+    [[nodiscard]] json readScene(const std::string& sceneName,
+                                 const std::string& configRoot,
+                                 const std::string& path) const;
+
+    /**
+     * @brief Unloads the current scene, then loads a scene already read by
+     * readScene and sets it as the current scene. An error removes what the
+     * new scene loaded, and leaves no current scene.
+     *
+     * @throws std::runtime_error naming the scene if a part cannot be loaded.
+     */
+    void switchScene(core::ecs::World& world, const std::string& sceneName,
+                     const json& scene);
 
     /**
      * @brief Returns the entity description, and the ones of its children,

@@ -213,10 +213,11 @@ unless it is [persistent](#persistent-entities).
    the last loaded first;
 3. loads the resources of the new scene, then its entities.
 
-`loadConfig(world, path)` reads the file and checks its `startScene` (a string,
-listed in `scenes`), removes everything the previous configuration loaded (its
-scenes, its persistent entities and its resources), loads the `resources` of
-the configuration, then its `startScene`.
+`loadConfig(world, path)` reads the file, checks its `startScene` (a string,
+listed in `scenes`) and reads the file of that scene from the new `configRoot`,
+then removes everything the previous configuration loaded (its scenes, its
+persistent entities and its resources), loads the `resources` of the
+configuration, then its `startScene`.
 
 | What                                       | Created by                                | Removed by                                 |
 | ------------------------------------------ | ----------------------------------------- | ------------------------------------------ |
@@ -428,7 +429,7 @@ Every error is a `std::runtime_error` (`std::invalid_argument` for
 Failed to load scene 'level1': Failed to load component 'Sprite': [json.exception.out_of_range.403] key 'layer' not found
 ```
 
-An unknown scene, a missing file, bad JSON, a bad version, a missing or unknown `startScene`, or a scene giving a resource only allowed in theconfiguration are found before anything is unloaded: the previous scene (or configuration) stays as it was. Any other error (a missing field, a key with no loader, an asset that cannot be loaded, an unknown backend, input name or operator) is found once the previous one is unloaded, so the load is undone:
+An unknown scene, a missing file, bad JSON, a bad version, a missing or unknown `startScene`, or a scene giving a resource only allowed in the configuration are found before anything is unloaded: the previous scene (or configuration) stays as it was. Any other error (a missing field, a key with no loader, an asset that cannot be loaded, an unknown backend, input name or operator) is found once the previous one is unloaded, so the load is undone:
 
 - `loadScene` destroys every entity the new scene created (its persistent ones
   too) and removes its resources. The configuration stays, and
