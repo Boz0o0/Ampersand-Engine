@@ -132,15 +132,34 @@ public:
     }
 
     /**
-     * @brief Checks whether an entity has a component of type T.
+     * @brief Checks whether an entity has a component of each given type.
      *
-     * @tparam T Component type.
+     * @tparam Ts Component types (at least one).
      * @param entity Entity to check.
-     * @return true if the entity has a component of type T, false otherwise.
+     * @return true if the entity has a component of every type in Ts, false
+     * otherwise.
      */
-    template <typename T>
+    template <typename... Ts>
+        requires(sizeof...(Ts) > 0)
     [[nodiscard]] bool has(Entity entity) const {
-        return alive(entity) && _rows[entity.index][componentId<T>()] != 0;
+        return alive(entity) &&
+               ((_rows[entity.index][componentId<Ts>()] != 0) && ...);
+    }
+
+    /**
+     * @brief Checks whether an entity has a component of at least one of the
+     * given types.
+     *
+     * @tparam Ts Component types (at least one).
+     * @param entity Entity to check.
+     * @return true if the entity has a component of any type in Ts, false
+     * otherwise.
+     */
+    template <typename... Ts>
+        requires(sizeof...(Ts) > 0)
+    [[nodiscard]] bool hasAny(Entity entity) const {
+        return alive(entity) &&
+               ((_rows[entity.index][componentId<Ts>()] != 0) || ...);
     }
 
     /**
