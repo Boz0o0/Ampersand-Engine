@@ -56,7 +56,7 @@ set(AMPERSAND_MODULE_NET OFF)  # optional: turn off what the game does not use
 
 FetchContent_Declare(ampersand
     GIT_REPOSITORY https://github.com/Boz0o0/Ampersand-Engine.git
-    GIT_TAG v0.3.0
+    GIT_TAG v0.4.1
 )
 FetchContent_MakeAvailable(ampersand)
 
@@ -74,3 +74,22 @@ is under `ampersand/<module>/`:
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/physics/systems/MovementSystem.hpp>
 ```
+
+## Game folder
+
+A game using the [scene module](architecture/scene.md) keeps its files in one
+folder, its `gameRoot`:
+
+```text
+game
+├── assets          # textures, fonts, sounds, music
+├── scripts         # Lua scripts
+└── world
+    ├── config.json # configuration, given to SceneManager::loadConfig
+    ├── prefabs     # one entity per file
+    └── scenes      # one level per file
+```
+
+Every path of the JSON files is written from `gameRoot`
+(`"world/prefabs/player.json"`, `"assets/ship.png"`). See
+[Game folder](architecture/scene.md#game-folder).

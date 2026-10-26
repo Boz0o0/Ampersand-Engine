@@ -18,11 +18,19 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 2. Update the links at the bottom of this file.
 3. Set the same version in `project()` of `CMakeLists.txt`
    (eg: `VERSION 0.2.0`).
-4. Once it is merged, tag `main` and push the tag
+4. Set the new tag in the `GIT_TAG` of the FetchContent snippets, in
+   `README.md` and `docs/mkdocs/getting-started.md` (eg: `GIT_TAG v0.2.0`).
+5. Once it is merged, tag `main` and push the tag
    (`git tag v0.2.0 && git push origin v0.2.0`). The release workflow does the checks and creates the GitHub
    release.
 
 ## [Unreleased]
+
+### Changed
+
+- **Scene**: the configuration gives `gameRoot` (the folder of the game) instead of `configRoot`. The paths of the scenes, prefabs and assets are relative to it.
+- **Docs**: the game folder (`assets/`, `scripts/`, `world/` with `config.json`, `prefabs/` and `scenes/`) is documented in Scene, Getting started and the README.
+- **Docs**: the FetchContent snippets use `GIT_TAG v0.4.1` (they still gave `v0.3.0`), and the release steps above say to update them.
 
 ## [0.4.1] - 2026-10-26
 

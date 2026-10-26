@@ -47,7 +47,7 @@ All modules are on by default. Turn one off with `AMPERSAND_MODULE_<NAME>=OFF`
 include(FetchContent)
 FetchContent_Declare(ampersand
     GIT_REPOSITORY https://github.com/Boz0o0/Ampersand-Engine.git
-    GIT_TAG v0.3.0
+    GIT_TAG v0.4.1
 )
 FetchContent_MakeAvailable(ampersand)
 
@@ -57,6 +57,20 @@ target_link_libraries(my_game PRIVATE ampersand_render ampersand_physics)
 ```cpp
 #include <ampersand/core/ecs/World.hpp>
 ```
+
+A game using the scene module keeps its files in one folder:
+
+```
+game/
+├── assets/          # Textures, fonts, sounds, music
+├── scripts/         # Lua scripts
+└── world/
+    ├── config.json  # Configuration, given to SceneManager::loadConfig
+    ├── prefabs/     # One entity per file
+    └── scenes/      # One level per file
+```
+
+See [Scene](https://boz0o0.github.io/Ampersand-Engine/architecture/scene/#game-folder).
 
 ## Build the engine
 
