@@ -50,7 +50,7 @@ std::uint32_t SceneManager::asset(const std::string& kind,
         return found->second;
     }
     const auto loaded =
-        load((std::filesystem::path(_configRoot) / path).string());
+        load((std::filesystem::path(_gameRoot) / path).string());
     if (loaded == 0) {
         throw std::runtime_error("Cannot load " + kind + " '" + path + "'");
     }
@@ -77,7 +77,7 @@ void SceneManager::loadConfig(core::ecs::World& world,
                               const std::string& path) {
     try {
         const json config = readJson(path);
-        auto configRoot = config.value("configRoot", std::string{});
+        auto gameRoot = config.value("gameRoot", std::string{});
         auto scenes =
             config.value("scenes", std::map<std::string, std::string>{});
         const auto startScene = config.at("startScene").get<std::string>();
@@ -86,10 +86,10 @@ void SceneManager::loadConfig(core::ecs::World& world,
                                      "'");
         }
         const json scene =
-            readScene(startScene, configRoot, scenes.at(startScene));
+            readScene(startScene, gameRoot, scenes.at(startScene));
         unloadConfig(world);
         try {
-            _configRoot = std::move(configRoot);
+            _gameRoot = std::move(gameRoot);
             _scenes = std::move(scenes);
             loadResources(world, config.value("resources", json{}),
                           _configResources);
@@ -112,15 +112,15 @@ void SceneManager::loadScene(core::ecs::World& world,
                                  "': Unknown scene");
     }
     switchScene(world, sceneName,
-                readScene(sceneName, _configRoot, path->second));
+                readScene(sceneName, _gameRoot, path->second));
 }
 
 json SceneManager::readScene(const std::string& sceneName,
-                             const std::string& configRoot,
+                             const std::string& gameRoot,
                              const std::string& path) const {
     try {
         json scene =
-            readJson((std::filesystem::path(configRoot) / path).string());
+            readJson((std::filesystem::path(gameRoot) / path).string());
         checkSceneResources(scene.value("resources", json{}));
         return scene;
     } catch (const std::exception& e) {
@@ -182,7 +182,7 @@ json SceneManager::readJson(const std::string& path) {
 }
 
 json SceneManager::readFile(const std::string& path) const {
-    return readJson((std::filesystem::path(_configRoot) / path).string());
+    return readJson((std::filesystem::path(_gameRoot) / path).string());
 }
 
 json SceneManager::resolvePrefab(const json& description,
