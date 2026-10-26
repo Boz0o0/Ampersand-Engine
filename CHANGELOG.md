@@ -24,6 +24,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-26
+
 ### Added
 
 - **Core**: parent and children of entities, stored in the `World`: `setParent`, `parent` and `children`, `destroy` destroys the children of the entity, and `setParent` throws `HierarchyCycle` instead of creating a cycle.
@@ -84,7 +86,8 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.0...HEAD
+[0.3.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Boz0o0/Ampersand-Engine/releases/tag/v0.1.0
