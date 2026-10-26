@@ -30,7 +30,9 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 - **Scripting**: new module (`AMPERSAND_MODULE_SCRIPTING`) that runs Lua scripts with sol2 (Lua 5.4.7 and sol2 3.5.0 downloaded by CMake). The `Scripts` component lists the `.lua` files of an entity, and the `ScriptingSystem` gives each script its own `self` table and globals and calls its `start`, `update` and `onDestroy` functions.
 - **Scripting**: errors of a script (missing file, syntax error, error in a function) turn it off without stopping the game, and are sent to the `EventQueue<ScriptError>` resource.
-- **Tests**: unit tests of the `ScriptingSystem` (functions called, instances, globals, list changes, destroyed entities and errors).
+- **Scripting**: engine API for the scripts: the `Entity`, `Vec3` and `Transform` types, `getTransform` and `hasTransform`, `destroy` (applied at the end of the frame through the `CommandQueue`), and the `input` table (`getAxis`, `getButton`, `getButtonDown`, `getButtonUp`) when the input module is turned on.
+- **Tests**: unit tests of the `ScriptingSystem` (functions called, instances, globals, list changes, destroyed entities, errors) and of its engine API (types, `Transform`, `destroy` and `input`).
+- **Scripting**: sol2 never prints the errors of the C++ functions called by a script (`SOL_PRINT_ERRORS=0`): they are only sent as a `ScriptError`.
 
 ## [0.4.2] - 2026-10-26
 

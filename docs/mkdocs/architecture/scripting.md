@@ -13,6 +13,7 @@ run through [sol2](https://github.com/ThePhD/sol2).
 | `ScriptingSystem`          | system    | loads the files, creates one instance per script and calls its functions |
 | `ScriptError`              | event     | an error raised by a script: `path` of the file and `message`           |
 | `EventQueue<ScriptError>`  | resource  | where the errors are sent, optional                                     |
+| `CommandQueue`             | resource  | where `destroy` records the entities to destroy (added by the `Scheduler`) |
 
 The `ScriptingSystem` reads `dt` from the `Clock` resource and throws
 `ResourceNotFound` without it.
@@ -61,6 +62,68 @@ different `self`.
 
 A file is compiled once, the first time it is used, then every instance is
 created from that compiled code.
+
+## Engine API
+
+Every script can use these types and functions.
+
+### Types
+
+| Lua name    | C++ type            | Fields                                                    | Created from Lua         |
+| ----------- | ------------------- | --------------------------------------------------------- | ------------------------ |
+| `Entity`    | `core::ecs::Entity` | `index` (read only)                                       | no                       |
+| `Vec3`      | `core::math::Vec3f` | `x`, `y`, `z`                                             | `Vec3.new()`, `Vec3.new(x, y, z)` |
+| `Transform` | `core::Transform`   | `position`, `scale`, `rotationDegrees`, `origin` (`Vec3`) | no                       |
+
+### Functions
+
+| Function                     | Returns     | What it does                                                         |
+| ---------------------------- | ----------- | -------------------------------------------------------------------- |
+| `getTransform(entity)`       | `Transform` | the `Transform` of the entity: changing it changes the component     |
+| `hasTransform(entity)`       | boolean     | whether the entity has a `Transform`                                 |
+| `destroy(entity)`            | void         | destroys the entity at the end of the frame                          |
+| `input.getAxis(name)`        | number      | value of the axis, from -1 to 1                                      |
+| `input.getButton(name)`      | boolean     | whether the virtual button is held                                   |
+| `input.getButtonDown(name)`  | boolean     | whether the virtual button was pressed during this frame             |
+| `input.getButtonUp(name)`    | boolean     | whether the virtual button was released during this frame            |
+
+The axes and buttons are the ones declared on the `InputManager` with `setAxis`
+and `setButton`, see [Input](input.md).
+
+```lua
+-- scripts/ship.lua
+local Ship = {}
+
+function Ship:start(dt)
+    self.speed = 300
+end
+
+function Ship:update(dt)
+    local transform = getTransform(self.entity)
+    transform.position.x = transform.position.x
+        + input.getAxis("Horizontal") * self.speed * dt
+    if transform.position.x > 1920 then
+        destroy(self.entity)
+    end
+end
+
+return Ship
+```
+
+!!! warning "Do not keep a Transform"
+    `getTransform` gives the component itself, which can move in memory when
+    components are added or removed. It is only valid during the current call:
+    never store it (or one of its `Vec3`) in `self` to use it on a later frame,
+    call `getTransform` again instead.
+
+- `destroy` does not remove the entity at once: it stays alive until the end of
+  the frame, and its `onDestroy` is called on the next update. It needs the
+  `CommandQueue` resource, added by the `Scheduler`.
+- `getTransform` on an entity without a `Transform`, `input` without an
+  `InputManager` resource, or an unknown axis or button name raise an error:
+  the script is turned off and a `ScriptError` is sent (see [Errors](#errors)).
+- `input` only exists when the input module is turned on
+  (`AMPERSAND_MODULE_INPUT`), it is `nil` otherwise.
 
 ## Functions called
 
@@ -125,7 +188,8 @@ A script turned off stays off, until the list of its entity changes.
 
 | Rule     | Value                                                                  |
 | -------- | ---------------------------------------------------------------------- |
-| Engine   | scripts only know `self.entity` and `dt`: no access to the components |
+| Engine   | only the `Transform` and `input` can be reached: other components are not bound |
 | Paths    | relative to the folder the game is run from                             |
 | List     | changing the list of an entity resets all its scripts                  |
 | Globals  | kept apart per instance, but shared tables (`math`...) are not          |
+| Transform | only valid during the current call: do not keep it in `self`          |

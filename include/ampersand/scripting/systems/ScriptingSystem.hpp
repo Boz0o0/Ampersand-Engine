@@ -103,12 +103,23 @@ private:
      */
     sol::protected_function chunk(const std::string& path);
 
+    /** @brief Binds the types to the Lua state. */
+    void bindTypes();
+
+    /** @brief Binds the world to the Lua state. */
+    void bindWorld(core::ecs::World& world);
+
+    /** @brief Binds the input to the Lua state. */
+    void bindInput([[maybe_unused]] core::ecs::World& world);
+
     /** @brief Lua state. Declared first, so it is destroyed last. */
     sol::state _lua;
     /** @brief Bytecode of the compiled script files, by path. */
     std::unordered_map<std::string, sol::bytecode> _chunks;
     /** @brief Script instances of each entity. */
     std::unordered_map<core::ecs::Entity, std::vector<Instance>> _instances;
+    /** @brief Indicates whether the scripting system has been bound. */
+    bool _bound{false};
 };
 
 }  // namespace ampersand::scripting

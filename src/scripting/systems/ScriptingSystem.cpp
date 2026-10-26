@@ -1,10 +1,17 @@
 #include <algorithm>
+#include <ampersand/core/components/Transform.hpp>
+#include <ampersand/core/ecs/CommandQueue.hpp>
 #include <ampersand/core/ecs/EventQueue.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <ampersand/core/math/Vec3.hpp>
 #include <ampersand/core/resources/Clock.hpp>
 #include <ampersand/scripting/components/Scripts.hpp>
 #include <ampersand/scripting/systems/ScriptingSystem.hpp>
 #include <stdexcept>
+
+#ifdef AMPERSAND_MODULE_INPUT
+#include <ampersand/input/resources/InputManager.hpp>
+#endif
 
 namespace ampersand::scripting {
 
@@ -14,8 +21,14 @@ ScriptingSystem::ScriptingSystem() {
 }
 
 void ScriptingSystem::update(core::ecs::World& world) {
-    const float deltaTime = world.getResource<core::Clock>().dt;
+    if (!_bound) {
+        bindTypes();
+        bindWorld(world);
+        bindInput(world);
+        _bound = true;
+    }
 
+    const float deltaTime = world.getResource<core::Clock>().dt;
     for (auto it = _instances.begin(); it != _instances.end();) {
         if (world.alive(it->first) && world.has<Scripts>(it->first)) {
             ++it;
@@ -26,7 +39,6 @@ void ScriptingSystem::update(core::ecs::World& world) {
         }
         it = _instances.erase(it);
     }
-
     for (const core::ecs::Entity entity : world.owners<Scripts>()) {
         sync(world, entity, deltaTime);
         for (auto& instance : _instances[entity]) {
@@ -124,6 +136,66 @@ sol::protected_function ScriptingSystem::chunk(const std::string& path) {
     sol::environment environment(_lua, sol::create, _lua.globals());
     sol::set_environment(environment, script);
     return script;
+}
+
+void ScriptingSystem::bindTypes() {
+    _lua.new_usertype<core::ecs::Entity>(
+        "Entity", sol::no_constructor, "index",
+        sol::readonly(&core::ecs::Entity::index));
+
+    _lua.new_usertype<core::math::Vec3f>(
+        "Vec3",
+        sol::constructors<core::math::Vec3f(),
+                          core::math::Vec3f(float, float, float)>(),
+        "x", &core::math::Vec3f::x, "y", &core::math::Vec3f::y, "z",
+        &core::math::Vec3f::z);
+
+    _lua.new_usertype<core::Transform>(
+        "Transform", sol::no_constructor, "position",
+        &core::Transform::position, "scale", &core::Transform::scale,
+        "rotationDegrees", &core::Transform::rotationDegrees, "origin",
+        &core::Transform::origin);
+}
+
+void ScriptingSystem::bindWorld(core::ecs::World& world) {
+    _lua.set_function("getTransform",
+                      [&world](core::ecs::Entity entity) -> core::Transform& {
+                          return world.get<core::Transform>(entity);
+                      });
+
+    _lua.set_function("hasTransform", [&world](core::ecs::Entity entity) {
+        return world.has<core::Transform>(entity);
+    });
+
+    _lua.set_function("destroy", [&world](core::ecs::Entity entity) {
+        world.getResource<core::ecs::CommandQueue>().destroy(entity);
+    });
+}
+
+void ScriptingSystem::bindInput([[maybe_unused]] core::ecs::World& world) {
+#ifdef AMPERSAND_MODULE_INPUT
+    sol::table inputTable = _lua.create_named_table("input");
+
+    inputTable.set_function("getAxis", [&world](const std::string& name) {
+        const auto& manager = world.getResource<input::InputManager>();
+        return manager.getAxisRaw(name);
+    });
+
+    inputTable.set_function("getButton", [&world](const std::string& name) {
+        const auto& manager = world.getResource<input::InputManager>();
+        return manager.getButton(name);
+    });
+
+    inputTable.set_function("getButtonDown", [&world](const std::string& name) {
+        const auto& manager = world.getResource<input::InputManager>();
+        return manager.getButtonDown(name);
+    });
+
+    inputTable.set_function("getButtonUp", [&world](const std::string& name) {
+        const auto& manager = world.getResource<input::InputManager>();
+        return manager.getButtonUp(name);
+    });
+#endif
 }
 
 }  // namespace ampersand::scripting

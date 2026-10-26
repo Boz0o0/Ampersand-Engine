@@ -95,7 +95,7 @@ if (AMPERSAND_MODULE_SCRIPTING)
             lua_static
     )
 
-    target_compile_definitions(ampersand_scripting PUBLIC SOL_ALL_SAFETIES_ON=1)
+    target_compile_definitions(ampersand_scripting PUBLIC SOL_ALL_SAFETIES_ON=1 SOL_PRINT_ERRORS=0)
 
     if(MSVC)
         target_compile_options(ampersand_scripting PRIVATE /bigobj)
