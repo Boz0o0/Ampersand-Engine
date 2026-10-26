@@ -120,8 +120,8 @@ The same check protects the network code from late packets (a `DESTROY 42`
 arriving after a new entity took row 42).
 
 !!! tip "The null entity"
-Versions start at 1, so `Entity{}` (`{0, 0}`) is never alive. Use it as
-"no entity", for example in a `Target` component that has no target yet.
+    Versions start at 1, so `Entity{}` (`{0, 0}`) is never alive. Use it as
+    "no entity", for example in a `Target` component that has no target yet.
 
 ### Free rows
 
@@ -172,9 +172,8 @@ Rows                                   ComponentPool<Transform>
 - `has<Velocity>(e1)`: row 1, column 1 is `0`, so it has none.
 
 The row plays the role of a signature (a cell that is not 0 is a set bit) and
-also gives the position, so there is nothing else to keep in sync. Thanks to the
-
-- 1, a new row filled with zeros is an entity with no component.
+also gives the position, so there is nothing else to keep in sync. Thanks to
+the + 1, a new row filled with zeros is an entity with no component.
 
 ### Removing a component
 
@@ -222,11 +221,11 @@ move than have a position), and check the others with `has`: each check is a
 single read in the entity's row.
 
 !!! warning "Changing a pool while looping on it"
-`owners<T>()` is the pool's own list, not a copy. Inside a loop on
-`owners<T>()`, do **not** `remove<T>`, `add<T>` or `destroy` an entity that
-has a `T`: the swap-and-pop moves the last entity into the current slot and
-the loop **skips** it, and an `add` can reallocate the list (**undefined
-behaviour**).
+    `owners<T>()` is the pool's own list, not a copy. Inside a loop on
+    `owners<T>()`, do **not** `remove<T>`, `add<T>` or `destroy` an entity that
+    has a `T`: the swap-and-pop moves the last entity into the current slot and
+    the loop **skips** it, and an `add` can reallocate the list (**undefined
+    behaviour**).
 
     Three safe ways to destroy entities in a system:
 
@@ -325,8 +324,8 @@ The time comes from the game, so the same loop works on both sides:
     same result.
 
 !!! warning
-Do not call `add` from a system: the list of systems would change while the
-Scheduler loops on it.
+    Do not call `add` from a system: the list of systems would change while the
+    Scheduler loops on it.
 
 ## Event queues
 
@@ -371,53 +370,6 @@ system. So:
 
 Without a Scheduler, add the resource with `world.addResource<ecs::EventQueue<T>>()`
 and call `clear()` at the end of each frame.
-
-## Command queue
-
-A **command** is a change to the World (destroy an entity...) that a system
-records in the `CommandQueue` resource instead of doing it at once. The
-Scheduler adds the queue and applies its commands, in the order they were
-recorded, at the end of each frame. So a system can change the World while it
-loops over `owners<T>()`:
-
-```cpp
-// in DamageSystem::update
-for (const ecs::Entity enemy : world.owners<Enemy>()) {
-    if (world.get<Health>(enemy).points <= 0) {
-        world.getResource<ecs::EventQueue<Died>>().send({.entity = enemy});
-        world.getResource<ecs::CommandQueue>().destroy(enemy);
-    }
-}
-
-// in ExplosionSystem::update, after DamageSystem: the entity can still be used
-for (const Died& died : world.getResource<ecs::EventQueue<Died>>().read()) {
-    spawnExplosion(world, world.get<ecs::Transform>(died.entity).position);
-}
-```
-
-The event and the command work together: the event tells the other systems
-what happened, the command does the change at the end of the frame.
-
-| Call           | Effect                                             | Throws |
-| -------------- | -------------------------------------------------- | ------ |
-| `destroy(e)`   | records the destruction of `e`                     | never  |
-| `apply(world)` | runs the commands in order, then empties the queue | never  |
-
-`destroy` skips an entity that is already dead when the queue is applied, so
-two systems can destroy the same entity in the same frame.
-
-Every command follows the same rules:
-
-- a command changes nothing until the end of the frame: the systems after the
-  one that records it still see the World as it was (a destroyed entity is
-  still alive, to read its position, add to the score...);
-- at the end of a frame, the Scheduler applies the `CommandQueue`, **then**
-  empties the event queues;
-- a command recorded between two frames is applied at the end of the next one;
-- if a system throws, the frame stops and the queue is not applied.
-
-Without a Scheduler, add the resource with `world.addResource<ecs::CommandQueue>()`
-and call `apply(world)` at the end of each frame.
 
 ## Command queue
 
@@ -513,9 +465,11 @@ world.destroy(ship);                     // the turret survives
 descendants, since an entity cannot be its own ancestor. The World is left
 unchanged.
 
-!!! warning - `children(e)` is the World's own list: inside a loop over it, do not
-`setParent` or `destroy` a child. Loop over a copy instead. - `destroy` may destroy other entities (the children): inside a loop over
-`owners<T>()`, destroy after the loop.
+!!! warning
+    - `children(e)` is the World's own list: inside a loop over it, do not
+      `setParent` or `destroy` a child. Loop over a copy instead.
+    - `destroy` may destroy other entities (the children): inside a loop over
+      `owners<T>()`, destroy after the loop.
 
 ## Resources
 
@@ -539,11 +493,11 @@ There is one instance per type and per world. The resource is built directly in
 the World, so types that cannot be copied or moved (window, socket) work.
 
 !!! note "Interfaces"
-Resources are found by their **exact type**: after
-`addResource<SfmlAudioEngine>(...)`, `getResource<IAudioEngine>()` throws
-`ResourceNotFound`. To share an object through its interface, put a
-reference to the interface in a resource (see`AudioListener` ([Audio](audio.md)) and
-`Renderer` ([Render](render.md#window))).
+    Resources are found by their **exact type**: after
+    `addResource<SfmlAudioEngine>(...)`, `getResource<IAudioEngine>()` throws
+    `ResourceNotFound`. To share an object through its interface, put a
+    reference to the interface in a resource (see `AudioListener` ([Audio](audio.md)) and
+    `Renderer` ([Render](render.md#window))).
 
 ## Entities as keys
 

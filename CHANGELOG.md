@@ -28,8 +28,6 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 - **Core**: parent and children of entities, stored in the `World`: `setParent`, `parent` and `children`, `destroy` destroys the children of the entity, and `setParent` throws `HierarchyCycle` instead of creating a cycle.
 
-### Changed
-
 ## [0.3.0] - 2026-10-23
 
 Frame loop with the `Scheduler`, event and command queues, controllers and action map for the input, layers and animation state machine for the render.
