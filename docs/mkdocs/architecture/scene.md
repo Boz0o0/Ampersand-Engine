@@ -154,12 +154,12 @@ gives them. A key of `components` or `resources` with no registered loader
 throws (see [Types of the game](#types-of-the-game)).
 
 !!! warning "Order of the keys"
-The keys of a JSON object are read in **alphabetical order**, not in the
-order of the file (`nlohmann::json` sorts them): the resources of a block
-and the components of an entity. The `entities` and `children` lists keep
-their order. So a loader never needs another key of its own block: the
-`Renderer` a `Sprite` needs comes from the configuration, loaded before every
-scene.
+    The keys of a JSON object are read in **alphabetical order**, not in the
+    order of the file (`nlohmann::json` sorts them): the resources of a block
+    and the components of an entity. The `entities` and `children` lists keep
+    their order. So a loader never needs another key of its own block: the
+    `Renderer` a `Sprite` needs comes from the configuration, loaded before every
+    scene.
 
 ## Prefabs
 
