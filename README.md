@@ -36,6 +36,7 @@ Each module is a static library. A game only builds the modules it uses.
 | Render  | `ampersand_render`  | core, input, SFML |
 | Audio   | `ampersand_audio`   | core, SFML        |
 | Net     | `ampersand_net`     | core, Asio        |
+| Scene   | `ampersand_scene`   | core, nlohmann/json |
 
 All modules are on by default. Turn one off with `AMPERSAND_MODULE_<NAME>=OFF`
 (e.g. `AMPERSAND_MODULE_RENDER=OFF`).

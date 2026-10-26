@@ -16,6 +16,7 @@ option(AMPERSAND_MODULE_INPUT "Build the Input module" ON)
 option(AMPERSAND_MODULE_NET "Build the Network module" ON)
 option(AMPERSAND_MODULE_PHYSICS "Build the Physics module" ON)
 option(AMPERSAND_MODULE_RENDER "Build the Render module" ON)
+option(AMPERSAND_MODULE_SCENE "Build the Scene module" ON)
 
 option(AMPERSAND_BUILD_TESTS "Build the engine unit tests" ${PROJECT_IS_TOP_LEVEL})
 
@@ -67,6 +68,14 @@ if (AMPERSAND_MODULE_NET AND NOT TARGET asio)
         target_compile_definitions(asio PUBLIC _WIN32_WINNT=0x0A00)
         target_link_libraries(asio PUBLIC ws2_32 mswsock)
     endif()
+endif()
+
+if (AMPERSAND_MODULE_SCENE)
+    CPMAddPackage(
+        NAME nlohmann_json
+        GITHUB_REPOSITORY nlohmann/json
+        GIT_TAG v3.12.0
+    )
 endif()
 
 add_subdirectory(src)

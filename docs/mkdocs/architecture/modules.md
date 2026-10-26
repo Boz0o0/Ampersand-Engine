@@ -13,6 +13,7 @@ For why we split it this way, see [Design decisions](../decisions.md#separation-
 | Input   | `ampersand_input`   | `AMPERSAND_MODULE_INPUT`   | core            | `src/input/`   | `tests/input/`   |
 | Audio   | `ampersand_audio`   | `AMPERSAND_MODULE_AUDIO`   | core, SFML      | `src/audio/`   | `tests/audio/`   |
 | Net     | `ampersand_net`     | `AMPERSAND_MODULE_NET`     | core, Asio      | `src/net/`     | `tests/net/`     |
+| Scene   | `ampersand_scene`   | `AMPERSAND_MODULE_SCENE`   | core, nlohmann/json | `src/scene/` |                  |
 
 Every option is `ON` by default. Turn one off at configure time:
 
@@ -21,7 +22,8 @@ cmake -B build -DAMPERSAND_MODULE_RENDER=OFF
 ```
 
 Linking a target also links the modules it needs: `ampersand_render` brings
-`ampersand_input` and `ampersand_core`.
+`ampersand_input` and `ampersand_core`. `ampersand_scene` links every other
+module that is turned on (except `net`), since it reads their types.
 
 The headers of a module are in `include/ampersand/<module>/`, with its
 `components/`, `resources/` and `systems/` in folders of the same name.

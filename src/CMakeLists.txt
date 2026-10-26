@@ -20,7 +20,7 @@ endfunction()
 
  if(NOT AMPERSAND_MODULE_CORE)
      if(AMPERSAND_MODULE_AUDIO OR AMPERSAND_MODULE_INPUT OR AMPERSAND_MODULE_NET
-        OR AMPERSAND_MODULE_PHYSICS OR AMPERSAND_MODULE_RENDER)
+        OR AMPERSAND_MODULE_PHYSICS OR AMPERSAND_MODULE_RENDER OR AMPERSAND_MODULE_SCENE)
          message(FATAL_ERROR "AMPERSAND_MODULE_CORE must be enabled when another engine module is enabled")
      endif()
  endif()
@@ -83,4 +83,34 @@ if(AMPERSAND_MODULE_RENDER)
             SFML::Window
             SFML::System
     )
+endif()
+
+if (AMPERSAND_MODULE_SCENE)
+    add_engine_module(scene)
+
+    target_link_libraries(ampersand_scene
+        PUBLIC
+            ampersand_core
+            nlohmann_json::nlohmann_json
+    )
+
+    if (AMPERSAND_MODULE_RENDER)
+        target_link_libraries(ampersand_scene PUBLIC ampersand_render)
+        target_compile_definitions(ampersand_scene PUBLIC AMPERSAND_MODULE_RENDER)
+    endif()
+
+    if (AMPERSAND_MODULE_PHYSICS)
+        target_link_libraries(ampersand_scene PUBLIC ampersand_physics)
+        target_compile_definitions(ampersand_scene PUBLIC AMPERSAND_MODULE_PHYSICS)
+    endif()
+
+    if (AMPERSAND_MODULE_AUDIO)
+        target_link_libraries(ampersand_scene PUBLIC ampersand_audio)
+        target_compile_definitions(ampersand_scene PUBLIC AMPERSAND_MODULE_AUDIO)
+    endif()
+
+    if (AMPERSAND_MODULE_INPUT)
+        target_link_libraries(ampersand_scene PUBLIC ampersand_input)
+        target_compile_definitions(ampersand_scene PUBLIC AMPERSAND_MODULE_INPUT)
+    endif()
 endif()

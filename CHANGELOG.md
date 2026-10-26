@@ -27,6 +27,10 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 ### Added
 
 - **Core**: parent and children of entities, stored in the `World`: `setParent`, `parent` and `children`, `destroy` destroys the children of the entity, and `setParent` throws `HierarchyCycle` instead of creating a cycle.
+- **Scene**: new module (`AMPERSAND_MODULE_SCENE`) that builds the World from JSON files: a configuration (`configRoot`, `startScene`, `scenes` and the resources of the whole game), scenes (resources and entities of one level) and prefabs, read by the `SceneManager` with `loadConfig` and `loadScene`.
+- **Scene**: prefabs merged field by field ([JSON Merge Patch](https://www.rfc-editor.org/rfc/rfc7386)), `instantiate`, persistent entities (`"persistent": true` and `dontDestroyOnLoad`) and assets (textures, fonts, sounds, music) loaded once per path.
+- **Scene**: loaders for the types of the render, physics, input and audio modules, `registerResource` (with a `ResourceScope`) and `registerComponent` for the types of the game, and the `Backends` resource that keeps the `SfmlRenderer` and `SfmlAudioEngine` created from the files. The `Renderer`, `AudioListener` and `InputManager` are only allowed in the configuration.
+- **Tests**: unit tests of the `SceneManager` (load, unload, prefabs, persistent entities and failure paths).
 
 ## [0.3.0] - 2026-10-23
 
