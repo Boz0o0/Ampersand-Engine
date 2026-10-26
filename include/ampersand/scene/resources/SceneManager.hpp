@@ -37,7 +37,7 @@ enum class ResourceScope : std::uint8_t {
  * InputManager are only allowed in the configuration (ResourceScope::Config):
  * the systems using them need them in every scene.
  *
- * Configuration format: {"version", "configRoot", "startScene", "scenes":
+ * Configuration format: {"version", "gameRoot", "startScene", "scenes":
  * {name: path}, "resources": {...}}. Scene format: {"version", "resources":
  * {...}, "entities": [...]}. Only "version" and "startScene" are mandatory.
  *
@@ -45,13 +45,13 @@ enum class ResourceScope : std::uint8_t {
  * "children": [...]}, every key optional ("name" is ignored). Every field of
  * a component is mandatory. The components of the scene are merged field by
  * field over the ones of the prefab (a null component removes it), so a scene
- * only gives the fields it overrides. Paths are relative to configRoot. A
- * persistent entry is created once: loading its scene again does not create
- * it twice while it is alive.
+ * only gives the fields it overrides. Paths (scenes, prefabs, assets) are
+ * relative to gameRoot, the folder of the game. A persistent entry is created
+ * once: loading its scene again does not create it twice while it is alive.
  */
 class SceneManager {
 public:
-    static constexpr std::int32_t kVersion = 1;  // Version of the SceneManager
+    static constexpr std::int32_t kVersion = 2;  // Version of the SceneManager
 
     /**
      * @brief Creates a SceneManager with the engine types already registered.
@@ -208,7 +208,7 @@ public:
      * @brief Returns the id of an asset, loading it on first use.
      *
      * @param kind Kind of the asset ("texture", "sound"...), one cache each.
-     * @param path Path of the asset, relative to configRoot.
+     * @param path Path of the asset, relative to gameRoot.
      * @param load Loads the asset from its full path.
      * @throws std::runtime_error if the asset cannot be loaded.
      */
@@ -243,7 +243,7 @@ public:
      * Calls the registered loader of each key of the "resources" block.
      *
      * The file, its "startScene" (a string, listed in "scenes") and the file
-     * of the start scene (read from the new configRoot, with no resource only
+     * of the start scene (read from the new gameRoot, with no resource only
      * allowed in the configuration) are checked before anything is unloaded:
      * if they are wrong, the previous configuration stays. An error after
      * that unloads everything, so nothing of the previous or the new
@@ -277,7 +277,7 @@ public:
      * scene is loaded, unless it is marked with dontDestroyOnLoad.
      *
      * @param world World receiving the entity.
-     * @param path Prefab file, relative to configRoot.
+     * @param path Prefab file, relative to gameRoot.
      * @return Root entity of the prefab.
      * @throws std::runtime_error if the prefab is invalid.
      */
@@ -427,18 +427,18 @@ private:
     static json readJson(const std::string& path);
 
     /**
-     * @brief Reads a JSON file relative to configRoot and checks its version.
+     * @brief Reads a JSON file relative to gameRoot and checks its version.
      */
     [[nodiscard]] json readFile(const std::string& path) const;
 
     /**
-     * @brief Reads the file of a scene, relative to configRoot, and checks
+     * @brief Reads the file of a scene, relative to gameRoot, and checks
      * that it gives no resource only allowed in the configuration.
      *
      * @throws std::runtime_error naming the scene if the file is invalid.
      */
     [[nodiscard]] json readScene(const std::string& sceneName,
-                                 const std::string& configRoot,
+                                 const std::string& gameRoot,
                                  const std::string& path) const;
 
     /**
@@ -530,7 +530,7 @@ private:
      */
     void unloadConfig(core::ecs::World& world);
 
-    std::string _configRoot;    // Path to the root of the configuration files
+    std::string _gameRoot;      // Path to the folder of the game
     std::string _currentScene;  // Name of the current scene
     std::map<std::string, std::string>
         _scenes;  // Map of scene names to their paths

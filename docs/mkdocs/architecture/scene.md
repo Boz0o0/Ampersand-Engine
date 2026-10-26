@@ -11,32 +11,75 @@ It only creates data: the game still adds the systems that use it.
 
 ## Concepts
 
-| Name              | Kind     | What it does                                                                                                                  |
-| ----------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `SceneManager`    | class    | loads the configuration, the scenes and the prefabs, and knows how to read each component and resource                        |
-| `Backends`        | resource | keeps alive the backends created from the files (`SfmlRenderer`, `SfmlAudioEngine`), added by the `SceneManager`              |
-| `Serializers.hpp` | header   | the JSON conversions of the engine types (`Vec2f`, `Transform`, `Color`, `KeyCode`...)                                        |
-| configuration     | file     | `configRoot`, `startScene`, the `scenes` by name, and the `resources` kept until the next configuration (see [Files](#files)) |
-| scene             | file     | the `resources` and `entities` of one level, removed when another scene is loaded                                             |
-| prefab            | file     | one entity: its `components` and `children` (see [Prefabs](#prefabs))                                                         |
+| Name              | Kind     | What it does                                                                                                                |
+| ----------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `SceneManager`    | class    | loads the configuration, the scenes and the prefabs, and knows how to read each component and resource                      |
+| `Backends`        | resource | keeps alive the backends created from the files (`SfmlRenderer`, `SfmlAudioEngine`), added by the `SceneManager`            |
+| `Serializers.hpp` | header   | the JSON conversions of the engine types (`Vec2f`, `Transform`, `Color`, `KeyCode`...)                                      |
+| configuration     | file     | `gameRoot`, `startScene`, the `scenes` by name, and the `resources` kept until the next configuration (see [Files](#files)) |
+| scene             | file     | the `resources` and `entities` of one level, removed when another scene is loaded                                           |
+| prefab            | file     | one entity: its `components` and `children` (see [Prefabs](#prefabs))                                                       |
 
-Every file has `"version": 1` (`SceneManager::kVersion`): a file with another
+Every file has `"version": 2` (`SceneManager::kVersion`): a file with another
 version, or none, is refused.
 
 The `SceneManager` only reads the types of the modules that are built: with
 `AMPERSAND_MODULE_RENDER=OFF`, `Sprite` is an unknown key. Linking
 `ampersand_scene` also links every module that is turned on.
 
+## Game folder
+
+Every file of a game is in one folder, its `gameRoot` (given in the
+configuration), laid out like this:
+
+```text
+game
+├── assets
+│   ├── font.ttf
+│   └── ship.png
+├── scripts
+│   ├── parallaxBackground.lua
+│   └── playerMovements.lua
+└── world
+    ├── config.json
+    ├── prefabs
+    │   ├── player.json
+    │   └── sword.json
+    └── scenes
+        ├── sceneGame.json
+        └── sceneMenu.json
+```
+
+| Folder              | What it holds                                                                          |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `assets/`           | the textures, fonts, sounds and music used by the components and resources             |
+| `scripts/`          | the Lua scripts of the game (not read by the engine yet)                               |
+| `world/`            | the JSON files read by the `SceneManager`                                              |
+| `world/config.json` | the [configuration](#files), opened with `loadConfig(world, "game/world/config.json")` |
+| `world/prefabs/`    | the [prefabs](#prefabs), one entity per file                                           |
+| `world/scenes/`     | the scenes, one level per file                                                         |
+
+The `SceneManager` does not add these folders itself: every path of the files
+is written from `gameRoot`, so a scene is `"world/scenes/sceneMenu.json"`, a
+prefab `"world/prefabs/player.json"` and a texture `"assets/ship.png"` (see
+[Files](#files)). `gameRoot` is relative to the working directory: with
+`"gameRoot": "game/"`, run the game from the folder that holds `game/`.
+
 ## Example
 
-`assets/config.json`:
+The files of a small game, laid out as in [Game folder](#game-folder).
+
+`game/world/config.json`:
 
 ```json
 {
-  "version": 1,
-  "configRoot": "assets/",
+  "version": 2,
+  "gameRoot": "game/",
   "startScene": "menu",
-  "scenes": { "menu": "scenes/menu.json", "level1": "scenes/level1.json" },
+  "scenes": {
+    "menu": "world/scenes/menu.json",
+    "level1": "world/scenes/level1.json"
+  },
   "resources": {
     "Renderer": {
       "backend": "sfml",
@@ -49,11 +92,11 @@ The `SceneManager` only reads the types of the modules that are built: with
 }
 ```
 
-`assets/scenes/level1.json`:
+`game/world/scenes/level1.json`:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "name": "level1",
   "resources": {
     "ClearColor": { "value": { "r": 8, "g": 8, "b": 24, "a": 255 } },
@@ -62,18 +105,18 @@ The `SceneManager` only reads the types of the modules that are built: with
   "entities": [
     {
       "name": "Player",
-      "prefab": "prefabs/ship.json",
+      "prefab": "world/prefabs/ship.json",
       "components": { "Transform": { "position": { "x": 100, "y": 360 } } }
     }
   ]
 }
 ```
 
-`assets/prefabs/ship.json`:
+`game/world/prefabs/ship.json`:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "name": "Ship",
   "components": {
     "Transform": {
@@ -83,7 +126,7 @@ The `SceneManager` only reads the types of the modules that are built: with
       "origin": { "x": 0, "y": 0, "z": 0 }
     },
     "Sprite": {
-      "texture": "textures/ships.png",
+      "texture": "assets/ships.png",
       "source": { "x": 0, "y": 0, "width": 33, "height": 17 },
       "color": { "r": 255, "g": 255, "b": 255, "a": 255 },
       "layer": 0
@@ -104,7 +147,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Score, value)
 ecs::World world;
 scene::SceneManager scenes;               // the engine types are already registered
 scenes.registerResource<Score>("Score");  // the game registers its own, before loading
-scenes.loadConfig(world, "assets/config.json");  // opens the window, loads "menu"
+scenes.loadConfig(world, "game/world/config.json");  // opens the window, loads "menu"
 
 auto& window = world.getResource<render::Renderer>();
 while (window.isOpen) {
@@ -128,7 +171,7 @@ backend: the `SceneManager` creates the `SfmlRenderer` and keeps it in the
 | ------------ | ------- | ------------------------------------------------------------------------------ |
 | `version`    |         | version of the SceneManager to use                                             |
 | `startScene` |         | name of the scene loaded at the end of `loadConfig`                            |
-| `configRoot` | `""`    | folder every other path is relative to                                         |
+| `gameRoot`   | `""`    | folder of the game, every other path is relative to                            |
 | `scenes`     | `{}`    | scene name → scene file. `setScene(name, path)` adds or replaces one from code |
 | `resources`  | `null`  | kept until the next `loadConfig`, see [Engine types](#engine-types)            |
 
@@ -146,8 +189,10 @@ default `null`). Any other key (`name`) is ignored.
 | `name`       |         | ignored: it only makes the file easier to read                                                          |
 
 The path given to `loadConfig` is opened as it is. Every other path (scenes,
-prefabs, textures, fonts, sounds) is relative to `configRoot`, which is itself
-relative to the **working directory**, not to the configuration file.
+prefabs, textures, fonts, sounds) is relative to `gameRoot`, which is itself
+relative to the **working directory**, not to the configuration file: a scene
+is written `"world/scenes/level1.json"`, a prefab `"world/prefabs/ship.json"`
+and a texture `"assets/ships.png"`.
 
 Every field of a component is mandatory: there are no defaults, unless a prefab
 gives them. A key of `components` or `resources` with no registered loader
@@ -174,12 +219,12 @@ with `"prefab"` starts from that file, then:
 
 ```json
 {
-  "prefab": "prefabs/ship.json",
+  "prefab": "world/prefabs/ship.json",
   "components": {
     "Transform": { "position": { "x": 100, "y": 360 } },
     "Velocity": null
   },
-  "children": [{ "prefab": "prefabs/turret.json" }]
+  "children": [{ "prefab": "world/prefabs/turret.json" }]
 }
 ```
 
@@ -195,7 +240,7 @@ throws. The prefab files are read from the disk each time they are used.
 root:
 
 ```cpp
-const ecs::Entity bullet = scenes.instantiate(world, "prefabs/bullet.json");
+const ecs::Entity bullet = scenes.instantiate(world, "world/prefabs/bullet.json");
 world.get<core::Transform>(bullet).position = muzzle;
 ```
 
@@ -215,7 +260,7 @@ unless it is [persistent](#persistent-entities).
 3. loads the resources of the new scene, then its entities.
 
 `loadConfig(world, path)` reads the file, checks its `startScene` (a string,
-listed in `scenes`) and reads the file of that scene from the new `configRoot`,
+listed in `scenes`) and reads the file of that scene from the new `gameRoot`,
 then removes everything the previous configuration loaded (its scenes, its
 persistent entities and its resources), loads the `resources` of the
 configuration, then its `startScene`.
@@ -260,7 +305,7 @@ one created by the scene: `loadScene` only destroys the entities whose root is
 not persistent.
 
 ```cpp
-const ecs::Entity player = scenes.instantiate(world, "prefabs/player.json");
+const ecs::Entity player = scenes.instantiate(world, "world/prefabs/player.json");
 scenes.dontDestroyOnLoad(world, player);  // follows the player from level to level
 ```
 
@@ -444,7 +489,7 @@ An unknown scene, a missing file, bad JSON, a bad version, a missing or unknown 
 
 | Rule       | Value                                                                                                              |
 | ---------- | ------------------------------------------------------------------------------------------------------------------ |
-| Version    | only `1`, for every file                                                                                           |
+| Version    | only `2`, for every file                                                                                           |
 | Backends   | only `"sfml"`, for the `Renderer` and the `AudioListener`                                                          |
 | Order      | the keys of an object are read in alphabetical order                                                               |
 | Fields     | every field of a component is mandatory (only `AudioListener`, `SceneMusic` and `InputManager` have optional ones) |
@@ -452,4 +497,4 @@ An unknown scene, a missing file, bad JSON, a bad version, a missing or unknown 
 | Prefabs    | read from the disk on each use, no cache                                                                           |
 | Persistent | an entry is known by its index in `entities`                                                                       |
 | Saving     | the files are only read: the World cannot be written back to JSON                                                  |
-| Paths      | relative to `configRoot`, itself relative to the working directory                                                 |
+| Paths      | relative to `gameRoot`, itself relative to the working directory                                                   |

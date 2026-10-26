@@ -18,7 +18,9 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 2. Update the links at the bottom of this file.
 3. Set the same version in `project()` of `CMakeLists.txt`
    (eg: `VERSION 0.2.0`).
-4. Once it is merged, tag `main` and push the tag
+4. Set the new tag in the `GIT_TAG` of the FetchContent snippets, in
+   `README.md` and `docs/mkdocs/getting-started.md` (eg: `GIT_TAG v0.2.0`).
+5. Once it is merged, tag `main` and push the tag
    (`git tag v0.2.0 && git push origin v0.2.0`). The release workflow does the checks and creates the GitHub
    release.
 
@@ -29,6 +31,15 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Scripting**: new module (`AMPERSAND_MODULE_SCRIPTING`) that runs Lua scripts with sol2 (Lua 5.4.7 and sol2 3.5.0 downloaded by CMake). The `Scripts` component lists the `.lua` files of an entity, and the `ScriptingSystem` gives each script its own `self` table and globals and calls its `start`, `update` and `onDestroy` functions.
 - **Scripting**: errors of a script (missing file, syntax error, error in a function) turn it off without stopping the game, and are sent to the `EventQueue<ScriptError>` resource.
 - **Tests**: unit tests of the `ScriptingSystem` (functions called, instances, globals, list changes, destroyed entities and errors).
+
+## [0.4.2] - 2026-10-26
+
+### Changed
+
+- **Scene**: `SceneManager::kVersion` is now `2`: every file must give `"version": 2`, a file with `"version": 1` is refused.
+- **Scene**: the configuration gives `gameRoot` (the folder of the game) instead of `configRoot`. The paths of the scenes, prefabs and assets are relative to it.
+- **Docs**: the game folder (`assets/`, `scripts/`, `world/` with `config.json`, `prefabs/` and `scenes/`) is documented in Scene, Getting started and the README.
+- **Docs**: the FetchContent snippets use `GIT_TAG v0.4.1` (they still gave `v0.3.0`), and the release steps above say to update them.
 
 ## [0.4.1] - 2026-10-26
 
@@ -99,7 +110,8 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.2.0...v0.3.0
