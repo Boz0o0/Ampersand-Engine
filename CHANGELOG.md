@@ -24,6 +24,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-26
+
 ### Added
 
 - **Core**: `has` takes several component types (`has<Transform, Velocity>(e)`): `true` if the entity has all of them.
@@ -91,8 +93,9 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.0...HEAD
-[0.3.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.3.0...v0.4.0
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Boz0o0/Ampersand-Engine/releases/tag/v0.1.0
