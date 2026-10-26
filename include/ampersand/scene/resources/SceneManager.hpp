@@ -258,6 +258,9 @@ public:
      * @brief Unloads the current scene (its entities and resources, in
      * reverse order), then loads a scene and sets it as the current scene.
      *
+     * An entity of the scene is destroyed with its children, even the ones
+     * the game attached under it with setParent.
+     *
      * An unknown scene, a file that cannot be read, or a resource only
      * allowed in the configuration leaves the current scene as it was. An error
      * after that removes what the new scene loaded, and leaves no current
@@ -509,8 +512,8 @@ private:
 
     /**
      * @brief Destroys the entities of the current scene that are not
-     * persistent (or attached under a persistent one), and removes its
-     * resources.
+     * persistent (or attached under a persistent one), with their children
+     * (the ones attached by the game included), and removes its resources.
      */
     void unloadScene(core::ecs::World& world);
 

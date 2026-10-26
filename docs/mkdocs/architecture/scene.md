@@ -209,7 +209,8 @@ unless it is [persistent](#persistent-entities).
 1. finds the scene and reads its file. An unknown scene, a missing file, bad
    JSON or a bad version throw here, and the current scene is left as it was;
 2. destroys the entities of the current scene (the ones it created and the
-   instantiated ones, not the persistent ones), then removes its resources,
+   instantiated ones, not the persistent ones) with their children, then
+   removes its resources,
    the last loaded first;
 3. loads the resources of the new scene, then its entities.
 
@@ -230,8 +231,10 @@ configuration, then its `startScene`.
 The `SceneManager` only removes what it created: the entities created with
 `world.create()` and the resources added by the game stay, except an entity the
 game marked with `dontDestroyOnLoad`, which the next `loadConfig` destroys like
-the other persistent entities. An entity destroyed
-by the game is skipped. A resource key belongs to the configuration **or** to
+the other persistent entities. Like in Unity, the hierarchy decides: an entity
+of the game attached under an entity of the scene with `setParent` is destroyed
+with it (detach it first to keep it). An entity destroyed by the game is
+skipped. A resource key belongs to the configuration **or** to
 the scenes: if both give it, the scene fails, since `addResource` throws when
 the resource is already there.
 
