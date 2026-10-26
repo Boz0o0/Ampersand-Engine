@@ -48,6 +48,9 @@ public:
      * The version of the row is incremented, so every handle to the destroyed
      * entity stops being alive, even after the row is reused.
      *
+     * The entity is removed from its parent, and its children are destroyed
+     * too (the whole subtree).
+     *
      * @param entity Entity to destroy.
      * @throws InvalidEntity if the entity is dead, null or out of range.
      */
@@ -60,6 +63,41 @@ public:
      * @return true if the entity exists, false otherwise.
      */
     [[nodiscard]] bool alive(Entity entity) const;
+
+    /**
+     * @brief Makes an entity the child of another one, or a root.
+     *
+     * Removes the child from the children of its old parent and adds it to
+     * the ones of the new parent.
+     *
+     * @param child Entity to attach.
+     * @param parent New parent, or a null Entity to make the child a root.
+     * @throws InvalidEntity if the child or the parent is dead.
+     * @throws HierarchyCycle if the parent is the child or one of its
+     * descendants.
+     */
+    void setParent(Entity child, Entity parent);
+
+    /**
+     * @brief Gives the parent of an entity.
+     *
+     * @param entity Entity to check.
+     * @return The parent, or a null Entity for a root.
+     * @throws InvalidEntity if the entity is dead, null or out of range.
+     */
+    [[nodiscard]] Entity parent(Entity entity) const;
+
+    /**
+     * @brief Lists the direct children of an entity.
+     *
+     * This is the World's own list, not a copy. Inside a loop over it, do not
+     * setParent() or destroy() a child: loop over a copy instead.
+     *
+     * @param entity Entity to check.
+     * @return The children, in the order they were attached (empty if none).
+     * @throws InvalidEntity if the entity is dead, null or out of range.
+     */
+    [[nodiscard]] const std::vector<Entity>& children(Entity entity) const;
 
     /**
      * @brief Attaches a component to an entity.
@@ -290,6 +328,8 @@ private:
     std::vector<std::uint32_t> _versions;
     std::queue<std::uint32_t> _free;
     std::vector<Row> _rows;
+    std::vector<Entity> _parents;
+    std::vector<std::vector<Entity>> _children;
     std::array<std::unique_ptr<IComponentPool>, kMaxComponents> _pools;
     std::vector<std::unique_ptr<IResource>> _resources;
 };
