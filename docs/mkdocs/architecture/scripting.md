@@ -74,10 +74,14 @@ the first time it is used.
 | Lua name      | C++ type                  | Fields                                                    | Created from Lua                             |
 | ------------- | ------------------------- | --------------------------------------------------------- | -------------------------------------------- |
 | `Entity`      | `core::ecs::Entity`       | `index` (read only)                                       | no                                           |
+| `Vec2`        | `core::math::Vec2f`       | `x`, `y`                                                  | `Vec2.new()`, `Vec2.new(x, y)`               |
 | `Vec3`        | `core::math::Vec3f`       | `x`, `y`, `z`                                             | `Vec3.new()`, `Vec3.new(x, y, z)`            |
 | `Rect`        | `core::math::Rect<float>` | `x`, `y`, `width`, `height`, `intersects(rect)`           | `Rect.new()`, `Rect.new(x, y, width, height)` |
 | `Transform`   | `core::Transform`         | `position`, `scale`, `rotationDegrees`, `origin` (`Vec3`) | no                                           |
 | `BoxCollider` | `physics::BoxCollider`    | `bounds` (`Rect`, local to the entity)                    | no                                           |
+| `Velocity`    | `physics::Velocity`       | `value` (`Vec2`, per second)                              | no                                           |
+| `Text`        | `render::Text`            | `value`, `size`, `color`, `layer`                         | no                                           |
+| `Color`       | `render::Color`           | `r`, `g`, `b`, `a` (0 to 255)                             | no                                           |
 | `AudioSource` | `audio::AudioSource`      | `volume`, `loop`, `playing`                               | no                                           |
 
 ### Functions
@@ -97,6 +101,10 @@ the first time it is used.
 | `hasBoxCollider(entity)`                  | physics | boolean              | whether the entity has a `BoxCollider`                               |
 | `getBounds(entity)`                       | physics | `Rect`               | the box in the world, from its `BoxCollider` and `Transform`         |
 | `getColliders()`                          | physics | list of `Entity`     | the entities with a `BoxCollider` and a `Transform`                  |
+| `getVelocity(entity)`                     | physics | `Velocity`           | the `Velocity` of the entity, applied by the `MovementSystem`        |
+| `hasVelocity(entity)`                     | physics | boolean              | whether the entity has a `Velocity`                                  |
+| `getText(entity)`                         | render  | `Text`               | the `Text` of the entity                                             |
+| `hasText(entity)`                         | render  | boolean              | whether the entity has a `Text`                                      |
 | `animation.setBool(entity, name, value)`  | render  |                      | sets a boolean parameter of the `AnimationStateMachine`              |
 | `animation.setFloat(entity, name, value)` | render  |                      | sets a number parameter                                              |
 | `animation.playOnce(entity, action)`      | render  |                      | plays the state `action` once, then goes back                        |
@@ -105,8 +113,8 @@ the first time it is used.
 | `getAudioSource(entity)`                  | audio   | `AudioSource`        | the `AudioSource` of the entity                                      |
 | `hasAudioSource(entity)`                  | audio   | boolean              | whether the entity has an `AudioSource`                              |
 
-The functions of a module (and `BoxCollider`, `AudioSource`) only exist when it
-is turned on: `input` is `nil` without `AMPERSAND_MODULE_INPUT`. Calling one on
+The functions and types of a module (`Velocity`, `Text`, `AudioSource`...)
+only exist when it is turned on: `input` is `nil` without `AMPERSAND_MODULE_INPUT`. Calling one on
 an entity without the component (or `input` without an `InputManager`, an
 unknown axis, button or state) raises an [error](#errors).
 

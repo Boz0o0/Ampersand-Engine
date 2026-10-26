@@ -4,6 +4,7 @@
 #include <ampersand/core/ecs/EventQueue.hpp>
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/core/math/Rect.hpp>
+#include <ampersand/core/math/Vec2.hpp>
 #include <ampersand/core/math/Vec3.hpp>
 #include <ampersand/core/resources/Clock.hpp>
 #include <ampersand/scripting/components/Scripts.hpp>
@@ -18,10 +19,12 @@
 
 #ifdef AMPERSAND_MODULE_PHYSICS
 #include <ampersand/physics/components/BoxCollider.hpp>
+#include <ampersand/physics/components/Velocity.hpp>
 #endif
 
 #ifdef AMPERSAND_MODULE_RENDER
 #include <ampersand/render/components/AnimationStateMachine.hpp>
+#include <ampersand/render/components/Text.hpp>
 #endif
 
 #ifdef AMPERSAND_MODULE_AUDIO
@@ -71,7 +74,7 @@ void ScriptingSystem::update(core::ecs::World& world) {
         bindWorld(world);
         bindInput(world);
         bindPhysics(world);
-        bindAnimation(world);
+        bindRender(world);
         bindAudio(world);
         _bound = true;
     }
@@ -186,6 +189,11 @@ void ScriptingSystem::bindTypes() {
     _lua.new_usertype<core::ecs::Entity>(
         "Entity", sol::no_constructor, "index",
         sol::readonly(&core::ecs::Entity::index));
+    _lua.new_usertype<core::math::Vec2f>(
+        "Vec2",
+        sol::constructors<core::math::Vec2f(),
+                          core::math::Vec2f(float, float)>(),
+        "x", &core::math::Vec2f::x, "y", &core::math::Vec2f::y);
     _lua.new_usertype<core::math::Vec3f>(
         "Vec3",
         sol::constructors<core::math::Vec3f(),
@@ -272,6 +280,15 @@ void ScriptingSystem::bindPhysics([[maybe_unused]] core::ecs::World& world) {
         return physics::worldBounds(world.get<core::Transform>(entity),
                                     world.get<physics::BoxCollider>(entity));
     });
+    _lua.new_usertype<physics::Velocity>("Velocity", sol::no_constructor,
+                                         "value", &physics::Velocity::value);
+    _lua.set_function("getVelocity",
+                      [&world](core::ecs::Entity entity) -> physics::Velocity& {
+                          return world.get<physics::Velocity>(entity);
+                      });
+    _lua.set_function("hasVelocity", [&world](core::ecs::Entity entity) {
+        return world.has<physics::Velocity>(entity);
+    });
     _lua.set_function("getColliders", [&world] {
         std::vector<core::ecs::Entity> colliders;
         for (const core::ecs::Entity entity :
@@ -285,8 +302,23 @@ void ScriptingSystem::bindPhysics([[maybe_unused]] core::ecs::World& world) {
 #endif
 }
 
-void ScriptingSystem::bindAnimation([[maybe_unused]] core::ecs::World& world) {
+void ScriptingSystem::bindRender([[maybe_unused]] core::ecs::World& world) {
 #ifdef AMPERSAND_MODULE_RENDER
+    _lua.new_usertype<render::Color>(
+        "Color", sol::no_constructor, "r", &render::Color::r, "g",
+        &render::Color::g, "b", &render::Color::b, "a", &render::Color::a);
+    _lua.new_usertype<render::Text>(
+        "Text", sol::no_constructor, "value", &render::Text::value, "size",
+        &render::Text::size, "color", &render::Text::color, "layer",
+        &render::Text::layer);
+    _lua.set_function("getText",
+                      [&world](core::ecs::Entity entity) -> render::Text& {
+                          return world.get<render::Text>(entity);
+                      });
+    _lua.set_function("hasText", [&world](core::ecs::Entity entity) {
+        return world.has<render::Text>(entity);
+    });
+
     sol::table animation = _lua.create_named_table("animation");
     const auto machine =
         [&world](core::ecs::Entity entity) -> render::AnimationStateMachine& {

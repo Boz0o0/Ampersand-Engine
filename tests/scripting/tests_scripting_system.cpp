@@ -22,10 +22,12 @@
 
 #ifdef AMPERSAND_MODULE_PHYSICS
 #include <ampersand/physics/components/BoxCollider.hpp>
+#include <ampersand/physics/components/Velocity.hpp>
 #endif
 
 #ifdef AMPERSAND_MODULE_RENDER
 #include <ampersand/render/components/AnimationStateMachine.hpp>
+#include <ampersand/render/components/Text.hpp>
 #endif
 
 #ifdef AMPERSAND_MODULE_AUDIO
@@ -730,6 +732,21 @@ TEST_F(ScriptingSystemTest, InputButtonIsReadable) {
 
 #endif
 
+TEST_F(ScriptingSystemTest, Vec2CanBeCreated) {
+    spawn({
+        script("vec2.lua", R"(
+        local S = {}
+        function S:update()
+            local v = Vec2.new(1, 2)
+            error("sum=" .. (v.x + v.y))
+        end
+        return S
+    )"),
+    });
+
+    EXPECT_EQ(count(frame(), "sum=3"), 1);
+}
+
 TEST_F(ScriptingSystemTest, RectsIntersect) {
     spawn({
         script("rect.lua", R"(
@@ -749,6 +766,41 @@ TEST_F(ScriptingSystemTest, RectsIntersect) {
 #ifdef AMPERSAND_MODULE_PHYSICS
 
 using ampersand::physics::BoxCollider;
+using ampersand::physics::Velocity;
+
+TEST_F(ScriptingSystemTest, ScriptSetsTheVelocity) {
+    const Entity entity = spawn({
+        script("velocity.lua", R"(
+        local S = {}
+        function S:update()
+            local velocity = getVelocity(self.entity)
+            velocity.value = Vec2.new(3, 4)
+            velocity.value.x = velocity.value.x + 1
+        end
+        return S
+    )"),
+    });
+    _world.add(entity, Velocity{});
+
+    EXPECT_TRUE(frame().empty());
+    EXPECT_FLOAT_EQ(_world.get<Velocity>(entity).value.x, 4.0F);
+    EXPECT_FLOAT_EQ(_world.get<Velocity>(entity).value.y, 4.0F);
+}
+
+TEST_F(ScriptingSystemTest, HasVelocityTellsIfThereIsOne) {
+    const auto path = script("has_velocity.lua", R"(
+        local S = {}
+        function S:update() error("has=" .. tostring(hasVelocity(self.entity))) end
+        return S
+    )");
+    const Entity moving = spawn({path});
+    _world.add(moving, Velocity{});
+    spawn({path});
+
+    const auto messages = frame();
+    EXPECT_EQ(count(messages, "has=true"), 1);
+    EXPECT_EQ(count(messages, "has=false"), 1);
+}
 
 TEST_F(ScriptingSystemTest, BoxColliderIsReadable) {
     const Entity entity = spawn({
@@ -838,6 +890,58 @@ TEST_F(ScriptingSystemTest, GetBoundsWithoutABoxColliderIsAScriptError) {
 
 using ampersand::render::Animation;
 using ampersand::render::AnimationStateMachine;
+using ampersand::render::Text;
+
+TEST_F(ScriptingSystemTest, ScriptChangesTheText) {
+    const Entity entity = spawn({
+        script("text.lua", R"(
+        local S = {}
+        function S:update()
+            local text = getText(self.entity)
+            text.value = "Score: 42"
+            text.size = 40
+            text.color.r = 10
+            text.layer = 3
+        end
+        return S
+    )"),
+    });
+    _world.add(entity, Text{});
+
+    EXPECT_TRUE(frame().empty());
+    const auto& text = _world.get<Text>(entity);
+    EXPECT_EQ(text.value, "Score: 42");
+    EXPECT_EQ(text.size, 40U);
+    EXPECT_EQ(text.color.r, 10);
+    EXPECT_EQ(text.layer, 3);
+}
+
+TEST_F(ScriptingSystemTest, HasTextTellsIfThereIsOne) {
+    const auto path = script("has_text.lua", R"(
+        local S = {}
+        function S:update() error("has=" .. tostring(hasText(self.entity))) end
+        return S
+    )");
+    const Entity label = spawn({path});
+    _world.add(label, Text{});
+    spawn({path});
+
+    const auto messages = frame();
+    EXPECT_EQ(count(messages, "has=true"), 1);
+    EXPECT_EQ(count(messages, "has=false"), 1);
+}
+
+TEST_F(ScriptingSystemTest, GetTextWithoutOneIsAScriptError) {
+    spawn({
+        script("no_text.lua", R"(
+        local S = {}
+        function S:start() getText(self.entity) end
+        return S
+    )"),
+    });
+
+    EXPECT_EQ(count(frame(), "Component not found"), 1);
+}
 
 /** @brief State machine with the states "idle" and "attack". */
 AnimationStateMachine stateMachine() {
