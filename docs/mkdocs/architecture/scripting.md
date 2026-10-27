@@ -80,6 +80,8 @@ the first time it is used.
 | `Transform`   | `core::Transform`         | `position`, `scale`, `rotationDegrees`, `origin` (`Vec3`) | no                                           |
 | `BoxCollider` | `physics::BoxCollider`    | `bounds` (`Rect`, local to the entity)                    | no                                           |
 | `Velocity`    | `physics::Velocity`       | `value` (`Vec2`, per second)                              | no                                           |
+| `IntRect`     | `core::math::Rect<int>`   | `x`, `y`, `width`, `height`                               | `IntRect.new()`, `IntRect.new(x, y, width, height)` |
+| `Sprite`      | `render::Sprite`          | `source` (`IntRect`, part of the texture), `color`, `layer` | no                                         |
 | `Text`        | `render::Text`            | `value`, `size`, `color`, `layer`                         | no                                           |
 | `Color`       | `render::Color`           | `r`, `g`, `b`, `a` (0 to 255)                             | no                                           |
 | `AudioSource` | `audio::AudioSource`      | `volume`, `loop`, `playing`                               | no                                           |
@@ -97,6 +99,11 @@ the first time it is used.
 | `input.getButton(name)`                   | input   | boolean              | whether the virtual button is held                                   |
 | `input.getButtonDown(name)`               | input   | boolean              | whether it was pressed during this frame                             |
 | `input.getButtonUp(name)`                 | input   | boolean              | whether it was released during this frame                            |
+| `input.getMouseButton(name)`              | input   | boolean              | whether the mouse button (`"Left"`, `"Right"` or `"Middle"`) is held |
+| `input.getMouseButtonDown(name)`          | input   | boolean              | whether it was pressed during this frame                             |
+| `input.getMouseButtonUp(name)`            | input   | boolean              | whether it was released during this frame                            |
+| `input.getMousePosition()`                | input   | `Vec2`               | the mouse in pixels of the window, from its top left corner          |
+| `input.getMouseWorldPosition()`           | input + render | `Vec2`        | the mouse in the world, through the `Camera` (the pixel without one) |
 | `getBoxCollider(entity)`                  | physics | `BoxCollider`        | the `BoxCollider` of the entity                                      |
 | `hasBoxCollider(entity)`                  | physics | boolean              | whether the entity has a `BoxCollider`                               |
 | `getBounds(entity)`                       | physics | `Rect`               | the box in the world, from its `BoxCollider` and `Transform`         |
@@ -105,6 +112,8 @@ the first time it is used.
 | `hasVelocity(entity)`                     | physics | boolean              | whether the entity has a `Velocity`                                  |
 | `getText(entity)`                         | render  | `Text`               | the `Text` of the entity                                             |
 | `hasText(entity)`                         | render  | boolean              | whether the entity has a `Text`                                      |
+| `getSprite(entity)`                       | render  | `Sprite`             | the `Sprite` of the entity                                           |
+| `hasSprite(entity)`                       | render  | boolean              | whether the entity has a `Sprite`                                    |
 | `animation.setBool(entity, name, value)`  | render  |                      | sets a boolean parameter of the `AnimationStateMachine`              |
 | `animation.setFloat(entity, name, value)` | render  |                      | sets a number parameter                                              |
 | `animation.playOnce(entity, action)`      | render  |                      | plays the state `action` once, then goes back                        |
@@ -115,8 +124,9 @@ the first time it is used.
 
 The functions and types of a module (`Velocity`, `Text`, `AudioSource`...)
 only exist when it is turned on: `input` is `nil` without `AMPERSAND_MODULE_INPUT`. Calling one on
-an entity without the component (or `input` without an `InputManager`, an
-unknown axis, button or state) raises an [error](#errors).
+an entity without the component (or `input` without an `InputManager`,
+`input.getMouseWorldPosition` without a `Renderer`, an unknown axis, button,
+mouse button or state) raises an [error](#errors).
 
 !!! warning "Do not keep a component"
     `getTransform` and the other getters give the component itself, which can
@@ -141,6 +151,29 @@ unknown axis, button or state) raises an [error](#errors).
             end
         end
     end
+    ```
+
+- **Mouse**: the buttons are read directly, without being declared with
+  `setButton` (they can also be bound to a virtual button, see
+  [Input](input.md)). Use `getMouseWorldPosition` to click on entities when
+  the `Camera` moves or zooms.
+
+    ```lua
+    function Builder:update(dt)
+        if input.getMouseButtonDown("Left") then
+            local at = input.getMouseWorldPosition()
+            placeTower(at.x, at.y)
+        end
+    end
+    ```
+
+- **Sprite**: `source` picks the part of the texture drawn (a frame of a
+  sheet), `color` tints it (white is unchanged, `a` fades it).
+
+    ```lua
+    local sprite = getSprite(self.entity)
+    sprite.source.x = 64 * frame
+    sprite.color.a = 128 -- half transparent
     ```
 
 - **Animation** drives the `AnimationStateMachine`, see [Render](render.md).

@@ -144,15 +144,16 @@ private:
     /** @brief Binds the world to the Lua state. */
     void bindWorld(core::ecs::World& world);
 
-    /** @brief Binds the input to the Lua state. */
+    /** @brief Binds the input to the Lua state: the axes, the buttons and the
+     * mouse. */
     void bindInput([[maybe_unused]] core::ecs::World& world);
 
     /** @brief Binds Velocity, BoxCollider and the bounds helpers, when the
      * physics module is on. */
     void bindPhysics([[maybe_unused]] core::ecs::World& world);
 
-    /** @brief Binds Text, Color and the animation table, when the render
-     * module is on. */
+    /** @brief Binds Text, Sprite, IntRect, Color and the animation table, when
+     * the render module is on. */
     void bindRender([[maybe_unused]] core::ecs::World& world);
 
     /** @brief Binds AudioSource, when the audio module is on. */

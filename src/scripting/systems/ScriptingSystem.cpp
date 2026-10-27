@@ -9,6 +9,7 @@
 #include <ampersand/core/resources/Clock.hpp>
 #include <ampersand/scripting/components/Scripts.hpp>
 #include <ampersand/scripting/systems/ScriptingSystem.hpp>
+#include <cstdint>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -24,7 +25,10 @@
 
 #ifdef AMPERSAND_MODULE_RENDER
 #include <ampersand/render/components/AnimationStateMachine.hpp>
+#include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
+#include <ampersand/render/resources/Camera.hpp>
+#include <ampersand/render/resources/Renderer.hpp>
 #endif
 
 #ifdef AMPERSAND_MODULE_AUDIO
@@ -260,6 +264,38 @@ void ScriptingSystem::bindInput([[maybe_unused]] core::ecs::World& world) {
         const auto& manager = world.getResource<input::InputManager>();
         return manager.getButtonUp(name);
     });
+    const auto mouseButton = [](const std::string& name) {
+        if (name == "Left") {
+            return input::MouseButton::Left;
+        }
+        if (name == "Right") {
+            return input::MouseButton::Right;
+        }
+        if (name == "Middle") {
+            return input::MouseButton::Middle;
+        }
+        throw std::invalid_argument("Unknown mouse button '" + name + "'");
+    };
+    inputTable.set_function(
+        "getMouseButton", [&world, mouseButton](const std::string& name) {
+            const auto& manager = world.getResource<input::InputManager>();
+            return manager.getMouseButton(mouseButton(name));
+        });
+    inputTable.set_function(
+        "getMouseButtonDown", [&world, mouseButton](const std::string& name) {
+            const auto& manager = world.getResource<input::InputManager>();
+            return manager.getMouseButtonDown(mouseButton(name));
+        });
+    inputTable.set_function(
+        "getMouseButtonUp", [&world, mouseButton](const std::string& name) {
+            const auto& manager = world.getResource<input::InputManager>();
+            return manager.getMouseButtonUp(mouseButton(name));
+        });
+    inputTable.set_function("getMousePosition", [&world] {
+        const auto pixel = world.getResource<input::InputManager>().mouse();
+        return core::math::Vec2f{static_cast<float>(pixel.x),
+                                 static_cast<float>(pixel.y)};
+    });
 #endif
 }
 
@@ -317,6 +353,24 @@ void ScriptingSystem::bindRender([[maybe_unused]] core::ecs::World& world) {
                       });
     _lua.set_function("hasText", [&world](core::ecs::Entity entity) {
         return world.has<render::Text>(entity);
+    });
+
+    using IntRect = core::math::Rect<std::int32_t>;
+    _lua.new_usertype<IntRect>(
+        "IntRect",
+        sol::constructors<IntRect(), IntRect(std::int32_t, std::int32_t,
+                                             std::int32_t, std::int32_t)>(),
+        "x", &IntRect::x, "y", &IntRect::y, "width", &IntRect::width, "height",
+        &IntRect::height);
+    _lua.new_usertype<render::Sprite>(
+        "Sprite", sol::no_constructor, "source", &render::Sprite::source,
+        "color", &render::Sprite::color, "layer", &render::Sprite::layer);
+    _lua.set_function("getSprite",
+                      [&world](core::ecs::Entity entity) -> render::Sprite& {
+                          return world.get<render::Sprite>(entity);
+                      });
+    _lua.set_function("hasSprite", [&world](core::ecs::Entity entity) {
+        return world.has<render::Sprite>(entity);
     });
 
     sol::table animation = _lua.create_named_table("animation");
