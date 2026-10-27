@@ -103,7 +103,6 @@ the first time it is used.
 | `input.getMouseButtonDown(name)`          | input   | boolean              | whether it was pressed during this frame                             |
 | `input.getMouseButtonUp(name)`            | input   | boolean              | whether it was released during this frame                            |
 | `input.getMousePosition()`                | input   | `Vec2`               | the mouse in pixels of the window, from its top left corner          |
-| `input.getMouseWorldPosition()`           | input + render | `Vec2`        | the mouse in the world, through the `Camera` (the pixel without one) |
 | `getBoxCollider(entity)`                  | physics | `BoxCollider`        | the `BoxCollider` of the entity                                      |
 | `hasBoxCollider(entity)`                  | physics | boolean              | whether the entity has a `BoxCollider`                               |
 | `getBounds(entity)`                       | physics | `Rect`               | the box in the world, from its `BoxCollider` and `Transform`         |
@@ -124,9 +123,8 @@ the first time it is used.
 
 The functions and types of a module (`Velocity`, `Text`, `AudioSource`...)
 only exist when it is turned on: `input` is `nil` without `AMPERSAND_MODULE_INPUT`. Calling one on
-an entity without the component (or `input` without an `InputManager`,
-`input.getMouseWorldPosition` without a `Renderer`, an unknown axis, button,
-mouse button or state) raises an [error](#errors).
+an entity without the component (or `input` without an `InputManager`, an
+unknown axis, button, mouse button or state) raises an [error](#errors).
 
 !!! warning "Do not keep a component"
     `getTransform` and the other getters give the component itself, which can
@@ -155,13 +153,14 @@ mouse button or state) raises an [error](#errors).
 
 - **Mouse**: the buttons are read directly, without being declared with
   `setButton` (they can also be bound to a virtual button, see
-  [Input](input.md)). Use `getMouseWorldPosition` to click on entities when
-  the `Camera` moves or zooms.
+  [Input](input.md)). `getMousePosition` is in pixels of the window: with a
+  `Camera` that does not match the window, the script converts it to the
+  world itself.
 
     ```lua
     function Builder:update(dt)
         if input.getMouseButtonDown("Left") then
-            local at = input.getMouseWorldPosition()
+            local at = input.getMousePosition()
             placeTower(at.x, at.y)
         end
     end
