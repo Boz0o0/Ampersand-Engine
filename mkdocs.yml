@@ -43,6 +43,7 @@ nav:
       - Audio: architecture/audio.md
       - Net: architecture/net.md
       - Scene: architecture/scene.md
+      - Scripting: architecture/scripting.md
   - Design decisions: decisions.md
   - Changelog: changelog.md
   - R-Type:

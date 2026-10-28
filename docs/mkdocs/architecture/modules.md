@@ -14,6 +14,7 @@ For why we split it this way, see [Design decisions](../decisions.md#separation-
 | Audio   | `ampersand_audio`   | `AMPERSAND_MODULE_AUDIO`   | core, SFML      | `src/audio/`   | `tests/audio/`   |
 | Net     | `ampersand_net`     | `AMPERSAND_MODULE_NET`     | core, Asio      | `src/net/`     | `tests/net/`     |
 | Scene   | `ampersand_scene`   | `AMPERSAND_MODULE_SCENE`   | core, nlohmann/json | `src/scene/` |                  |
+| Scripting | `ampersand_scripting` | `AMPERSAND_MODULE_SCRIPTING` | core, Lua, sol2 | `src/scripting/` | `tests/scripting/` |
 
 Every option is `ON` by default. Turn one off at configure time:
 

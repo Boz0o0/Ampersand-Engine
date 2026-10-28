@@ -20,3 +20,13 @@ We went for a sparse set ECS, where each component type is packed in its own poo
 
 ## Separation of modules
 We decided to separate the engine into different modules, each with its own responsibilities. The objective was to have a clear separation of concerns, which would make the engine easier to maintain and extend, and the compilation more effcient, by compiling only the necessary modules.
+
+## Scripting
+
+### Why Lua
+We wanted the behaviour of the entities to be written outside of C++, so it can be changed without recompiling. We compared Lua, Python and ChaiScript. Python is the best known, but its interpreter is big and hard to embed and to keep apart per script. ChaiScript is made for C++, but it is slow and no longer maintained. Lua is small (a few dozen C files), fast, made to be embedded, and is the usual choice in games (World of Warcraft, Roblox, Defold), so it was the clear choice. It also lets each script get its own globals (its environment) at almost no cost.
+
+### Why sol2
+Lua's C API works with a stack that has to be handled by hand, which is easy to get wrong. [sol2](https://github.com/ThePhD/sol2) wraps it in C++ types: it calls Lua functions safely (an error becomes a value, not a crash) and turns C++ types into Lua ones by itself. It is header-only and widely used. We checked that it builds with the Lua version we use (5.4): sol2 does not support Lua 5.5 yet.
+
+The official Lua sources have no CMake file, so CMake downloads them and builds them as the `lua_static` library.

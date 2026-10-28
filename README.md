@@ -37,6 +37,7 @@ Each module is a static library. A game only builds the modules it uses.
 | Audio   | `ampersand_audio`   | core, SFML        |
 | Net     | `ampersand_net`     | core, Asio        |
 | Scene   | `ampersand_scene`   | core, nlohmann/json |
+| Scripting | `ampersand_scripting` | core, Lua, sol2 |
 
 All modules are on by default. Turn one off with `AMPERSAND_MODULE_<NAME>=OFF`
 (e.g. `AMPERSAND_MODULE_RENDER=OFF`).
@@ -75,7 +76,7 @@ See [Scene](https://boz0o0.github.io/Ampersand-Engine/architecture/scene/#game-f
 ## Build the engine
 
 Needs CMake 3.24+, a C++20 compiler and Git. The dependencies (SFML, Asio,
-GoogleTest) are downloaded by CMake.
+nlohmann/json, Lua, sol2, GoogleTest) are downloaded by CMake.
 
 ```sh
 cmake -B build -DCMAKE_BUILD_TYPE=Debug

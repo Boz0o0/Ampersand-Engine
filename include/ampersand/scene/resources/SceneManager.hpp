@@ -382,6 +382,20 @@ private:
     static void loadInputManager(core::ecs::World& world, const json& data);
 #endif
 
+#ifdef AMPERSAND_MODULE_SCRIPTING
+    /**
+     * @brief Registers Scripts.
+     */
+    void registerScripting();
+
+    /**
+     * @brief Scripts: "scripts", the list of the .lua files of the entity,
+     * relative to gameRoot.
+     */
+    void loadScripts(core::ecs::World& world, core::ecs::Entity entity,
+                     const json& data) const;
+#endif
+
 #ifdef AMPERSAND_MODULE_AUDIO
     /**
      * @brief Registers AudioListener, SceneMusic and AudioSource.
@@ -469,6 +483,13 @@ private:
     core::ecs::Entity createEntity(core::ecs::World& world,
                                    const json& resolved,
                                    core::ecs::Entity parent);
+
+    /**
+     * @brief Sends an EntityCreated for an entity and each of its descendants
+     * (parents first), if the World has an EventQueue<EntityCreated>.
+     */
+    static void notifyCreated(core::ecs::World& world,
+                              core::ecs::Entity entity);
 
     /**
      * @brief Calls the registered loader of each key of a "components" block.

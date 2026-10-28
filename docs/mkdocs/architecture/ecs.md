@@ -373,6 +373,27 @@ system. So:
 Without a Scheduler, add the resource with `world.addResource<ecs::EventQueue<T>>()`
 and call `clear()` at the end of each frame.
 
+### Engine events
+
+`<ampersand/core/ecs/Events.hpp>` gives the events that the engine modules
+send themselves. Each one is only sent if the game added its queue:
+
+| Event             | Field    | Sent by                                                                                                           |
+| ----------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| `EntityCreated`   | `entity` | the `SceneManager`, for every entity of a loaded scene and of an `instantiate`, children included (parents first) |
+| `EntityDestroyed` | `entity` | the `kill` function of the scripts, before the destruction is recorded in the `CommandQueue`                      |
+
+```cpp
+scheduler.addEventQueue<ecs::EntityCreated>();
+scheduler.addEventQueue<ecs::EntityDestroyed>();
+```
+
+!!! note
+    `world.create()`, `world.destroy()` and `CommandQueue::destroy()` send no
+    event: only the calls listed above do. An `EntityDestroyed` is sent for the
+    entity given to `kill`, not for its children. A scene that fails to load
+    sends no `EntityCreated`.
+
 ## Command queue
 
 A **command** is a change to the World (destroy an entity...) that a system
