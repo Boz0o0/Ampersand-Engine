@@ -534,6 +534,38 @@ TEST_F(ScriptingSystemTest, KillSendsEntityDestroyedThenWaitsForTheQueue) {
     EXPECT_FALSE(_world.alive(entity));
 }
 
+TEST_F(ScriptingSystemTest, KillTwiceInOneFrameSendsOneEvent) {
+    auto& destroyed = _world.addResource<EventQueue<EntityDestroyed>>();
+    const Entity entity = spawn({
+        script("kill_twice.lua", R"(
+        local S = {}
+        function S:update() kill(self.entity) kill(self.entity) end
+        return S
+    )"),
+    });
+
+    EXPECT_TRUE(frame().empty());
+    ASSERT_EQ(destroyed.read().size(), 1U);
+    EXPECT_EQ(destroyed.read()[0].entity, entity);
+}
+
+TEST_F(ScriptingSystemTest, KillADeadEntitySendsNoEvent) {
+    auto& destroyed = _world.addResource<EventQueue<EntityDestroyed>>();
+    const Entity dead = _world.create();
+    _world.destroy(dead);
+    _system.lua().set_function("getDead", [dead] { return dead; });
+    spawn({
+        script("kill_dead.lua", R"(
+        local S = {}
+        function S:update() kill(getDead()) end
+        return S
+    )"),
+    });
+
+    EXPECT_TRUE(frame().empty());
+    EXPECT_TRUE(destroyed.read().empty());
+}
+
 TEST_F(ScriptingSystemTest, KillWithoutTheQueueStillDestroys) {
     const Entity entity = spawn({
         script("kill_self.lua", R"(

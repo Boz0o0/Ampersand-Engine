@@ -230,12 +230,19 @@ void ScriptingSystem::bindWorld(core::ecs::World& world) {
         return world.has<core::Transform>(entity);
     });
     _lua.set_function("kill", [&world](core::ecs::Entity entity) {
+        if (!world.alive(entity)) {
+            return;
+        }
         if (world.hasResource<
                 core::ecs::EventQueue<core::ecs::EntityDestroyed>>()) {
-            world
-                .getResource<
-                    core::ecs::EventQueue<core::ecs::EntityDestroyed>>()
-                .send({.entity = entity});
+            auto& destroyed = world.getResource<
+                core::ecs::EventQueue<core::ecs::EntityDestroyed>>();
+            if (std::ranges::none_of(destroyed.read(),
+                                     [entity](const auto& event) {
+                                         return event.entity == entity;
+                                     })) {
+                destroyed.send({.entity = entity});
+            }
         }
         world.getResource<core::ecs::CommandQueue>().destroy(entity);
     });
