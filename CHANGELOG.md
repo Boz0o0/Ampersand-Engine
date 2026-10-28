@@ -26,6 +26,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-28
+
 ### Fixed
 
 - **Scripting**: `kill` sends one `EntityDestroyed` per entity and frame, even when called several times, and none for an entity already dead.
@@ -125,7 +127,8 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.0...v0.4.1
