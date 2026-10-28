@@ -26,6 +26,9 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+
+## [0.5.0] - 2026-10-28
+
 ### Added
 
 - **Scripting**: new module (`AMPERSAND_MODULE_SCRIPTING`) that runs Lua scripts with sol2 (Lua 5.4.7 and sol2 3.5.0 downloaded by CMake). The `Scripts` component lists the `.lua` files of an entity, and the `ScriptingSystem` gives each script its own `self` table and globals and calls its `start`, `update` and `onDestroy` functions.
@@ -119,7 +122,8 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.3.0...v0.4.0
