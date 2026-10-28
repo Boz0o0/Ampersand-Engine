@@ -36,6 +36,10 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Scene**: `Scripts` component (`"scripts"`, a list of paths relative to `gameRoot`), so scenes and prefabs give the scripts of their entities.
 - **Tests**: unit tests of the `ScriptingSystem` (functions called, instances, globals, list changes, destroyed entities, errors), of its engine API (types, `Transform`, `destroy` and `input`), of `lua()` and `defer`, of velocities, texts, colliders, animation and audio sources, and of the `Scripts` of the scenes.
 - **Scripting**: sol2 never prints the errors of the C++ functions called by a script (`SOL_PRINT_ERRORS=0`): they are only sent as a `ScriptError`.
+- **Core**: engine events in `Events.hpp`: `EntityCreated` and `EntityDestroyed`, each sent only if the game added its `EventQueue`.
+- **Scripting**: `kill(entity)`, which sends an `EntityDestroyed` then destroys the entity at the end of the frame like `destroy`.
+- **Scene**: `instantiate` and `loadScene` send an `EntityCreated` for every entity they create, children included, once the prefab or the scene is fully loaded.
+- **Tests**: unit tests of `kill` and its `EntityDestroyed`, and of the `EntityCreated` sent by `instantiate` and `loadScene` (children, persistent entities, failed scenes).
 
 ## [0.4.2] - 2026-10-26
 

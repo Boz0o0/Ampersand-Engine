@@ -247,6 +247,8 @@ world.get<core::Transform>(bullet).position = muzzle;
 The entity belongs to the current scene: the next `loadScene` destroys it,
 unless it is [persistent](#persistent-entities).
 
+If the game added an `EventQueue<ecs::EntityCreated>`, `instantiate` sends an `EntityCreated` for the root and each of its descendants, parents first, once they all have their components ([Engine events](ecs.md#engine-events)).
+
 ## Loading
 
 `loadScene(world, name)`:
@@ -257,7 +259,10 @@ unless it is [persistent](#persistent-entities).
    instantiated ones, not the persistent ones) with their children, then
    removes its resources,
    the last loaded first;
-3. loads the resources of the new scene, then its entities.
+3. loads the resources of the new scene, then its entities;
+4. once the whole scene is loaded, sends an `EntityCreated` for each entity it
+   created, children included (persistent entities already alive are not
+   created again, so they get no new event). A scene that fails sends none.
 
 `loadConfig(world, path)` reads the file, checks its `startScene` (a string,
 listed in `scenes`) and reads the file of that scene from the new `gameRoot`,

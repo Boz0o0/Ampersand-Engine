@@ -7,13 +7,14 @@ The scripting module gives entities a behaviour written in Lua (run through
 
 ## Concepts
 
-| Name                      | Kind      | What it does                                                             |
-| ------------------------- | --------- | ------------------------------------------------------------------------ |
-| `Scripts`                 | component | the paths of the `.lua` files of the entity (`scripts`)                  |
-| `ScriptingSystem`         | system    | loads the files, creates one instance per script and calls its functions |
-| `ScriptError`             | event     | an error of a script: `path` of the file and `message`                   |
-| `EventQueue<ScriptError>` | resource  | where the errors are sent, optional                                      |
-| `CommandQueue`            | resource  | where `destroy` records the entities (added by the `Scheduler`)          |
+| Name                          | Kind      | What it does                                                                   |
+| ----------------------------- | --------- | ------------------------------------------------------------------------------ |
+| `Scripts`                     | component | the paths of the `.lua` files of the entity (`scripts`)                        |
+| `ScriptingSystem`             | system    | loads the files, creates one instance per script and calls its functions       |
+| `ScriptError`                 | event     | an error of a script: `path` of the file and `message`                         |
+| `EventQueue<ScriptError>`     | resource  | where the errors are sent, optional                                            |
+| `CommandQueue`                | resource  | where `destroy` and `kill` record the entities (added by the `Scheduler`)      |
+| `EventQueue<EntityDestroyed>` | resource  | where `kill` sends the killed entities, optional ([ECS](ecs.md#engine-events)) |
 
 The `ScriptingSystem` reads `dt` from the `Clock` resource, and throws
 `ResourceNotFound` without it.
@@ -93,6 +94,7 @@ the first time it is used.
 | `getTransform(entity)`                    | core    | `Transform`          | the component itself: changing it changes the entity                 |
 | `hasTransform(entity)`                    | core    | boolean              | whether the entity has a `Transform`                                 |
 | `destroy(entity)`                         | core    |                      | destroys the entity at the end of the frame                          |
+| `kill(entity)`                            | core    |                      | sends an `EntityDestroyed`, then destroys it like `destroy`          |
 | `getParent(entity)`                       | core    | `Entity`             | the parent, `nil` for a root                                         |
 | `getChildren(entity)`                     | core    | list of `Entity`     | the children, in the order they were attached                        |
 | `input.getAxis(name)`                     | input   | number               | value of the axis, from -1 to 1                                      |
@@ -134,6 +136,9 @@ unknown axis, button, mouse button or state) raises an [error](#errors).
 
 - **`destroy`** keeps the entity alive until the end of the frame (it goes
   through the `CommandQueue`), and its `onDestroy` is called on the next update.
+- **`kill`** does the same, and also sends an `EntityDestroyed` to the
+  `EventQueue<EntityDestroyed>` (if the game added it)
+  so the systems after the `ScriptingSystem` can react while the entity is still alive (score, explosion...). Its children are destroyed with it, without an event.
 - **Input**: the axes and buttons are the ones declared with `setAxis` and
   `setButton`, see [Input](input.md).
 - **Collisions**: a script checks them itself. Unlike the `CollisionSystem`

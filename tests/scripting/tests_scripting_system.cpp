@@ -5,6 +5,7 @@
 #include <ampersand/core/ecs/CommandQueue.hpp>
 #include <ampersand/core/ecs/ECSExceptions.hpp>
 #include <ampersand/core/ecs/EventQueue.hpp>
+#include <ampersand/core/ecs/Events.hpp>
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/core/resources/Clock.hpp>
 #include <ampersand/scripting/components/Scripts.hpp>
@@ -38,6 +39,7 @@ using ampersand::core::Clock;
 using ampersand::core::Transform;
 using ampersand::core::ecs::CommandQueue;
 using ampersand::core::ecs::Entity;
+using ampersand::core::ecs::EntityDestroyed;
 using ampersand::core::ecs::EventQueue;
 using ampersand::core::ecs::ResourceNotFound;
 using ampersand::core::ecs::World;
@@ -511,6 +513,40 @@ TEST_F(ScriptingSystemTest, DestroyWaitsForTheCommandQueue) {
 
     EXPECT_EQ(count(frame(), "destroyed"), 1);
     EXPECT_TRUE(frame().empty());
+}
+
+TEST_F(ScriptingSystemTest, KillSendsEntityDestroyedThenWaitsForTheQueue) {
+    auto& destroyed = _world.addResource<EventQueue<EntityDestroyed>>();
+    const Entity entity = spawn({
+        script("kill_self.lua", R"(
+        local S = {}
+        function S:update() kill(self.entity) end
+        return S
+    )"),
+    });
+
+    EXPECT_TRUE(frame().empty());
+    ASSERT_EQ(destroyed.read().size(), 1U);
+    EXPECT_EQ(destroyed.read()[0].entity, entity);
+    EXPECT_TRUE(_world.alive(entity));
+
+    _world.getResource<CommandQueue>().apply(_world);
+    EXPECT_FALSE(_world.alive(entity));
+}
+
+TEST_F(ScriptingSystemTest, KillWithoutTheQueueStillDestroys) {
+    const Entity entity = spawn({
+        script("kill_self.lua", R"(
+        local S = {}
+        function S:update() kill(self.entity) end
+        return S
+    )"),
+    });
+
+    EXPECT_TRUE(frame().empty());
+    _world.getResource<CommandQueue>().apply(_world);
+
+    EXPECT_FALSE(_world.alive(entity));
 }
 
 /** @brief Component of a game, bound by the tests through lua(). */

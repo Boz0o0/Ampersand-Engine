@@ -485,6 +485,13 @@ private:
                                    core::ecs::Entity parent);
 
     /**
+     * @brief Sends an EntityCreated for an entity and each of its descendants
+     * (parents first), if the World has an EventQueue<EntityCreated>.
+     */
+    static void notifyCreated(core::ecs::World& world,
+                              core::ecs::Entity entity);
+
+    /**
      * @brief Calls the registered loader of each key of a "components" block.
      */
     void loadComponents(core::ecs::World& world, core::ecs::Entity entity,

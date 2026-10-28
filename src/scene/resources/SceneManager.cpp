@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <ampersand/core/ecs/EventQueue.hpp>
+#include <ampersand/core/ecs/Events.hpp>
 #include <ampersand/scene/resources/SceneManager.hpp>
 #include <filesystem>
 #include <fstream>
@@ -146,6 +148,9 @@ void SceneManager::switchScene(core::ecs::World& world,
             abortScene(world);
             throw;
         }
+        for (const auto& entity : _sceneEntities) {
+            notifyCreated(world, entity);
+        }
     } catch (const std::exception& e) {
         throw std::runtime_error("Failed to load scene '" + sceneName +
                                  "': " + e.what());
@@ -158,6 +163,7 @@ core::ecs::Entity SceneManager::instantiate(core::ecs::World& world,
         const auto entity =
             createEntity(world, resolvePrefab({{"prefab", path}}), {});
         _sceneEntities.push_back(entity);
+        notifyCreated(world, entity);
         return entity;
     } catch (const std::exception& e) {
         throw std::runtime_error("Failed to instantiate '" + path +
@@ -231,6 +237,18 @@ core::ecs::Entity SceneManager::createEntity(core::ecs::World& world,
         throw;
     }
     return entity;
+}
+
+void SceneManager::notifyCreated(core::ecs::World& world,
+                                 core::ecs::Entity entity) {
+    using Created = core::ecs::EventQueue<core::ecs::EntityCreated>;
+    if (!world.hasResource<Created>()) {
+        return;
+    }
+    world.getResource<Created>().send({.entity = entity});
+    for (const auto& child : world.children(entity)) {
+        notifyCreated(world, child);
+    }
 }
 
 void SceneManager::loadComponents(core::ecs::World& world,

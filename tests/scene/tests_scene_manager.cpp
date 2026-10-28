@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <ampersand/core/ecs/EventQueue.hpp>
+#include <ampersand/core/ecs/Events.hpp>
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/scene/resources/SceneManager.hpp>
 
@@ -15,6 +17,8 @@
 #include <vector>
 
 using ampersand::core::ecs::Entity;
+using ampersand::core::ecs::EntityCreated;
+using ampersand::core::ecs::EventQueue;
 using ampersand::core::ecs::World;
 using ampersand::scene::json;
 using ampersand::scene::ResourceScope;
@@ -211,6 +215,62 @@ TEST_F(SceneManagerTest, InstantiatedEntityBelongsToTheScene) {
     _scenes.loadScene(_world, "b");
 
     EXPECT_FALSE(_world.alive(entity));
+}
+
+TEST_F(SceneManagerTest, InstantiateSendsEntityCreatedParentsFirst) {
+    write("a.json", R"({})");
+    write("b.json", R"({})");
+    write("prefab.json", R"({"components": {"Stats": {"health": 4, "speed": 1}},
+        "children": [{"components": {"Stats": {"health": 1, "speed": 1}}}]})");
+    _scenes.loadConfig(_world, config("config.json"));
+    auto& created = _world.addResource<EventQueue<EntityCreated>>();
+
+    const Entity entity = _scenes.instantiate(_world, "prefab.json");
+
+    ASSERT_EQ(created.read().size(), 2U);
+    EXPECT_EQ(created.read()[0].entity, entity);
+    EXPECT_EQ(created.read()[1].entity, _world.children(entity)[0]);
+}
+
+TEST_F(SceneManagerTest, LoadSceneSendsEntityCreatedOncePerEntity) {
+    write("a.json", R"({"entities": [
+        {"persistent": true, "components": {"Stats": {"health": 1, "speed": 1}}},
+        {"components": {"Stats": {"health": 2, "speed": 1}}}
+    ]})");
+    write("b.json", R"({})");
+    auto& created = _world.addResource<EventQueue<EntityCreated>>();
+
+    _scenes.loadConfig(_world, config("config.json"));
+    EXPECT_EQ(created.read().size(), 2U);
+    created.clear();
+    _scenes.loadScene(_world, "b");
+    _scenes.loadScene(_world, "a");
+
+    EXPECT_EQ(created.read().size(), 1U);
+}
+
+TEST_F(SceneManagerTest, FailedSceneSendsNoEntityCreated) {
+    write("a.json", R"({})");
+    write("b.json", R"({"entities": [
+        {"components": {"Stats": {"health": 2, "speed": 1}}},
+        {"components": {"Unknown": {}}}
+    ]})");
+    _scenes.loadConfig(_world, config("config.json"));
+    auto& created = _world.addResource<EventQueue<EntityCreated>>();
+
+    EXPECT_THROW(_scenes.loadScene(_world, "b"), std::runtime_error);
+
+    EXPECT_TRUE(created.read().empty());
+}
+
+TEST_F(SceneManagerTest, EntityCreatedIsDroppedWithoutTheQueue) {
+    write("a.json", R"({})");
+    write("b.json", R"({})");
+    write("prefab.json",
+          R"({"components": {"Stats": {"health": 4, "speed": 1}}})");
+    _scenes.loadConfig(_world, config("config.json"));
+
+    EXPECT_NO_THROW((void)_scenes.instantiate(_world, "prefab.json"));
 }
 
 TEST_F(SceneManagerTest, DontDestroyOnLoadNeedsARoot) {

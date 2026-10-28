@@ -2,6 +2,7 @@
 #include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/ecs/CommandQueue.hpp>
 #include <ampersand/core/ecs/EventQueue.hpp>
+#include <ampersand/core/ecs/Events.hpp>
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/core/math/Rect.hpp>
 #include <ampersand/core/math/Vec2.hpp>
@@ -227,6 +228,16 @@ void ScriptingSystem::bindWorld(core::ecs::World& world) {
                       });
     _lua.set_function("hasTransform", [&world](core::ecs::Entity entity) {
         return world.has<core::Transform>(entity);
+    });
+    _lua.set_function("kill", [&world](core::ecs::Entity entity) {
+        if (world.hasResource<
+                core::ecs::EventQueue<core::ecs::EntityDestroyed>>()) {
+            world
+                .getResource<
+                    core::ecs::EventQueue<core::ecs::EntityDestroyed>>()
+                .send({.entity = entity});
+        }
+        world.getResource<core::ecs::CommandQueue>().destroy(entity);
     });
     _lua.set_function("destroy", [&world](core::ecs::Entity entity) {
         world.getResource<core::ecs::CommandQueue>().destroy(entity);
