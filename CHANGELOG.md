@@ -26,6 +26,9 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+### Fixed
+
+- **Scripting**: `kill` sends one `EntityDestroyed` per entity and frame, even when called several times, and none for an entity already dead.
 
 ## [0.5.0] - 2026-10-28
 

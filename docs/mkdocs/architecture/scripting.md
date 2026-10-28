@@ -139,6 +139,14 @@ unknown axis, button, mouse button or state) raises an [error](#errors).
 - **`kill`** does the same, and also sends an `EntityDestroyed` to the
   `EventQueue<EntityDestroyed>` (if the game added it)
   so the systems after the `ScriptingSystem` can react while the entity is still alive (score, explosion...). Its children are destroyed with it, without an event.
+  An entity killed several times in one frame sends one event, and a dead one
+  sends none.
+
+    !!! warning "Only `kill` sends it"
+        `destroy`, `world.destroy()`, `loadScene` and the children of a killed
+        entity send no `EntityDestroyed`: do not use it to find every entity
+        that disappears (to tell the clients, for example), or send it
+        yourself where the game destroys entities.
 - **Input**: the axes and buttons are the ones declared with `setAxis` and
   `setButton`, see [Input](input.md).
 - **Collisions**: a script checks them itself. Unlike the `CollisionSystem`
