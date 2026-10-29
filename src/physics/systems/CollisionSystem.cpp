@@ -1,5 +1,5 @@
-#include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <ampersand/core/hierarchy/WorldTransform.hpp>
 #include <ampersand/core/math/Rect.hpp>
 #include <ampersand/physics/components/BoxCollider.hpp>
 #include <ampersand/physics/resources/Collisions.hpp>

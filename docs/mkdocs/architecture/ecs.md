@@ -487,9 +487,10 @@ world.destroy(ship);                     // the turret survives
 
 ### World transform
 
-`core::worldTransform(world, e)` (in `Transform.hpp`) walks up the parents of
-`e` and applies each one with `core::compose(parent, child)`, the same way SFML
-places a child:
+`core::worldTransform(world, e)` (in
+`<ampersand/core/hierarchy/WorldTransform.hpp>`) walks up the parents of `e`
+and applies each one with `core::compose(parent, child)` (in `Transform.hpp`),
+the same way SFML places a child:
 
 ```
 world position = parent position + rotate(parent rotation z, (child position - parent origin) * parent scale)

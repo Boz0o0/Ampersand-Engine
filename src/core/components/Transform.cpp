@@ -1,5 +1,4 @@
 #include <ampersand/core/components/Transform.hpp>
-#include <ampersand/core/ecs/World.hpp>
 #include <cmath>
 #include <numbers>
 
@@ -7,7 +6,7 @@ namespace ampersand::core {
 
 Transform compose(const Transform& parent, const Transform& child) {
     const float radians =
-        parent.rotationDegrees.z * std::numbers::pi_v<float> / 180.0F;
+        parent.rotationDegrees.z * std::numbers::pi_v<float> / kHalfTurnDegrees;
     const float cos = std::cos(radians);
     const float sin = std::sin(radians);
     const float offsetX = (child.position.x - parent.origin.x) * parent.scale.x;
@@ -33,17 +32,6 @@ Transform compose(const Transform& parent, const Transform& child) {
             },
         .origin = child.origin,
     };
-}
-
-Transform worldTransform(ecs::World& world, ecs::Entity entity) {
-    Transform result = world.get<Transform>(entity);
-    for (ecs::Entity parent = world.parent(entity); parent != ecs::Entity{};
-         parent = world.parent(parent)) {
-        if (world.has<Transform>(parent)) {
-            result = compose(world.get<Transform>(parent), result);
-        }
-    }
-    return result;
 }
 
 }  // namespace ampersand::core

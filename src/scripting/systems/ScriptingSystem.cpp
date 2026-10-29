@@ -1,9 +1,9 @@
 #include <algorithm>
-#include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/ecs/CommandQueue.hpp>
 #include <ampersand/core/ecs/EventQueue.hpp>
 #include <ampersand/core/ecs/Events.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <ampersand/core/hierarchy/WorldTransform.hpp>
 #include <ampersand/core/math/Rect.hpp>
 #include <ampersand/core/math/Vec2.hpp>
 #include <ampersand/core/math/Vec3.hpp>

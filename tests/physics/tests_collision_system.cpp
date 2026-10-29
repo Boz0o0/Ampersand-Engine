@@ -120,6 +120,25 @@ TEST(CollisionSystem, OnlyCollidesOnTheSameZ) {
     EXPECT_TRUE(hasPair(collisions, ship, enemy));
 }
 
+TEST(CollisionSystem, PlacesAChildBoxWithItsParent) {
+    World world;
+    world.addResource<Collisions>();
+    const Entity ship = world.create();
+    Transform shipTransform;
+    shipTransform.position = {100.0F, 0.0F, 0.0F};
+    world.add(ship, shipTransform);
+    const Entity turret = createBox(world, 0.0F, 0.0F, 10.0F);
+    world.setParent(turret, ship);
+    const Entity enemy = createBox(world, 105.0F, 0.0F, 10.0F);
+    createBox(world, -5.0F, 0.0F, 10.0F);
+
+    CollisionSystem{}.update(world);
+
+    const auto& collisions = world.getResource<Collisions>();
+    ASSERT_EQ(collisions.pairs.size(), 1U);
+    EXPECT_TRUE(hasPair(collisions, turret, enemy));
+}
+
 TEST(CollisionSystem, IgnoresEntityWithoutTransform) {
     World world;
     world.addResource<Collisions>();
