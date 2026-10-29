@@ -28,7 +28,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ### Changed
 
-— **Core**: the `Transform` of a child is now **local**, relative to its parent (like in Unity): moving, turning or scaling the parent moves its children. It was in world space before, so games that moved the children by hand must stop doing it.
+- **Core**: the `Transform` of a child is now **local**, relative to its parent (like in Unity): moving, turning or scaling the parent moves its children. It was in world space before, so games that moved the children by hand must stop doing it.
 - **Render**, **Physics**: the `RenderSystem` draws and the `CollisionSystem` compares each entity at its world transform (its `Transform` composed with its parents'). The `MovementSystem` still moves the local `Transform`.
 
 ### Added
