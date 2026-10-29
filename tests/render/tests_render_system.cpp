@@ -82,11 +82,23 @@ public:
         transforms.push_back(transform);
     }
 
-    void draw(const Rectangle& /*rectangle*/,
-              const Transform& /*transform*/) override {}
-    void draw(const Circle& /*circle*/,
-              const Transform& /*transform*/) override {}
-    void draw(const Line& /*line*/, const Transform& /*transform*/) override {}
+    void draw(const Rectangle& rectangle, const Transform& transform) override {
+        calls.emplace_back("drawRectangle");
+        rectangles.push_back(rectangle);
+        transforms.push_back(transform);
+    }
+
+    void draw(const Circle& circle, const Transform& transform) override {
+        calls.emplace_back("drawCircle");
+        circles.push_back(circle);
+        transforms.push_back(transform);
+    }
+
+    void draw(const Line& line, const Transform& transform) override {
+        calls.emplace_back("drawLine");
+        lines.push_back(line);
+        transforms.push_back(transform);
+    }
 
     void draw(const Text& text, const Transform& transform) override {
         calls.emplace_back("drawText");
@@ -99,6 +111,9 @@ public:
     std::vector<std::string> calls;
     std::vector<Sprite> sprites;
     std::vector<Text> texts;
+    std::vector<Rectangle> rectangles;
+    std::vector<Circle> circles;
+    std::vector<Line> lines;
     std::vector<Transform> transforms;
     Color clearColor{.r = 1, .g = 2, .b = 3};
     std::optional<Camera> lastCamera;
@@ -251,6 +266,102 @@ TEST(RenderSystem, DrawsBetweenBeginAndEndFrame) {
 
     const std::vector<std::string> expected{
         "beginFrame", "setView", "drawSprite", "drawText", "endFrame",
+    };
+    EXPECT_EQ(renderer.calls, expected);
+}
+
+TEST(RenderSystem, DrawsRectangleAtItsTransform) {
+    FakeRenderer renderer;
+    World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
+    const Entity wall = createAt(world, 30.0F, 60.0F);
+    world.add(wall,
+              Rectangle{.size = {100.0F, 20.0F}, .outlineThickness = 2.0F});
+
+    RenderSystem{}.update(world);
+
+    ASSERT_EQ(renderer.rectangles.size(), 1U);
+    EXPECT_FLOAT_EQ(renderer.rectangles[0].size.x, 100.0F);
+    EXPECT_FLOAT_EQ(renderer.rectangles[0].outlineThickness, 2.0F);
+    EXPECT_FLOAT_EQ(renderer.transforms[0].position.x, 30.0F);
+    EXPECT_FLOAT_EQ(renderer.transforms[0].position.y, 60.0F);
+}
+
+TEST(RenderSystem, DrawsCircleAtItsTransform) {
+    FakeRenderer renderer;
+    World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
+    const Entity ball = createAt(world, 7.0F, 8.0F);
+    world.add(ball, Circle{.radius = 12.0F, .layer = 4});
+
+    RenderSystem{}.update(world);
+
+    ASSERT_EQ(renderer.circles.size(), 1U);
+    EXPECT_FLOAT_EQ(renderer.circles[0].radius, 12.0F);
+    EXPECT_EQ(renderer.circles[0].layer, 4);
+    EXPECT_FLOAT_EQ(renderer.transforms[0].position.x, 7.0F);
+}
+
+TEST(RenderSystem, DrawsLineAtItsTransform) {
+    FakeRenderer renderer;
+    World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
+    const Entity laser = createAt(world, 1.0F, 2.0F);
+    world.add(laser, Line{.from = {0.0F, 0.0F}, .to = {50.0F, 0.0F}});
+
+    RenderSystem{}.update(world);
+
+    ASSERT_EQ(renderer.lines.size(), 1U);
+    EXPECT_FLOAT_EQ(renderer.lines[0].to.x, 50.0F);
+    EXPECT_FLOAT_EQ(renderer.transforms[0].position.y, 2.0F);
+}
+
+TEST(RenderSystem, DrawsPrimitivesAtTheirWorldTransform) {
+    FakeRenderer renderer;
+    World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
+    const Entity parent = createAt(world, 100.0F, 0.0F);
+    const Entity child = createAt(world, 10.0F, 0.0F);
+    world.setParent(child, parent);
+    world.add(child, Rectangle{.size = {1.0F, 1.0F}});
+
+    RenderSystem{}.update(world);
+
+    ASSERT_EQ(renderer.transforms.size(), 1U);
+    EXPECT_FLOAT_EQ(renderer.transforms[0].position.x, 110.0F);
+}
+
+TEST(RenderSystem, SkipsPrimitivesWithoutTransform) {
+    FakeRenderer renderer;
+    World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
+    const Entity ghost = world.create();
+    world.add(ghost, Rectangle{});
+    world.add(ghost, Circle{});
+    world.add(ghost, Line{});
+
+    RenderSystem{}.update(world);
+
+    EXPECT_TRUE(renderer.rectangles.empty());
+    EXPECT_TRUE(renderer.circles.empty());
+    EXPECT_TRUE(renderer.lines.empty());
+}
+
+TEST(RenderSystem, DrawsPrimitivesAfterSpritesAndText) {
+    FakeRenderer renderer;
+    World world;
+    world.addResource<Renderer>(renderer, WindowConfig{});
+    world.add(createAt(world, 0.0F, 0.0F), Line{});
+    world.add(createAt(world, 0.0F, 0.0F), Circle{});
+    world.add(createAt(world, 0.0F, 0.0F), Rectangle{});
+    world.add(createAt(world, 0.0F, 0.0F), Text{.font = 1});
+    world.add(createAt(world, 0.0F, 0.0F), Sprite{.texture = 1});
+
+    RenderSystem{}.update(world);
+
+    const std::vector<std::string> expected{
+        "beginFrame",    "resetView",  "drawSprite", "drawText",
+        "drawRectangle", "drawCircle", "drawLine",   "endFrame",
     };
     EXPECT_EQ(renderer.calls, expected);
 }

@@ -72,20 +72,23 @@ the first time it is used.
 
 ### Types
 
-| Lua name      | C++ type                  | Fields                                                    | Created from Lua                             |
-| ------------- | ------------------------- | --------------------------------------------------------- | -------------------------------------------- |
-| `Entity`      | `core::ecs::Entity`       | `index` (read only)                                       | no                                           |
-| `Vec2`        | `core::math::Vec2f`       | `x`, `y`                                                  | `Vec2.new()`, `Vec2.new(x, y)`               |
-| `Vec3`        | `core::math::Vec3f`       | `x`, `y`, `z`                                             | `Vec3.new()`, `Vec3.new(x, y, z)`            |
-| `Rect`        | `core::math::Rect<float>` | `x`, `y`, `width`, `height`, `intersects(rect)`           | `Rect.new()`, `Rect.new(x, y, width, height)` |
-| `Transform`   | `core::Transform`         | `position`, `scale`, `rotationDegrees`, `origin` (`Vec3`) | no                                           |
-| `BoxCollider` | `physics::BoxCollider`    | `bounds` (`Rect`, local to the entity)                    | no                                           |
-| `Velocity`    | `physics::Velocity`       | `value` (`Vec2`, per second)                              | no                                           |
-| `IntRect`     | `core::math::Rect<int>`   | `x`, `y`, `width`, `height`                               | `IntRect.new()`, `IntRect.new(x, y, width, height)` |
-| `Sprite`      | `render::Sprite`          | `source` (`IntRect`, part of the texture), `color`, `layer` | no                                         |
-| `Text`        | `render::Text`            | `value`, `size`, `color`, `layer`                         | no                                           |
-| `Color`       | `render::Color`           | `r`, `g`, `b`, `a` (0 to 255)                             | no                                           |
-| `AudioSource` | `audio::AudioSource`      | `volume`, `loop`, `playing`                               | no                                           |
+| Lua name      | C++ type                  | Fields                                                          | Created from Lua                                    |
+| ------------- | ------------------------- | --------------------------------------------------------------- | --------------------------------------------------- |
+| `Entity`      | `core::ecs::Entity`       | `index` (read only)                                             | no                                                  |
+| `Vec2`        | `core::math::Vec2f`       | `x`, `y`                                                        | `Vec2.new()`, `Vec2.new(x, y)`                      |
+| `Vec3`        | `core::math::Vec3f`       | `x`, `y`, `z`                                                   | `Vec3.new()`, `Vec3.new(x, y, z)`                   |
+| `Rect`        | `core::math::Rect<float>` | `x`, `y`, `width`, `height`, `intersects(rect)`                 | `Rect.new()`, `Rect.new(x, y, width, height)`       |
+| `Transform`   | `core::Transform`         | `position`, `scale`, `rotationDegrees`, `origin` (`Vec3`)       | no                                                  |
+| `BoxCollider` | `physics::BoxCollider`    | `bounds` (`Rect`, local to the entity)                          | no                                                  |
+| `Velocity`    | `physics::Velocity`       | `value` (`Vec2`, per second)                                    | no                                                  |
+| `IntRect`     | `core::math::Rect<int>`   | `x`, `y`, `width`, `height`                                     | `IntRect.new()`, `IntRect.new(x, y, width, height)` |
+| `Sprite`      | `render::Sprite`          | `source` (`IntRect`, part of the texture), `color`, `layer`     | no                                                  |
+| `Text`        | `render::Text`            | `value`, `size`, `color`, `layer`                               | no                                                  |
+| `Rectangle`   | `render::Rectangle`       | `size` (`Vec2`), `fill`, `outline`, `outlineThickness`, `layer` | no                                                  |
+| `Circle`      | `render::Circle`          | `radius`, `fill`, `outline`, `outlineThickness`, `layer`        | no                                                  |
+| `Line`        | `render::Line`            | `from`, `to` (`Vec2`), `color`, `layer`                         | no                                                  |
+| `Color`       | `render::Color`           | `r`, `g`, `b`, `a` (0 to 255)                                   | no                                                  |
+| `AudioSource` | `audio::AudioSource`      | `volume`, `loop`, `playing`                                     | no                                                  |
 
 ### Functions
 
@@ -116,6 +119,12 @@ the first time it is used.
 | `hasText(entity)`                         | render  | boolean              | whether the entity has a `Text`                                      |
 | `getSprite(entity)`                       | render  | `Sprite`             | the `Sprite` of the entity                                           |
 | `hasSprite(entity)`                       | render  | boolean              | whether the entity has a `Sprite`                                    |
+| `getRectangle(entity)`                    | render  | `Rectangle`          | the `Rectangle` of the entity                                        |
+| `hasRectangle(entity)`                    | render  | boolean              | whether the entity has a `Rectangle`                                 |
+| `getCircle(entity)`                       | render  | `Circle`             | the `Circle` of the entity                                           |
+| `hasCircle(entity)`                       | render  | boolean              | whether the entity has a `Circle`                                    |
+| `getLine(entity)`                         | render  | `Line`               | the `Line` of the entity                                             |
+| `hasLine(entity)`                         | render  | boolean              | whether the entity has a `Line`                                      |
 | `animation.setBool(entity, name, value)`  | render  |                      | sets a boolean parameter of the `AnimationStateMachine`              |
 | `animation.setFloat(entity, name, value)` | render  |                      | sets a number parameter                                              |
 | `animation.playOnce(entity, action)`      | render  |                      | plays the state `action` once, then goes back                        |

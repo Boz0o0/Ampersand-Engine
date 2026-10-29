@@ -28,6 +28,7 @@
 
 #ifdef AMPERSAND_MODULE_RENDER
 #include <ampersand/render/components/AnimationStateMachine.hpp>
+#include <ampersand/render/components/Primitive.hpp>
 #include <ampersand/render/components/Text.hpp>
 #endif
 
@@ -983,6 +984,9 @@ TEST_F(ScriptingSystemTest, GetBoundsWithoutABoxColliderIsAScriptError) {
 
 using ampersand::render::Animation;
 using ampersand::render::AnimationStateMachine;
+using ampersand::render::Circle;
+using ampersand::render::Line;
+using ampersand::render::Rectangle;
 using ampersand::render::Text;
 
 TEST_F(ScriptingSystemTest, ScriptChangesTheText) {
@@ -1034,6 +1038,129 @@ TEST_F(ScriptingSystemTest, GetTextWithoutOneIsAScriptError) {
     });
 
     EXPECT_EQ(count(frame(), "Component not found"), 1);
+}
+
+TEST_F(ScriptingSystemTest, ScriptChangesTheRectangle) {
+    const Entity entity = spawn({
+        script("rectangle.lua", R"(
+        local S = {}
+        function S:update()
+            local rectangle = getRectangle(self.entity)
+            rectangle.size = Vec2.new(40, 20)
+            rectangle.fill.g = 200
+            rectangle.outline.a = 0
+            rectangle.outlineThickness = 3
+            rectangle.layer = 2
+        end
+        return S
+    )"),
+    });
+    _world.add(entity, Rectangle{});
+
+    EXPECT_TRUE(frame().empty());
+    const auto& rectangle = _world.get<Rectangle>(entity);
+    EXPECT_FLOAT_EQ(rectangle.size.x, 40.0F);
+    EXPECT_FLOAT_EQ(rectangle.size.y, 20.0F);
+    EXPECT_EQ(rectangle.fill.g, 200);
+    EXPECT_EQ(rectangle.outline.a, 0);
+    EXPECT_FLOAT_EQ(rectangle.outlineThickness, 3.0F);
+    EXPECT_EQ(rectangle.layer, 2);
+}
+
+TEST_F(ScriptingSystemTest, ScriptChangesTheCircle) {
+    const Entity entity = spawn({
+        script("circle.lua", R"(
+        local S = {}
+        function S:update()
+            local circle = getCircle(self.entity)
+            circle.radius = circle.radius * 2
+            circle.fill.b = 100
+            circle.outlineThickness = 1.5
+            circle.layer = -1
+        end
+        return S
+    )"),
+    });
+    _world.add(entity, Circle{.radius = 4.0F});
+
+    EXPECT_TRUE(frame().empty());
+    const auto& circle = _world.get<Circle>(entity);
+    EXPECT_FLOAT_EQ(circle.radius, 8.0F);
+    EXPECT_EQ(circle.fill.b, 100);
+    EXPECT_FLOAT_EQ(circle.outlineThickness, 1.5F);
+    EXPECT_EQ(circle.layer, -1);
+}
+
+TEST_F(ScriptingSystemTest, ScriptChangesTheLine) {
+    const Entity entity = spawn({
+        script("line.lua", R"(
+        local S = {}
+        function S:update()
+            local line = getLine(self.entity)
+            line.from.x = 5
+            line.to = Vec2.new(30, 40)
+            line.color.r = 7
+            line.layer = 6
+        end
+        return S
+    )"),
+    });
+    _world.add(entity, Line{});
+
+    EXPECT_TRUE(frame().empty());
+    const auto& line = _world.get<Line>(entity);
+    EXPECT_FLOAT_EQ(line.from.x, 5.0F);
+    EXPECT_FLOAT_EQ(line.to.x, 30.0F);
+    EXPECT_FLOAT_EQ(line.to.y, 40.0F);
+    EXPECT_EQ(line.color.r, 7);
+    EXPECT_EQ(line.layer, 6);
+}
+
+TEST_F(ScriptingSystemTest, HasPrimitiveTellsIfThereIsOne) {
+    const auto path = script("has_primitive.lua", R"(
+        local S = {}
+        function S:update()
+            error("rectangle=" .. tostring(hasRectangle(self.entity))
+                  .. " circle=" .. tostring(hasCircle(self.entity))
+                  .. " line=" .. tostring(hasLine(self.entity)))
+        end
+        return S
+    )");
+    const Entity shapes = spawn({path});
+    _world.add(shapes, Rectangle{});
+    _world.add(shapes, Circle{});
+    _world.add(shapes, Line{});
+    spawn({path});
+
+    const auto messages = frame();
+    EXPECT_EQ(count(messages, "rectangle=true circle=true line=true"), 1);
+    EXPECT_EQ(count(messages, "rectangle=false circle=false line=false"), 1);
+}
+
+TEST_F(ScriptingSystemTest, GetPrimitiveWithoutOneIsAScriptError) {
+    spawn({
+        script("no_rectangle.lua", R"(
+        local S = {}
+        function S:start() getRectangle(self.entity) end
+        return S
+    )"),
+    });
+    spawn({
+        script("no_circle.lua", R"(
+        local S = {}
+        function S:start() getCircle(self.entity) end
+        return S
+    )"),
+    });
+    spawn({
+        script("no_line.lua", R"(
+        local S = {}
+        function S:start() getLine(self.entity) end
+        return S
+    )"),
+    });
+
+    EXPECT_EQ(count(frame(), "Component not found"), 3);
 }
 
 /** @brief State machine with the states "idle" and "attack". */

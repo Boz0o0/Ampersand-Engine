@@ -11,6 +11,7 @@
 #include <ampersand/render/WindowConfig.hpp>
 #include <ampersand/render/components/Animation.hpp>
 #include <ampersand/render/components/AnimationStateMachine.hpp>
+#include <ampersand/render/components/Primitive.hpp>
 #include <ampersand/render/resources/Camera.hpp>
 #include <ampersand/render/resources/ClearColor.hpp>
 #endif
@@ -55,6 +56,11 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ClearColor, value)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Camera, center, size)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WindowConfig, size, title, vsync)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Animation, frames, frameDuration, loop)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Rectangle, size, fill, outline,
+                                   outlineThickness, layer)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Circle, radius, fill, outline,
+                                   outlineThickness, layer)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Line, from, to, color, layer)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AnimationParams, floats, bools)
 }  // namespace ampersand::render
 #endif
