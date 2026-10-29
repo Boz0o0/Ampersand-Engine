@@ -32,6 +32,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Render**, **Physics**: the `RenderSystem` draws and the `CollisionSystem` compares each entity at its world transform (its `Transform` composed with its parents'). The `MovementSystem` still moves the local `Transform`.
 - **Render**: the fields `start` and `end` of `Line` are renamed `from` and `to` (local points of its `Transform`). Games that build or read a `Line` must use the new names.
 - **Render**: `Rectangle`, `Circle` and `Line` are now components: the `RenderSystem` draws them at the world transform of their entity, sorted by `layer` with the `Sprite`s and `Text`s. They can still be drawn by hand with `IRenderer::draw`.
+- **Render**: Moved the Primitive.hpp into the components/ folder.
 
 ### Added
 
