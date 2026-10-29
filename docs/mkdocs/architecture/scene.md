@@ -349,6 +349,9 @@ name such as `"X"`, or `null`; an unknown name throws), `dead` and
 | `Transform`             | core    | `position`, `scale`, `rotationDegrees`, `origin` (`Vec3`), local to parent         |
 | `Sprite`                | render  | `texture` (a path), `source`, `color`, `layer`                                     |
 | `Text`                  | render  | `font` (a path), `value`, `size`, `color`, `layer`                                 |
+| `Rectangle`             | render  | `size` (`Vec2`), `fill`, `outline` (colors), `outlineThickness`, `layer`           |
+| `Circle`                | render  | `radius`, `fill`, `outline` (colors), `outlineThickness`, `layer`                  |
+| `Line`                  | render  | `from`, `to` (`Vec2`, local points), `color`, `layer`                              |
 | `Animation`             | render  | `frames` (list of `Rect`), `frameDuration`, `loop`                                 |
 | `AnimationStateMachine` | render  | `initial`, `states`, `params`, `transitions` (see [State machine](#state-machine)) |
 | `Velocity`              | physics | `value`                                                                            |
@@ -357,7 +360,8 @@ name such as `"X"`, or `null`; an unknown name throws), `dead` and
 | `AudioSource`           | audio   | `sound` **or** `music` (a path, exactly one), `volume`, `loop`, `playing`          |
 | `Scripts`               | scripting | `scripts` (list of paths of `.lua` files), see [Scripting](scripting.md)         |
 
-A `Sprite` or `Text` needs the `Renderer`, and an `AudioSource` or `SceneMusic`
+A `Sprite` or `Text` needs the `Renderer` (a `Rectangle`, `Circle` or `Line`
+does not: it has no asset to load), and an `AudioSource` or `SceneMusic`
 needs the `AudioListener`.
 
 `Renderer`, `InputManager` and `AudioListener` are only allowed in the

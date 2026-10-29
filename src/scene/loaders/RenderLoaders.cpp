@@ -1,6 +1,7 @@
 #ifdef AMPERSAND_MODULE_RENDER
 
 #include <algorithm>
+#include <ampersand/render/Primitive.hpp>
 #include <ampersand/render/SfmlRenderer.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
@@ -70,6 +71,29 @@ void SceneManager::loadText(core::ecs::World& world, core::ecs::Entity entity,
     world.add(entity, text);
 }
 
+void SceneManager::checkNotNegative(float value, const std::string& field) {
+    if (value < 0.0F) {
+        throw std::runtime_error(field + " must not be negative");
+    }
+}
+
+void SceneManager::loadRectangle(core::ecs::World& world,
+                                 core::ecs::Entity entity, const json& data) {
+    const auto rectangle = data.get<render::Rectangle>();
+    checkNotNegative(rectangle.size.x, "Rectangle size");
+    checkNotNegative(rectangle.size.y, "Rectangle size");
+    checkNotNegative(rectangle.outlineThickness, "Rectangle outlineThickness");
+    world.add(entity, rectangle);
+}
+
+void SceneManager::loadCircle(core::ecs::World& world, core::ecs::Entity entity,
+                              const json& data) {
+    const auto circle = data.get<render::Circle>();
+    checkNotNegative(circle.radius, "Circle radius");
+    checkNotNegative(circle.outlineThickness, "Circle outlineThickness");
+    world.add(entity, circle);
+}
+
 bool SceneManager::conditionHolds(const json& condition,
                                   const render::AnimationParams& params) {
     const auto param = condition.at("param").get<std::string>();
@@ -135,6 +159,9 @@ void SceneManager::registerRender() {
         [this](core::ecs::World& world) { removeRenderer(world); },
         ResourceScope::Config);
     registerComponent<render::Animation>("Animation");
+    registerComponent("Rectangle", loadRectangle);
+    registerComponent("Circle", loadCircle);
+    registerComponent<render::Line>("Line");
     registerComponent("AnimationStateMachine", loadAnimationStateMachine);
     registerComponent(
         "Sprite",

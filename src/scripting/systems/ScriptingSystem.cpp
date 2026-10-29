@@ -25,6 +25,7 @@
 #endif
 
 #ifdef AMPERSAND_MODULE_RENDER
+#include <ampersand/render/Primitive.hpp>
 #include <ampersand/render/components/AnimationStateMachine.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
@@ -392,6 +393,43 @@ void ScriptingSystem::bindRender([[maybe_unused]] core::ecs::World& world) {
                       });
     _lua.set_function("hasSprite", [&world](core::ecs::Entity entity) {
         return world.has<render::Sprite>(entity);
+    });
+
+    _lua.new_usertype<render::Rectangle>(
+        "Rectangle", sol::no_constructor, "size", &render::Rectangle::size,
+        "fill", &render::Rectangle::fill, "outline",
+        &render::Rectangle::outline, "outlineThickness",
+        &render::Rectangle::outlineThickness, "layer",
+        &render::Rectangle::layer);
+    _lua.set_function("getRectangle",
+                      [&world](core::ecs::Entity entity) -> render::Rectangle& {
+                          return world.get<render::Rectangle>(entity);
+                      });
+    _lua.set_function("hasRectangle", [&world](core::ecs::Entity entity) {
+        return world.has<render::Rectangle>(entity);
+    });
+    _lua.new_usertype<render::Circle>(
+        "Circle", sol::no_constructor, "radius", &render::Circle::radius,
+        "fill", &render::Circle::fill, "outline", &render::Circle::outline,
+        "outlineThickness", &render::Circle::outlineThickness, "layer",
+        &render::Circle::layer);
+    _lua.set_function("getCircle",
+                      [&world](core::ecs::Entity entity) -> render::Circle& {
+                          return world.get<render::Circle>(entity);
+                      });
+    _lua.set_function("hasCircle", [&world](core::ecs::Entity entity) {
+        return world.has<render::Circle>(entity);
+    });
+    _lua.new_usertype<render::Line>(
+        "Line", sol::no_constructor, "from", &render::Line::from, "to",
+        &render::Line::to, "color", &render::Line::color, "layer",
+        &render::Line::layer);
+    _lua.set_function("getLine",
+                      [&world](core::ecs::Entity entity) -> render::Line& {
+                          return world.get<render::Line>(entity);
+                      });
+    _lua.set_function("hasLine", [&world](core::ecs::Entity entity) {
+        return world.has<render::Line>(entity);
     });
 
     sol::table animation = _lua.create_named_table("animation");
