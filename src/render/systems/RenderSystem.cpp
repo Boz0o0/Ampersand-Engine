@@ -1,5 +1,5 @@
-#include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <ampersand/core/hierarchy/WorldTransform.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
 #include <ampersand/render/resources/Camera.hpp>
@@ -28,14 +28,14 @@ void RenderSystem::update(core::ecs::World& world) {
             continue;
         }
         renderer.draw(world.get<Sprite>(entity),
-                      world.get<core::Transform>(entity));
+                      core::worldTransform(world, entity));
     }
     for (const core::ecs::Entity entity : world.owners<Text>()) {
         if (!world.has<core::Transform>(entity)) {
             continue;
         }
         renderer.draw(world.get<Text>(entity),
-                      world.get<core::Transform>(entity));
+                      core::worldTransform(world, entity));
     }
     renderer.endFrame();
 }

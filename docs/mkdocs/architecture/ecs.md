@@ -445,8 +445,10 @@ and call `apply(world)` at the end of each frame.
 
 An entity can be the **child** of another one, like a turret on a ship. The
 World stores the links itself, next to the version of each row: there is no
-component to add. It is only a link: the `Transform` of every entity stays in
-world space.
+component to add. Like in Unity, the `Transform` of a child is **local**:
+relative to its parent, so moving, turning or scaling the parent moves the
+child with it. `core::worldTransform(world, e)` gives the transform in the
+world, by composing the `Transform` of `e` with the ones of all its parents.
 
 ```cpp
 const ecs::Entity ship = world.create();
@@ -455,13 +457,12 @@ world.add(ship, core::Transform{});
 world.add(turret, core::Transform{});
 world.setParent(turret, ship);  // the turret is mounted on the ship
 
-// The Transform stays in world space: moving the ship does not move the
-// turret, so move its children by the same offset
-constexpr float kOffset = 10.0F;
-world.get<core::Transform>(ship).position.x += kOffset;
-for (const ecs::Entity child : world.children(ship)) {
-    world.get<core::Transform>(child).position.x += kOffset;
-}
+// The turret Transform is relative to the ship: 20 pixels to its right
+world.get<core::Transform>(turret).position.x = 20.0F;
+
+// Moving the ship moves the turret too
+world.get<core::Transform>(ship).position.x += 10.0F;
+const core::Transform aim = core::worldTransform(world, turret);  // x == 30
 
 // A bullet hit the turret: find the ship it is mounted on
 const ecs::Entity owner = world.parent(turret);
@@ -483,6 +484,33 @@ world.destroy(ship);                     // the turret survives
 | `parent(e)`                | returns the parent, or a null `Entity` for a root                                | `InvalidEntity`                   |
 | `children(e)`              | returns the direct children, in the order they were attached                     | `InvalidEntity`                   |
 | `destroy(e)`               | detaches `e` from its parent, then destroys it and all its descendants           | `InvalidEntity`                   |
+
+### World transform
+
+`core::worldTransform(world, e)` (in
+`<ampersand/core/hierarchy/WorldTransform.hpp>`) walks up the parents of `e`
+and applies each one with `core::compose(parent, child)` (in `Transform.hpp`),
+the same way SFML places a child:
+
+```
+world position = parent position + rotate(parent rotation z, (child position - parent origin) * parent scale)
+world rotation = parent rotation + child rotation
+world scale    = parent scale * child scale
+world origin   = child origin
+```
+
+The `z` of the positions is added. Parents without a `Transform` are skipped.
+It is computed on each call (nothing is cached), and the render, the
+collisions and the Lua `getWorldTransform` / `getBounds` all use it. The
+`MovementSystem` moves the local `Transform`.
+
+!!! note
+    A `Transform` cannot store a skew: with a non-uniform parent scale and a
+    rotated child, the world scale and rotation are an approximation (the
+    world position stays exact).
+
+`setParent` keeps the local `Transform` as is: the child jumps to the same
+offset under its new parent.
 
 `setParent` throws `HierarchyCycle` if `parent` is `child` itself or one of its
 descendants, since an entity cannot be its own ancestor. The World is left

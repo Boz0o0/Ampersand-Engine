@@ -22,7 +22,9 @@ The server does not need this module.
 | `IRenderer`             | interface | the window: open, events, load textures and fonts, draw (`SfmlRenderer`)                                                    |
 
 The systems only use the entities that also have a `Transform` (and a `Sprite`
-for the `AnimationSystem`). The `RenderSystem` throws `ResourceNotFound`
+for the `AnimationSystem`). The `RenderSystem` draws each entity at its world
+transform: a child follows its parent (see
+[World transform](ecs.md#world-transform)). The `RenderSystem` throws `ResourceNotFound`
 without a `Renderer`, and the `AnimationSystem` without a `Clock`.
 
 The `layer` of each drawable (`Sprite`, `Text`, `Rectangle`, `Circle`, `Line`)

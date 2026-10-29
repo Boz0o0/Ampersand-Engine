@@ -1,5 +1,5 @@
-#include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <ampersand/core/hierarchy/WorldTransform.hpp>
 #include <ampersand/core/math/Rect.hpp>
 #include <ampersand/physics/components/BoxCollider.hpp>
 #include <ampersand/physics/resources/Collisions.hpp>
@@ -27,11 +27,12 @@ void CollisionSystem::update(core::ecs::World& world) {
         if (!world.has<core::Transform>(entity)) {
             continue;
         }
-        const auto& transform = world.get<core::Transform>(entity);
-        boxes.push_back(
-            {.entity = entity,
-             .bounds = worldBounds(transform, world.get<BoxCollider>(entity)),
-             .z = transform.position.z});
+        const core::Transform transform = core::worldTransform(world, entity);
+        boxes.push_back({
+            .entity = entity,
+            .bounds = worldBounds(transform, world.get<BoxCollider>(entity)),
+            .z = transform.position.z,
+        });
     }
     for (std::size_t first = 0; first < boxes.size(); first++) {
         for (std::size_t second = first + 1; second < boxes.size(); second++) {

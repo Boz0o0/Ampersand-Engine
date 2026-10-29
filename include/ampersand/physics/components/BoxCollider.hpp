@@ -19,7 +19,7 @@ struct BoxCollider {
  * @brief Computes the box of a collider in the world, applying the origin,
  * scale and position of the Transform (rotation is ignored).
  *
- * @param transform Transform of the entity.
+ * @param transform World transform of the entity (see core::worldTransform).
  * @param collider Collider of the entity.
  * @return The collider box in world coordinates.
  */

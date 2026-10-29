@@ -459,6 +459,31 @@ TEST_F(ScriptingSystemTest, ScriptReplacesAVec3) {
     EXPECT_FLOAT_EQ(scale.z, 4.0F);
 }
 
+TEST_F(ScriptingSystemTest, GetWorldTransformAppliesTheParents) {
+    const Entity turret = spawn({
+        script("world_transform.lua", R"(
+        local S = {}
+        function S:update()
+            local world = getWorldTransform(self.entity)
+            local loc = getTransform(self.entity)
+            error("world=" .. world.position.x .. "," .. world.position.y
+                  .. " local=" .. loc.position.x)
+        end
+        return S
+    )"),
+    });
+    const Entity ship = _world.create();
+    Transform shipTransform;
+    shipTransform.position = {100.0F, 50.0F, 0.0F};
+    _world.add(ship, shipTransform);
+    Transform turretTransform;
+    turretTransform.position = {10.0F, 0.0F, 0.0F};
+    _world.add(turret, turretTransform);
+    _world.setParent(turret, ship);
+
+    EXPECT_EQ(count(frame(), "world=110.0,50.0 local=10.0"), 1);
+}
+
 TEST_F(ScriptingSystemTest, HasTransformTellsIfThereIsOne) {
     const auto path = script("has.lua", R"(
         local S = {}

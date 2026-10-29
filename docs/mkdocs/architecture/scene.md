@@ -346,7 +346,7 @@ name such as `"X"`, or `null`; an unknown name throws), `dead` and
 
 | Key                     | Module  | Fields                                                                             |
 | ----------------------- | ------- | ---------------------------------------------------------------------------------- |
-| `Transform`             | core    | `position`, `scale`, `rotationDegrees`, `origin` (each a `Vec3`)                   |
+| `Transform`             | core    | `position`, `scale`, `rotationDegrees`, `origin` (`Vec3`), local to parent         |
 | `Sprite`                | render  | `texture` (a path), `source`, `color`, `layer`                                     |
 | `Text`                  | render  | `font` (a path), `value`, `size`, `color`, `layer`                                 |
 | `Animation`             | render  | `frames` (list of `Rect`), `frameDuration`, `loop`                                 |

@@ -26,6 +26,18 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+### Changed
+
+- **Core**: the `Transform` of a child is now **local**, relative to its parent (like in Unity): moving, turning or scaling the parent moves its children. It was in world space before, so games that moved the children by hand must stop doing it.
+- **Render**, **Physics**: the `RenderSystem` draws and the `CollisionSystem` compares each entity at its world transform (its `Transform` composed with its parents'). The `MovementSystem` still moves the local `Transform`.
+
+### Added
+
+- **Core**: `compose(parent, child)` in `Transform.hpp`, which moves a child `Transform` out of its parent (position, rotation, scale and origin).
+- **Core**: `worldTransform(world, entity)` in `core/hierarchy/WorldTransform.hpp`, which gives the transform of an entity in the world. Parents without a `Transform` are skipped.
+- **Scripting**: `getWorldTransform(entity)`, a copy of the transform in the world. `getBounds` uses the world transform.
+- **Tests**: unit tests of `compose`, of `worldTransform` (three levels, parent without `Transform`), of the collision of a child and of `getWorldTransform`.
+
 ## [0.5.1] - 2026-10-28
 
 ### Fixed

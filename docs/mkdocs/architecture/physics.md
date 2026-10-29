@@ -16,7 +16,8 @@ touch. It only needs `core`, so it runs on the server, which has no render.
 | `MovementSystem`  | system    | velocity += gravity × dt, then position += velocity × dt                     |
 | `CollisionSystem` | system    | fills `Collisions` with every pair of overlapping hitboxes **on the same z** |
 
-The systems only use the entities that also have a `Transform`. They throw
+The systems only use the entities that also have a `Transform`. The
+`MovementSystem` moves the local `Transform` (relative to the parent). They throw
 `ResourceNotFound` if a resource they need is missing (`GravityForce` is only
 needed when an entity has a `Gravity`).
 
@@ -63,8 +64,10 @@ in several pairs: check `world.alive(entity)` before using it.
 ## Hitboxes
 
 The `bounds` of a `BoxCollider` are in the **local coordinates** of the entity:
-always measured from the local (0, 0), not from the origin. The `Transform`
-places them exactly like the render places a sprite:
+always measured from the local (0, 0), not from the origin. The world transform
+of the entity (its `Transform` composed with its parents', see
+[World transform](ecs.md#world-transform)) places them exactly like the render
+places a sprite:
 
 ```
 world point = position + (local point - origin) * scale
@@ -115,7 +118,8 @@ hitbox together, so the hitbox stays on the drawing:
 Without a sprite (on the server, or for an invisible zone), with the default
 origin, `bounds` is just an offset and a size from `position`.
 
-`worldBounds(transform, collider)` gives the hitbox in the world. The rotation is
+`worldBounds(core::worldTransform(world, e), collider)` gives the hitbox in the
+world, and the `CollisionSystem` compares the world `z`. The rotation is
 ignored: hitboxes are rectangles that never turn. Two hitboxes that only touch by
 an edge do not collide.
 
