@@ -226,6 +226,9 @@ void ScriptingSystem::bindWorld(core::ecs::World& world) {
                       [&world](core::ecs::Entity entity) -> core::Transform& {
                           return world.get<core::Transform>(entity);
                       });
+    _lua.set_function("getWorldTransform", [&world](core::ecs::Entity entity) {
+        return core::worldTransform(world, entity);
+    });
     _lua.set_function("hasTransform", [&world](core::ecs::Entity entity) {
         return world.has<core::Transform>(entity);
     });
@@ -331,7 +334,7 @@ void ScriptingSystem::bindPhysics([[maybe_unused]] core::ecs::World& world) {
         return world.has<physics::BoxCollider>(entity);
     });
     _lua.set_function("getBounds", [&world](core::ecs::Entity entity) {
-        return physics::worldBounds(world.get<core::Transform>(entity),
+        return physics::worldBounds(core::worldTransform(world, entity),
                                     world.get<physics::BoxCollider>(entity));
     });
     _lua.new_usertype<physics::Velocity>("Velocity", sol::no_constructor,

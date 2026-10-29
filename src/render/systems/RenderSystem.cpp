@@ -28,14 +28,14 @@ void RenderSystem::update(core::ecs::World& world) {
             continue;
         }
         renderer.draw(world.get<Sprite>(entity),
-                      world.get<core::Transform>(entity));
+                      core::worldTransform(world, entity));
     }
     for (const core::ecs::Entity entity : world.owners<Text>()) {
         if (!world.has<core::Transform>(entity)) {
             continue;
         }
         renderer.draw(world.get<Text>(entity),
-                      world.get<core::Transform>(entity));
+                      core::worldTransform(world, entity));
     }
     renderer.endFrame();
 }

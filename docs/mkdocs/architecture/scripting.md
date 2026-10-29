@@ -91,7 +91,8 @@ the first time it is used.
 
 | Function                                  | Module  | Returns              | What it does                                                         |
 | ----------------------------------------- | ------- | -------------------- | -------------------------------------------------------------------- |
-| `getTransform(entity)`                    | core    | `Transform`          | the component itself: changing it changes the entity                 |
+| `getTransform(entity)`                    | core    | `Transform`          | the component itself (local): changing it changes the entity         |
+| `getWorldTransform(entity)`               | core    | `Transform`          | a copy of the transform in the world, with its parents applied       |
 | `hasTransform(entity)`                    | core    | boolean              | whether the entity has a `Transform`                                 |
 | `destroy(entity)`                         | core    |                      | destroys the entity at the end of the frame                          |
 | `kill(entity)`                            | core    |                      | sends an `EntityDestroyed`, then destroys it like `destroy`          |
@@ -107,7 +108,7 @@ the first time it is used.
 | `input.getMousePosition()`                | input   | `Vec2`               | the mouse in pixels of the window, from its top left corner          |
 | `getBoxCollider(entity)`                  | physics | `BoxCollider`        | the `BoxCollider` of the entity                                      |
 | `hasBoxCollider(entity)`                  | physics | boolean              | whether the entity has a `BoxCollider`                               |
-| `getBounds(entity)`                       | physics | `Rect`               | the box in the world, from its `BoxCollider` and `Transform`         |
+| `getBounds(entity)`                       | physics | `Rect`               | the box in the world, from its `BoxCollider` and world transform     |
 | `getColliders()`                          | physics | list of `Entity`     | the entities with a `BoxCollider` and a `Transform`                  |
 | `getVelocity(entity)`                     | physics | `Velocity`           | the `Velocity` of the entity, applied by the `MovementSystem`        |
 | `hasVelocity(entity)`                     | physics | boolean              | whether the entity has a `Velocity`                                  |

@@ -8,7 +8,8 @@ namespace ampersand::physics {
  * @brief Finds every pair of entities whose BoxColliders overlap and writes
  * them in the Collisions resource.
  *
- * Only entities on the same z (Transform position) can collide.
+ * Boxes are placed with the world transform of their entity (see
+ * core::worldTransform). Only entities on the same world z can collide.
  */
 class CollisionSystem final : public core::ecs::ISystem {
 public:

@@ -8,8 +8,8 @@ struct Renderer;
 
 /**
  * @brief Draws one whole frame with the Renderer resource: clears the window,
- * sets the camera, draws every Sprite and Text at its Transform (sorted by
- * layer), then displays it.
+ * sets the camera, draws every Sprite and Text at its world transform (see
+ * core::worldTransform, sorted by layer), then displays it.
  */
 class RenderSystem final : public core::ecs::ISystem {
 public:
