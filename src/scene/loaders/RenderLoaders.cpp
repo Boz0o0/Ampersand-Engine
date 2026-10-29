@@ -1,8 +1,8 @@
 #ifdef AMPERSAND_MODULE_RENDER
 
 #include <algorithm>
-#include <ampersand/render/Primitive.hpp>
 #include <ampersand/render/SfmlRenderer.hpp>
+#include <ampersand/render/components/Primitive.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
 #include <ampersand/render/resources/Renderer.hpp>

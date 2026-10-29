@@ -1,6 +1,6 @@
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/core/hierarchy/WorldTransform.hpp>
-#include <ampersand/render/Primitive.hpp>
+#include <ampersand/render/components/Primitive.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
 #include <ampersand/render/resources/Camera.hpp>

@@ -25,8 +25,8 @@
 #endif
 
 #ifdef AMPERSAND_MODULE_RENDER
-#include <ampersand/render/Primitive.hpp>
 #include <ampersand/render/components/AnimationStateMachine.hpp>
+#include <ampersand/render/components/Primitive.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
 #include <ampersand/render/resources/Camera.hpp>

@@ -5,6 +5,10 @@
 #include <ampersand/core/ecs/World.hpp>
 #include <ampersand/scene/resources/SceneManager.hpp>
 
+#ifdef AMPERSAND_MODULE_RENDER
+#include <ampersand/render/components/Primitive.hpp>
+#endif
+
 #ifdef AMPERSAND_MODULE_SCRIPTING
 #include <ampersand/core/resources/Clock.hpp>
 #include <ampersand/scripting/components/Scripts.hpp>
@@ -443,6 +447,84 @@ TEST_F(SceneManagerTest, EngineBackendsAndInputAreConfigOnly) {
         EXPECT_EQ(_scenes.getCurrentScene(), "a");
     }
 }
+
+#ifdef AMPERSAND_MODULE_RENDER
+
+using ampersand::render::Circle;
+using ampersand::render::Line;
+using ampersand::render::Rectangle;
+
+TEST_F(SceneManagerTest, PrimitivesAreLoaded) {
+    write("a.json", R"({})");
+    write("prefab.json", R"({"components": {
+        "Rectangle": {"size": {"x": 40, "y": 20},
+                      "fill": {"r": 255, "g": 0, "b": 0, "a": 255},
+                      "outline": {"r": 0, "g": 0, "b": 0, "a": 255},
+                      "outlineThickness": 2, "layer": 1},
+        "Circle": {"radius": 8,
+                   "fill": {"r": 0, "g": 255, "b": 0, "a": 255},
+                   "outline": {"r": 0, "g": 0, "b": 0, "a": 0},
+                   "outlineThickness": 0, "layer": 2},
+        "Line": {"from": {"x": 0, "y": 0}, "to": {"x": 10, "y": 5},
+                 "color": {"r": 0, "g": 0, "b": 255, "a": 128}, "layer": 3}
+    }})");
+    _scenes.loadConfig(_world, config("config.json"));
+
+    const Entity entity = _scenes.instantiate(_world, "prefab.json");
+
+    const auto& rectangle = _world.get<Rectangle>(entity);
+    EXPECT_FLOAT_EQ(rectangle.size.x, 40.0F);
+    EXPECT_EQ(rectangle.fill.r, 255);
+    EXPECT_FLOAT_EQ(rectangle.outlineThickness, 2.0F);
+    EXPECT_EQ(rectangle.layer, 1);
+    const auto& circle = _world.get<Circle>(entity);
+    EXPECT_FLOAT_EQ(circle.radius, 8.0F);
+    EXPECT_EQ(circle.fill.g, 255);
+    EXPECT_EQ(circle.layer, 2);
+    const auto& line = _world.get<Line>(entity);
+    EXPECT_FLOAT_EQ(line.to.x, 10.0F);
+    EXPECT_FLOAT_EQ(line.to.y, 5.0F);
+    EXPECT_EQ(line.color.a, 128);
+    EXPECT_EQ(line.layer, 3);
+}
+
+TEST_F(SceneManagerTest, NegativePrimitiveSizesThrow) {
+    const std::vector<std::string> components{
+        R"("Rectangle": {"size": {"x": -1, "y": 20},
+            "fill": {"r": 0, "g": 0, "b": 0, "a": 0},
+            "outline": {"r": 0, "g": 0, "b": 0, "a": 0},
+            "outlineThickness": 0, "layer": 0})",
+        R"("Rectangle": {"size": {"x": 1, "y": 1},
+            "fill": {"r": 0, "g": 0, "b": 0, "a": 0},
+            "outline": {"r": 0, "g": 0, "b": 0, "a": 0},
+            "outlineThickness": -2, "layer": 0})",
+        R"("Circle": {"radius": -8,
+            "fill": {"r": 0, "g": 0, "b": 0, "a": 0},
+            "outline": {"r": 0, "g": 0, "b": 0, "a": 0},
+            "outlineThickness": 0, "layer": 0})",
+        R"("Circle": {"radius": 8,
+            "fill": {"r": 0, "g": 0, "b": 0, "a": 0},
+            "outline": {"r": 0, "g": 0, "b": 0, "a": 0},
+            "outlineThickness": -1, "layer": 0})",
+    };
+    write("a.json", R"({})");
+    _scenes.loadConfig(_world, config("config.json"));
+
+    for (const auto& component : components) {
+        write("prefab.json", R"({"components": {)" + component + "}}");
+
+        try {
+            _scenes.instantiate(_world, "prefab.json");
+            ADD_FAILURE() << component << " was loaded";
+        } catch (const std::runtime_error& error) {
+            EXPECT_NE(std::string(error.what()).find("must not be negative"),
+                      std::string::npos)
+                << error.what();
+        }
+    }
+}
+
+#endif
 
 #ifdef AMPERSAND_MODULE_SCRIPTING
 

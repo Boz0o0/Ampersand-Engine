@@ -8,10 +8,10 @@
 
 #ifdef AMPERSAND_MODULE_RENDER
 #include <ampersand/render/Color.hpp>
-#include <ampersand/render/Primitive.hpp>
 #include <ampersand/render/WindowConfig.hpp>
 #include <ampersand/render/components/Animation.hpp>
 #include <ampersand/render/components/AnimationStateMachine.hpp>
+#include <ampersand/render/components/Primitive.hpp>
 #include <ampersand/render/resources/Camera.hpp>
 #include <ampersand/render/resources/ClearColor.hpp>
 #endif
