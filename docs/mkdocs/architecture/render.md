@@ -258,6 +258,18 @@ then `draw` (with a `Sprite`, a `Text` or a `Rectangle`, `Circle` or `Line`),
 then `endFrame`. The `RenderSystem` already does `beginFrame` and `endFrame`,
 so use one or the other, not both in the same frame.
 
+## Batching
+
+The `SfmlRenderer` does not draw anything in `draw`: it keeps the command, and `endFrame` sorts them all by `layer` and draws them. The `Sprite`s that follow each other in that order and use the same texture are drawn together, in one draw call. A `Rectangle`, `Circle`, `Line` or `Text` is drawn alone, and a sprite with another texture than the one before starts a new draw call.
+
+```
+layer:   0       0       0       1        1       2
+draw:    ship    ship    ship    bullet   rect    ship
+calls:   [ships.png ×3        ] [bul.png] [rect] [ships.png]  → 4 draw calls
+```
+
+Inside one layer, the `RenderSystem` draws the `Sprite`s first (in the order of the entities), then the `Text`s, `Rectangle`s, `Circle`s and `Line`s. Two textures in the same layer can then alternate (`A B A` is 3 draw calls). To draw fewer, put the images of the same kind in one spritesheet, and give each texture its own `layer` when their order does not matter. A sprite alone in its draw call (`A B A B`) is a bit slower than before the batching, so this matters most for the many sprites of one kind.
+
 ## Limits
 
 | Rule       | Value                                                                                            |

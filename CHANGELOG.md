@@ -33,6 +33,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Render**: the fields `start` and `end` of `Line` are renamed `from` and `to` (local points of its `Transform`). Games that build or read a `Line` must use the new names.
 - **Render**: `Rectangle`, `Circle` and `Line` are now components: the `RenderSystem` draws them at the world transform of their entity, sorted by `layer` with the `Sprite`s and `Text`s. They can still be drawn by hand with `IRenderer::draw`.
 - **Render**: Moved the Primitive.hpp into the components/ folder.
+- **Render**: the `SfmlRenderer` batches the sprites: in `endFrame`, the `Sprite`s that follow each other in layer order with the same texture are drawn in one draw call, instead of one each. `Rectangle`, `Circle`, `Line` and `Text` are still drawn one by one. The image is the same as before.
 
 ### Added
 
