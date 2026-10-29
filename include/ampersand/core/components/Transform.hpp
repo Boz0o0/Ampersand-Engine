@@ -4,9 +4,6 @@
 
 namespace ampersand::core {
 
-/** @brief Degrees in half a turn, which is pi radians. */
-constexpr float kHalfTurnDegrees = 180.0F;
-
 /**
  * @brief Position, scale, rotation, and origin for a 3D object, relative to
  * the parent entity (see World::setParent).

@@ -4,6 +4,9 @@
 
 namespace ampersand::core {
 
+/** @brief Degrees in half a turn, which is pi radians. */
+constexpr float kHalfTurnDegrees = 180.0F;
+
 Transform compose(const Transform& parent, const Transform& child) {
     const float radians =
         parent.rotationDegrees.z * std::numbers::pi_v<float> / kHalfTurnDegrees;
