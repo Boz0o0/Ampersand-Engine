@@ -26,8 +26,22 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+### Changed
+
+- **Core**: the `Transform` of a child is now **local**, relative to its parent (like in Unity): moving, turning or scaling the parent moves its children. It was in world space before, so games that moved the children by hand must stop doing it.
+- **Render**, **Physics**: the `RenderSystem` draws and the `CollisionSystem` compares each entity at its world transform (its `Transform` composed with its parents'). The `MovementSystem` still moves the local `Transform`.
+- **Render**: the fields `start` and `end` of `Line` are renamed `from` and `to` (local points of its `Transform`). Games that build or read a `Line` must use the new names.
+- **Render**: `Rectangle`, `Circle` and `Line` are now components: the `RenderSystem` draws them at the world transform of their entity, sorted by `layer` with the `Sprite`s and `Text`s. They can still be drawn by hand with `IRenderer::draw`.
+- **Render**: Moved the Primitive.hpp into the components/ folder.
+
 ### Added
 
+- **Core**: `compose(parent, child)` in `Transform.hpp`, which moves a child `Transform` out of its parent (position, rotation, scale and origin).
+- **Core**: `worldTransform(world, entity)` in `core/hierarchy/WorldTransform.hpp`, which gives the transform of an entity in the world. Parents without a `Transform` are skipped.
+- **Scripting**: `getWorldTransform(entity)`, a copy of the transform in the world. `getBounds` uses the world transform.
+- **Scene**: `Rectangle`, `Circle` and `Line` components in the scenes and prefabs. A negative `size`, `radius` or `outlineThickness` throws.
+- **Scripting**: the `Rectangle`, `Circle` and `Line` types, with `getRectangle`, `hasRectangle`, `getCircle`, `hasCircle`, `getLine` and `hasLine`.
+- **Tests**: unit tests of `compose`, of `worldTransform` (three levels, parent without `Transform`), of the collision of a child and of `getWorldTransform`.
 - **Core**: `Stats` resource, filled by the `Scheduler` at the end of each `update` if the World has it: `frameMs`, `updateMs`, `fps`, `entities`, the `history` of the last 120 frame times, and `values` for the metrics of the game.
 - **Core**: `World::entityCount()`, the number of live entities.
 - **Tests**: unit tests of `World::entityCount()` and of the `Stats` filled by the `Scheduler`.

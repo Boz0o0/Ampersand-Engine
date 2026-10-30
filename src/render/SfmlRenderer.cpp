@@ -151,11 +151,11 @@ void SfmlRenderer::draw(const Line& line, const core::Transform& transform) {
                 const std::array<sf::Vertex, 2> vertices{
                     {
                         {
-                            .position = {line.start.x, line.start.y},
+                            .position = {line.from.x, line.from.y},
                             .color = color,
                         },
                         {
-                            .position = {line.end.x, line.end.y},
+                            .position = {line.to.x, line.to.y},
                             .color = color,
                         },
                     },

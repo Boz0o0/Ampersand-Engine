@@ -1,9 +1,9 @@
 #include <algorithm>
-#include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/ecs/CommandQueue.hpp>
 #include <ampersand/core/ecs/EventQueue.hpp>
 #include <ampersand/core/ecs/Events.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <ampersand/core/hierarchy/WorldTransform.hpp>
 #include <ampersand/core/math/Rect.hpp>
 #include <ampersand/core/math/Vec2.hpp>
 #include <ampersand/core/math/Vec3.hpp>
@@ -26,6 +26,7 @@
 
 #ifdef AMPERSAND_MODULE_RENDER
 #include <ampersand/render/components/AnimationStateMachine.hpp>
+#include <ampersand/render/components/Primitive.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
 #include <ampersand/render/resources/Camera.hpp>
@@ -226,6 +227,9 @@ void ScriptingSystem::bindWorld(core::ecs::World& world) {
                       [&world](core::ecs::Entity entity) -> core::Transform& {
                           return world.get<core::Transform>(entity);
                       });
+    _lua.set_function("getWorldTransform", [&world](core::ecs::Entity entity) {
+        return core::worldTransform(world, entity);
+    });
     _lua.set_function("hasTransform", [&world](core::ecs::Entity entity) {
         return world.has<core::Transform>(entity);
     });
@@ -331,7 +335,7 @@ void ScriptingSystem::bindPhysics([[maybe_unused]] core::ecs::World& world) {
         return world.has<physics::BoxCollider>(entity);
     });
     _lua.set_function("getBounds", [&world](core::ecs::Entity entity) {
-        return physics::worldBounds(world.get<core::Transform>(entity),
+        return physics::worldBounds(core::worldTransform(world, entity),
                                     world.get<physics::BoxCollider>(entity));
     });
     _lua.new_usertype<physics::Velocity>("Velocity", sol::no_constructor,
@@ -389,6 +393,43 @@ void ScriptingSystem::bindRender([[maybe_unused]] core::ecs::World& world) {
                       });
     _lua.set_function("hasSprite", [&world](core::ecs::Entity entity) {
         return world.has<render::Sprite>(entity);
+    });
+
+    _lua.new_usertype<render::Rectangle>(
+        "Rectangle", sol::no_constructor, "size", &render::Rectangle::size,
+        "fill", &render::Rectangle::fill, "outline",
+        &render::Rectangle::outline, "outlineThickness",
+        &render::Rectangle::outlineThickness, "layer",
+        &render::Rectangle::layer);
+    _lua.set_function("getRectangle",
+                      [&world](core::ecs::Entity entity) -> render::Rectangle& {
+                          return world.get<render::Rectangle>(entity);
+                      });
+    _lua.set_function("hasRectangle", [&world](core::ecs::Entity entity) {
+        return world.has<render::Rectangle>(entity);
+    });
+    _lua.new_usertype<render::Circle>(
+        "Circle", sol::no_constructor, "radius", &render::Circle::radius,
+        "fill", &render::Circle::fill, "outline", &render::Circle::outline,
+        "outlineThickness", &render::Circle::outlineThickness, "layer",
+        &render::Circle::layer);
+    _lua.set_function("getCircle",
+                      [&world](core::ecs::Entity entity) -> render::Circle& {
+                          return world.get<render::Circle>(entity);
+                      });
+    _lua.set_function("hasCircle", [&world](core::ecs::Entity entity) {
+        return world.has<render::Circle>(entity);
+    });
+    _lua.new_usertype<render::Line>(
+        "Line", sol::no_constructor, "from", &render::Line::from, "to",
+        &render::Line::to, "color", &render::Line::color, "layer",
+        &render::Line::layer);
+    _lua.set_function("getLine",
+                      [&world](core::ecs::Entity entity) -> render::Line& {
+                          return world.get<render::Line>(entity);
+                      });
+    _lua.set_function("hasLine", [&world](core::ecs::Entity entity) {
+        return world.has<render::Line>(entity);
     });
 
     sol::table animation = _lua.create_named_table("animation");

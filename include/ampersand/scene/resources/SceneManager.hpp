@@ -314,7 +314,8 @@ private:
 #ifdef AMPERSAND_MODULE_RENDER
     /**
      * @brief Registers ClearColor, Camera, Renderer, Animation,
-     * AnimationStateMachine, Sprite and Text (src/scene/loaders).
+     * AnimationStateMachine, Sprite, Text, Rectangle, Circle and Line
+     * (src/scene/loaders).
      */
     void registerRender();
 
@@ -342,6 +343,28 @@ private:
      */
     void loadText(core::ecs::World& world, core::ecs::Entity entity,
                   const json& data);
+
+    /**
+     * @brief Throws if a size read from a scene is negative.
+     *
+     * @param field Name of the field, for the error message.
+     * @throws std::runtime_error if value is negative.
+     */
+    static void checkNotNegative(float value, const std::string& field);
+
+    /**
+     * @brief Rectangle: every field, "size" and "outlineThickness" not
+     * negative.
+     */
+    static void loadRectangle(core::ecs::World& world, core::ecs::Entity entity,
+                              const json& data);
+
+    /**
+     * @brief Circle: every field, "radius" and "outlineThickness" not
+     * negative.
+     */
+    static void loadCircle(core::ecs::World& world, core::ecs::Entity entity,
+                           const json& data);
 
     /**
      * @brief Checks one condition of a transition: {"param", "op", "value"}

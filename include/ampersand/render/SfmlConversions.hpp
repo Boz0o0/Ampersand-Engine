@@ -191,9 +191,11 @@ inline std::optional<Event> toEvent(const sf::Event::JoystickMoved& moved) {
     if (!axis) {
         return std::nullopt;
     }
-    return input::JoystickMoved{.joystick = moved.joystickId,
-                                .axis = *axis,
-                                .position = moved.position / 100.0F};
+    return input::JoystickMoved{
+        .joystick = moved.joystickId,
+        .axis = *axis,
+        .position = moved.position / 100.0F,
+    };
 }
 
 inline std::optional<Event> toEvent(

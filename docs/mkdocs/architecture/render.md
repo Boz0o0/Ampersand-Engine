@@ -11,6 +11,9 @@ The server does not need this module.
 | ----------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `Sprite`                | component | image to draw: `texture`, `source` (part of the texture), `color` (tint), `layer` (draw order)                              |
 | `Text`                  | component | text to draw: `font`, `value`, `size`, `color`, `layer` (draw order)                                                        |
+| `Rectangle`             | component | filled rectangle from the local (0, 0): `size`, `fill`, `outline`, `outlineThickness`, `layer`                              |
+| `Circle`                | component | filled circle in the box of its diameter: `radius`, `fill`, `outline`, `outlineThickness`, `layer`                          |
+| `Line`                  | component | segment between two local points: `from`, `to`, `color`, `layer`                                                            |
 | `Animation`             | component | list of frames played on the `Sprite`, `isFinished`, `framesFromGrid` (see [Animation](#animation))                         |
 | `AnimationStateMachine` | component | picks the clip of the `Animation` from named states, transitions and one-shot actions (see [State machine](#state-machine)) |
 | `Renderer`              | resource  | the `IRenderer` and its window: `size`, `title`, `isOpen` (see [Window](#window))                                           |
@@ -18,11 +21,13 @@ The server does not need this module.
 | `Camera`                | resource  | part of the world shown in the window (see [Camera](#camera)), optional                                                     |
 | `ClearColor`            | resource  | background color of the window, optional (black without it)                                                                 |
 | `AnimationSystem`       | system    | runs every `AnimationStateMachine`, then moves every `Animation` forward and writes its frame in `Sprite::source`           |
-| `RenderSystem`          | system    | draws one whole frame: clear, camera, every `Sprite` and `Text`, display                                                    |
+| `RenderSystem`          | system    | draws one whole frame: clear, camera, every `Sprite`, `Text`, `Rectangle`, `Circle` and `Line`, display                     |
 | `IRenderer`             | interface | the window: open, events, load textures and fonts, draw (`SfmlRenderer`)                                                    |
 
 The systems only use the entities that also have a `Transform` (and a `Sprite`
-for the `AnimationSystem`). The `RenderSystem` throws `ResourceNotFound`
+for the `AnimationSystem`). The `RenderSystem` draws each entity at its world
+transform: a child follows its parent (see
+[World transform](ecs.md#world-transform)). The `RenderSystem` throws `ResourceNotFound`
 without a `Renderer`, and the `AnimationSystem` without a `Clock`.
 
 The `layer` of each drawable (`Sprite`, `Text`, `Rectangle`, `Circle`, `Line`)
@@ -227,6 +232,25 @@ world.addResource<render::Camera>() = {.center = {960.0F, 540.0F},
 To follow a player, change `center` every frame. To zoom, change `size`. If the
 window does not have the same ratio as `size`, the image is stretched.
 
+## Shapes
+
+`Rectangle`, `Circle` and `Line` draw plain shapes without a texture. They are placed by the `Transform` like a `Sprite`: the shape starts at the local (0, 0), the `origin` is its pivot, and the `scale` stretches it (and its outline). Give the size in pixels with `size` or `radius` and keep a scale of 1, so the children of the entity are not stretched with it.
+
+```cpp
+const ecs::Entity button = world.create();
+world.add(button, core::Transform{.position = {100.0F, 50.0F, 0.0F}});
+world.add(button, render::Rectangle{.size = {160.0F, 48.0F},
+                                    .fill = {58, 66, 80, 255},
+                                    .outline = {255, 255, 255, 70},
+                                    .outlineThickness = 2.0F,
+                                    .layer = 10});
+
+const ecs::Entity range = world.create();
+constexpr float kRadius = 150.0F;
+world.add(range, core::Transform{.origin = {kRadius, kRadius, 0.0F}});  // centered
+world.add(range, render::Circle{.radius = kRadius, .fill = {255, 255, 255, 40}});
+```
+
 ## Drawing by hand
 
 `IRenderer` (`window.renderer`) can also draw without the ECS: `beginFrame`,
@@ -239,7 +263,7 @@ so use one or the other, not both in the same frame.
 | Rule       | Value                                                                                            |
 | ---------- | ------------------------------------------------------------------------------------------------ |
 | Dimensions | 2D only: the `z` of the `Transform` is ignored, `layer` is the draw order                        |
-| Components | `Sprite` and `Text` only: shapes (`Rectangle`, `Circle`, `Line`) are drawn by hand               |
+| Shapes     | `Rectangle`, `Circle` and `Line` only, without texture; a `Line` is always 1 pixel thick          |
 | Animation  | one clip at a time per entity: no blending between two clips, a switch shows the new one at once |
 | Camera     | one for the whole window, stretched if the window does not have the ratio of its `size`          |
 | Assets     | a failed load returns `0`, and an entity with an unknown id is not drawn                         |

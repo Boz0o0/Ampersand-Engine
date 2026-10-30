@@ -1,5 +1,6 @@
-#include <ampersand/core/components/Transform.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <ampersand/core/hierarchy/WorldTransform.hpp>
+#include <ampersand/render/components/Primitive.hpp>
 #include <ampersand/render/components/Sprite.hpp>
 #include <ampersand/render/components/Text.hpp>
 #include <ampersand/render/resources/Camera.hpp>
@@ -23,21 +24,22 @@ void RenderSystem::update(core::ecs::World& world) {
     } else {
         renderer.resetView();
     }
-    for (const core::ecs::Entity entity : world.owners<Sprite>()) {
-        if (!world.has<core::Transform>(entity)) {
-            continue;
-        }
-        renderer.draw(world.get<Sprite>(entity),
-                      world.get<core::Transform>(entity));
-    }
-    for (const core::ecs::Entity entity : world.owners<Text>()) {
-        if (!world.has<core::Transform>(entity)) {
-            continue;
-        }
-        renderer.draw(world.get<Text>(entity),
-                      world.get<core::Transform>(entity));
-    }
+    drawAll<Sprite>(world, renderer);
+    drawAll<Text>(world, renderer);
+    drawAll<Rectangle>(world, renderer);
+    drawAll<Circle>(world, renderer);
+    drawAll<Line>(world, renderer);
     renderer.endFrame();
+}
+
+template <typename T>
+void RenderSystem::drawAll(core::ecs::World& world, IRenderer& renderer) {
+    for (const core::ecs::Entity entity : world.owners<T>()) {
+        if (world.has<core::Transform>(entity)) {
+            renderer.draw(world.get<T>(entity),
+                          core::worldTransform(world, entity));
+        }
+    }
 }
 
 bool RenderSystem::syncWindow(Renderer& window) {
