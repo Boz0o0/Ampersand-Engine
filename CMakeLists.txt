@@ -20,6 +20,7 @@ option(AMPERSAND_MODULE_SCENE "Build the Scene module" ON)
 option(AMPERSAND_MODULE_SCRIPTING "Build the Scripting module" ON)
 
 option(AMPERSAND_BUILD_TESTS "Build the engine unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(AMPERSAND_BUILD_EDITOR "Build the editor" OFF)
 
 include(cmake/CPM.cmake)
 
@@ -113,6 +114,14 @@ if (AMPERSAND_MODULE_SCRIPTING)
 endif()
 
 add_subdirectory(src)
+
+if(AMPERSAND_BUILD_EDITOR)
+    if(NOT AMPERSAND_MODULE_RENDER OR NOT AMPERSAND_MODULE_SCENE)
+        message(FATAL_ERROR "AMPERSAND_MODULE_RENDER and AMPERSAND_MODULE_SCENE must be enabled to build the editor")
+    endif()
+
+    add_subdirectory(editor)
+endif()
 
 if(AMPERSAND_BUILD_TESTS AND BUILD_TESTING)
     add_subdirectory(tests)
