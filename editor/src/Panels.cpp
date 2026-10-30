@@ -1,20 +1,48 @@
 #include <imgui.h>
 
 #include <editor/Editor.hpp>
+#include <filesystem>
 
 namespace ampersand::editor {
 
 void Editor::drawFiles() {
     ImGui::Begin("Files");
 
-    ImGui::TextUnformatted("Assets");
+    if (this->_project == std::nullopt) return;
+    if (ImGui::Button("Refresh")) {
+        this->_project->refreshFiles();
+    }
     ImGui::Separator();
-
-    ImGui::BulletText("Textures");
-    ImGui::BulletText("Models");
-    ImGui::BulletText("Scenes");
+    for (const FileNode& node : this->_project->getFiles()) {
+        drawFileNode(node);
+    }
 
     ImGui::End();
+}
+
+void Editor::drawFileNode(const FileNode& node) {
+    std::string assetPathPayload = "ASSET_PATH";
+
+    if (node.directory) {
+        if (ImGui::TreeNodeEx(node.name.c_str(),
+                              ImGuiTreeNodeFlags_OpenOnArrow)) {
+            for (const FileNode& child : node.children) {
+                drawFileNode(child);
+            }
+            ImGui::TreePop();
+        }
+        return;
+    }
+    ImGui::TreeNodeEx(
+        node.name.c_str(),
+        ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+    if (ImGui::BeginDragDropSource()) {
+        const std::string path = node.path.generic_string();
+        ImGui::SetDragDropPayload(assetPathPayload.c_str(), path.c_str(),
+                                  path.size() + 1);
+        ImGui::TextUnformatted(path.c_str());
+        ImGui::EndDragDropSource();
+    }
 }
 
 void Editor::drawHierarchy() {

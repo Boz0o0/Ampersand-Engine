@@ -1,10 +1,12 @@
 #pragma once
 
+#include <array>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 /**
  * @file Project.hpp
@@ -20,6 +22,16 @@ struct Document {
     std::filesystem::path path;   // Relative to the project root
     nlohmann::ordered_json data;  // Ordered: keeps the key order of the file
     bool dirty{false};            // Changed since the last build
+};
+
+/**
+ * @brief File or folder of the project, as listed by the last refresh.
+ */
+struct FileNode {
+    std::filesystem::path path;  // Relative to the project root
+    std::string name;            // File name, shown in the Files panel
+    bool directory{false};
+    std::vector<FileNode> children;  // Folders first, then sorted by name
 };
 
 /**
@@ -49,13 +61,31 @@ public:
     /** @brief The world/config.json document. */
     [[nodiscard]] Document& getConfig() { return _config; }
 
+    /** @brief The assets/, scripts/ and world/ folders that exist. */
+    [[nodiscard]] const std::vector<FileNode>& getFiles() const {
+        return _files;
+    }
+
+    /** @brief Lists the project folders again from the disk. */
+    void refreshFiles();
+
 private:
+    /** @brief Folders shown in the Files panel, relative to the root. */
+    static constexpr std::array<std::string_view, 3> kFolders{
+        "assets", "scripts", "world"};
+
     /** @brief Reads a JSON object, or std::nullopt if it can't. */
     static std::optional<nlohmann::ordered_json> readJson(
         const std::filesystem::path& path);
 
+    /** @brief Lists the folder at root / relative, recursively. */
+    static std::vector<FileNode> listDirectory(
+        const std::filesystem::path& root,
+        const std::filesystem::path& relative);
+
     std::filesystem::path _root;
     Document _config;
+    std::vector<FileNode> _files;
 };
 
 }  // namespace ampersand::editor

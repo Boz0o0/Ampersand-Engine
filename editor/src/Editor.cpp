@@ -30,6 +30,7 @@ void Editor::run() {
         this->drawMenuBar();
         drawDockspace();
         this->drawErrorPopup();
+        this->drawInfoPopup();
 
         if (this->_project != std::nullopt) {
             drawFiles();
@@ -99,6 +100,15 @@ void Editor::pickProject() {
     }
 }
 
+void Editor::buildProject() {
+    if (this->_project == std::nullopt) {
+        return;
+    }
+
+    // WRITE THE JSON HERE
+    this->_project->refreshFiles();
+}
+
 void Editor::pollEvents() {
     while (const auto event = this->_window.pollEvent()) {
         ImGui::SFML::ProcessEvent(this->_window, *event);
@@ -114,6 +124,11 @@ void Editor::handleShortcuts() {
                         ImGuiInputFlags_RouteGlobal)) {
         this->pickProject();
     }
+    // NOLINTNEXTLINE(bugprone-signed-bitwise): ImGui chords are signed
+    if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_B,
+                        ImGuiInputFlags_RouteGlobal)) {
+        this->buildProject();
+    }
 }
 
 void Editor::drawErrorPopup() {
@@ -126,6 +141,22 @@ void Editor::drawErrorPopup() {
         ImGui::TextUnformatted(this->_error.c_str());
         if (ImGui::Button("OK")) {
             this->_error.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void Editor::drawInfoPopup() {
+    if (this->_info.empty()) {
+        return;
+    }
+    ImGui::OpenPopup("Info");
+    if (ImGui::BeginPopupModal("Info", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextUnformatted(this->_info.c_str());
+        if (ImGui::Button("OK")) {
+            this->_info.clear();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -146,9 +177,9 @@ void Editor::drawDockspace() {
         ImGuiID centerId = dockspaceId;
         ImGuiID bottomId = 0;
 
-        ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Left, 0.20F, &leftId,
-                                    &centerId);
         ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Right, 0.25F, &rightId,
+                                    &centerId);
+        ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Left, 0.20F, &leftId,
                                     &centerId);
         ImGui::DockBuilderSplitNode(centerId, ImGuiDir_Down, 0.25F, &bottomId,
                                     &centerId);
@@ -170,9 +201,14 @@ void Editor::drawMenuBar() {
             if (ImGui::MenuItem("Open", "Ctrl+O")) {
                 this->pickProject();
             }
-            if (ImGui::MenuItem("New Scene")) {
+            if (ImGui::MenuItem("Create project")) {
+                this->pickProject();
             }
-            if (ImGui::MenuItem("Build", "Ctrl+B")) {
+            if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
+            }
+            if (ImGui::MenuItem("Build", "Ctrl+B", false,
+                                this->_project.has_value())) {
+                this->buildProject();
             }
             if (ImGui::MenuItem("Quit")) {
                 this->_window.close();
@@ -181,6 +217,9 @@ void Editor::drawMenuBar() {
         }
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("Documentation")) {
+                this->_info =
+                    "Visit the Ampersand Engine documentation at : "
+                    "https://boz0o0.github.io/Ampersand-Engine/";
             }
             ImGui::EndMenu();
         }

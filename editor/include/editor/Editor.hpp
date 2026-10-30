@@ -5,6 +5,7 @@
 #include <editor/Project.hpp>
 #include <optional>
 #include <string>
+#include <string_view>
 
 /**
  * @file Editor.hpp
@@ -45,6 +46,9 @@ private:
     /** @brief Asks for a project folder with the native dialog and opens it. */
     void pickProject();
 
+    /** @brief Build the project. */
+    void buildProject();
+
     /** @brief Handle window events. */
     void pollEvents();
 
@@ -54,6 +58,9 @@ private:
     /** @brief Draw the error popup while there is an error to show. */
     void drawErrorPopup();
 
+    /** @brief Draw the info popup while there is an info to show. */
+    void drawInfoPopup();
+
     /** @brief Draw and create the dockspace. */
     static void drawDockspace();
 
@@ -61,7 +68,10 @@ private:
     void drawMenuBar();
 
     /** @brief Draw the files panel. */
-    static void drawFiles();
+    void drawFiles();
+
+    /** @brief Draw a file node, and its children if it's an open folder. */
+    static void drawFileNode(const FileNode& node);
 
     /** @brief Draw the hierarchy panel. */
     static void drawHierarchy();
@@ -75,6 +85,7 @@ private:
     std::optional<Project> _project;
     std::string _iniPath;
     std::string _error;
+    std::string _info;
     sf::RenderWindow _window;
     sf::Clock _clock;
 };
