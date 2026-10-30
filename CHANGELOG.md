@@ -26,6 +26,12 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+### Added
+
+- **Core**: `Stats` resource, filled by the `Scheduler` at the end of each `update` if the World has it: `frameMs`, `updateMs`, `fps`, `entities`, the `history` of the last 120 frame times, and `values` for the metrics of the game.
+- **Core**: `World::entityCount()`, the number of live entities.
+- **Tests**: unit tests of `World::entityCount()` and of the `Stats` filled by the `Scheduler`.
+
 ## [0.5.1] - 2026-10-28
 
 ### Fixed

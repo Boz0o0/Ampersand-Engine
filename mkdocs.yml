@@ -44,6 +44,7 @@ nav:
       - Net: architecture/net.md
       - Scene: architecture/scene.md
       - Scripting: architecture/scripting.md
+      - Stats: architecture/stats.md
   - Design decisions: decisions.md
   - Changelog: changelog.md
   - R-Type:
