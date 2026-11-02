@@ -132,6 +132,8 @@ the first time it is used.
 | `animation.getState(entity)`              | render  | string               | the current state (the base state while an action plays)             |
 | `getAudioSource(entity)`                  | audio   | `AudioSource`        | the `AudioSource` of the entity                                      |
 | `hasAudioSource(entity)`                  | audio   | boolean              | whether the entity has an `AudioSource`                              |
+| `instantiate(path)`                       | scene   | `Entity`             | creates the prefab now and returns its root entity                   |
+| `loadScene(name)`                         | scene   |                      | loads the scene at the end of the update                             |
 
 The functions and types of a module (`Velocity`, `Text`, `AudioSource`...)
 only exist when it is turned on: `input` is `nil` without `AMPERSAND_MODULE_INPUT`. Calling one on
@@ -214,6 +216,46 @@ unknown axis, button, mouse button or state) raises an [error](#errors).
         getAudioSource(children[2]).playing = input.getAxis("Horizontal") ~= 0
     end
     ```
+
+### Scenes and prefabs
+
+`instantiate` and `loadScene` call the `SceneManager` of the
+[scene module](scene.md). They only exist once the game gave them to the
+scripts:
+
+```cpp
+scenes.bindScripting(scripting, world);  // scenes and world outlive scripting
+```
+
+- **`instantiate(path)`** creates the prefab (path relative to `gameRoot`) at
+  once and returns its root entity, so the script can place it. The scripts of
+  the new entity start on the next update.
+- **`loadScene(name)`** runs at the end of the update, after every script: it
+  destroys the entities of the current scene, the calling one included. Two
+  calls in one update load both scenes, the last one stays.
+
+A missing prefab raises an [error](#errors) in the calling script. An unknown
+scene sends a `ScriptError` of the calling script at the end of the update, and
+the current scene stays.
+
+```lua
+function Enemy:update(dt)
+    self.cooldown = self.cooldown - dt
+    if self.cooldown <= 0 then
+        local shot = instantiate("prefabs/enemy_shot.json")
+        local from = getTransform(self.entity).position
+        getTransform(shot).position.x = from.x
+        getTransform(shot).position.y = from.y
+        self.cooldown = 1.5
+    end
+end
+
+function Menu:update(dt)
+    if input.getButtonDown("Submit") then
+        loadScene("level1")
+    end
+end
+```
 
 ### Bindings of the game
 
