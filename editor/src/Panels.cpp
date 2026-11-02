@@ -66,12 +66,16 @@ void Editor::drawHierarchy() {
         ImGui::End();
         return;
     }
-    ImGui::TextUnformatted(scene->name.c_str());
+    const std::string title = scene->name + (scene->document.dirty ? " *" : "");
+    ImGui::TextUnformatted(title.c_str());
     ImGui::Separator();
-    this->drawSelectable("World", {
-                                      .scene = scene->name,
-                                      .pointer = Pointer(),
-                                  });
+    const std::string world = std::string("World") +
+                              (this->_project->getConfig().dirty ? " *" : "") +
+                              "###World";
+    this->drawSelectable(world, {
+                                    .scene = scene->name,
+                                    .pointer = Pointer(),
+                                });
     this->drawSelectable("Scene resources",
                          {
                              .scene = scene->name,
@@ -431,12 +435,248 @@ void Editor::drawViewport() {
 
 void Editor::drawInspector() {
     ImGui::Begin("Inspector");
-
-    ImGui::TextUnformatted("Selected Object");
-    ImGui::Separator();
-    ImGui::TextDisabled("Nothing selected.");
-
+    if (this->_project && this->_selection) {
+        drawSelectionInspector(*this->_project, *this->_selection);
+    } else {
+        ImGui::TextDisabled("Nothing selected.");
+    }
     ImGui::End();
+}
+
+void Editor::drawSelectionInspector(Project& project,
+                                    const Selection& selection) {
+    const TypedMapEdit resources{
+        .types = TypeTable::get().getResources(),
+        .addLabel = "Add resource",
+        .showConfigOnly = selection.pointer.empty(),
+    };
+    if (selection.pointer.empty()) {
+        ImGui::SeparatorText("World");
+        Document& config = project.getConfig();
+        if (editTypedMap(config.data, "resources", resources)) {
+            config.dirty = true;
+        }
+        return;
+    }
+    std::optional<Scene>& scene = project.getScene();
+    if (!scene || scene->name != selection.scene) {
+        ImGui::TextDisabled("Nothing selected.");
+        return;
+    }
+    if (selection.pointer == Pointer("/resources")) {
+        ImGui::SeparatorText("Scene resources");
+        if (editTypedMap(scene->document.data, "resources", resources)) {
+            scene->document.dirty = true;
+        }
+        return;
+    }
+    drawEntityInspector(project, scene->document, selection.pointer);
+}
+
+void Editor::drawEntityInspector(Project& project, Document& document,
+                                 const Pointer& pointer) {
+    if (!Project::isEntity(document.data, pointer)) {
+        ImGui::TextDisabled("Nothing selected.");
+        return;
+    }
+    nlohmann::ordered_json& entity = document.data[pointer];
+    bool changed = false;
+    const auto name = entity.find("name");
+    std::string text = name != entity.end() && name->is_string()
+                           ? name->get<std::string>()
+                           : std::string();
+    if (inputText("Name", text)) {
+        entity["name"] = text;
+        changed = true;
+    }
+    if (pointer.parent_pointer() == Pointer("/entities")) {
+        const auto flag = entity.find("persistent");
+        bool persistent =
+            flag != entity.end() && flag->is_boolean() && flag->get<bool>();
+        if (ImGui::Checkbox("Persistent", &persistent)) {
+            if (persistent) {
+                entity["persistent"] = true;
+            } else {
+                entity.erase("persistent");
+            }
+            changed = true;
+        }
+    }
+    ImGui::SeparatorText("Components");
+    if (entity.contains("prefab")) {
+        changed = editPrefabComponents(project, entity) || changed;
+    } else {
+        const TypedMapEdit components{
+            .types = TypeTable::get().getComponents(),
+            .addLabel = "Add component",
+        };
+        changed = editTypedMap(entity, "components", components) || changed;
+    }
+    if (changed) {
+        document.dirty = true;
+    }
+}
+
+bool Editor::editPrefabComponents(Project& project,
+                                  nlohmann::ordered_json& entity) {
+    TypedMapEdit edit{
+        .types = TypeTable::get().getComponents(),
+        .addLabel = "Add component",
+    };
+    nlohmann::ordered_json components;
+    try {
+        const nlohmann::ordered_json prefab{{"prefab", entity.at("prefab")}};
+        edit.prefab = project.resolved(prefab).value(
+            "components", nlohmann::ordered_json::object());
+        components = project.resolved(entity).value(
+            "components", nlohmann::ordered_json::object());
+    } catch (const std::exception& error) {
+        ImGui::PushStyleColor(ImGuiCol_Text, kErrorColor);
+        ImGui::TextWrapped("%s", error.what());
+        ImGui::PopStyleColor();
+        return false;
+    }
+    edit.overrides =
+        entity.value("components", nlohmann::ordered_json::object());
+    ImGui::TextDisabled("Prefab: %s",
+                        entity.at("prefab").get<std::string>().c_str());
+    if (!editTypedValues(components, edit)) {
+        return false;
+    }
+    nlohmann::ordered_json overrides =
+        Project::mergeDiff(edit.prefab, components);
+    if (overrides.empty()) {
+        entity.erase("components");
+    } else {
+        entity["components"] = std::move(overrides);
+    }
+    return true;
+}
+
+bool Editor::editTypedMap(nlohmann::ordered_json& owner, const std::string& key,
+                          const TypedMapEdit& edit) {
+    const auto found = owner.find(key);
+    nlohmann::ordered_json map = found != owner.end() && found->is_object()
+                                     ? *found
+                                     : nlohmann::ordered_json::object();
+    if (!editTypedValues(map, edit)) {
+        return false;
+    }
+    owner[key] = std::move(map);
+    return true;
+}
+
+bool Editor::editTypedValues(nlohmann::ordered_json& map,
+                             const TypedMapEdit& edit) {
+    bool changed = false;
+    std::optional<std::string> removed;
+    for (const auto& item : map.items()) {
+        ImGui::PushID(item.key().c_str());
+        bool kept = true;
+        if (ImGui::CollapsingHeader(item.key().c_str(), &kept,
+                                    ImGuiTreeNodeFlags_DefaultOpen)) {
+            nlohmann::ordered_json full =
+                withDefaults(item.value(), item.key(), edit.types);
+            if (editTypedValue(item.key(), full, edit)) {
+                item.value() = std::move(full);
+                changed = true;
+            }
+        }
+        if (!kept) {
+            removed = item.key();
+        }
+        ImGui::PopID();
+    }
+    if (removed) {
+        map.erase(*removed);
+        changed = true;
+    }
+    if (const auto added = drawAddTypePopup(map, edit)) {
+        map[added->name] = added->defaults;
+        changed = true;
+    }
+    return changed;
+}
+
+bool Editor::editTypedValue(const std::string& name,
+                            nlohmann::ordered_json& value,
+                            const TypedMapEdit& edit) {
+    const auto own = edit.overrides.is_object() ? edit.overrides.find(name)
+                                                : edit.overrides.end();
+    if (!value.is_object() || own == edit.overrides.end() ||
+        !own->is_object()) {
+        return editFields(value);
+    }
+    const nlohmann::ordered_json base =
+        edit.prefab.value(name, nlohmann::ordered_json::object());
+    bool changed = false;
+    std::optional<std::string> reverted;
+    for (const auto& item : value.items()) {
+        ImGui::PushID(item.key().c_str());
+        const bool overridden = own->contains(item.key());
+        if (overridden) {
+            if (ImGui::SmallButton("R")) {
+                reverted = item.key();
+            }
+            ImGui::SetItemTooltip("Revert to the prefab value");
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, kOverrideColor);
+        }
+        changed = editValue(item.key(), item.value()) || changed;
+        if (overridden) {
+            ImGui::PopStyleColor();
+        }
+        ImGui::PopID();
+    }
+    if (reverted) {
+        if (base.contains(*reverted)) {
+            value[*reverted] = base.at(*reverted);
+        } else {
+            value.erase(*reverted);
+        }
+        changed = true;
+    }
+    return changed;
+}
+
+nlohmann::ordered_json Editor::withDefaults(
+    const nlohmann::ordered_json& value, const std::string& name,
+    const std::vector<TypeInfo>& types) {
+    const auto type = std::ranges::find(types, name, &TypeInfo::name);
+    if (type == types.end() || !value.is_object() ||
+        !type->defaults.is_object()) {
+        return value;
+    }
+    nlohmann::ordered_json full = value;
+    for (const auto& field : type->defaults.items()) {
+        if (!full.contains(field.key())) {
+            full[field.key()] = field.value();
+        }
+    }
+    return full;
+}
+
+std::optional<TypeInfo> Editor::drawAddTypePopup(
+    const nlohmann::ordered_json& map, const TypedMapEdit& edit) {
+    ImGui::Separator();
+    if (ImGui::Button(edit.addLabel.c_str(), {-FLT_MIN, 0.0F})) {
+        ImGui::OpenPopup(edit.addLabel.c_str());
+    }
+    std::optional<TypeInfo> picked;
+    if (!ImGui::BeginPopup(edit.addLabel.c_str())) {
+        return picked;
+    }
+    for (const TypeInfo& type : edit.types) {
+        if ((type.configOnly && !edit.showConfigOnly) ||
+            map.contains(type.name)) {
+            continue;
+        }
+        if (ImGui::Selectable(type.name.c_str())) {
+            picked = type;
+        }
+    }
+    ImGui::EndPopup();
+    return picked;
 }
 
 }  // namespace ampersand::editor

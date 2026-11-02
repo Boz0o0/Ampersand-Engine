@@ -94,10 +94,29 @@ public:
 
     /**
      * @brief The prefab file at relative, read once then kept in memory.
+     * The editor only reads prefabs, it never changes them.
      *
-     * @return The prefab, or an empty object if the file can't be read.
+     * @return The prefab, or null if the file can't be read.
      */
     const nlohmann::ordered_json& getPrefab(const std::string& relative);
+
+    /**
+     * @brief entity with its prefab applied, as SceneManager::resolvePrefab
+     * does: the components of the entity merge-patched over the ones of its
+     * prefab (itself resolved), and the children of both, resolved.
+     *
+     * @throw std::runtime_error If a prefab can't be read or uses itself.
+     */
+    nlohmann::ordered_json resolved(const nlohmann::ordered_json& entity);
+
+    /**
+     * @brief The smallest merge patch turning base into target: keys whose
+     * values differ, recursing into objects, and null for the keys of base
+     * that target lacks. Not an RFC 6902 patch like nlohmann's diff.
+     */
+    static nlohmann::ordered_json mergeDiff(
+        const nlohmann::ordered_json& base,
+        const nlohmann::ordered_json& target);
 
     /*
      * Edition of the opened scene. An entity is given by its pointer in the
@@ -124,10 +143,21 @@ public:
     /** @brief Sets the name of entity. */
     bool renameEntity(const Pointer& entity, const std::string& name);
 
+    /** @brief Whether pointer is an entity of the scene data. */
+    static bool isEntity(const nlohmann::ordered_json& data,
+                         const Pointer& pointer);
+
     /** @brief Whether pointer is root or one of the values inside it. */
     static bool isInside(const Pointer& pointer, const Pointer& root);
 
 private:
+    /**
+     * @brief Recursion of resolved. chain holds the prefabs being resolved,
+     * to detect a prefab using itself.
+     */
+    nlohmann::ordered_json resolve(const nlohmann::ordered_json& description,
+                                   std::vector<std::string>& chain);
+
     /** @brief Version of the scene files the engine loads. */
     static constexpr std::int32_t kSceneVersion{2};
 
@@ -135,10 +165,6 @@ private:
      * @brief Checks the file has the shape of a scene, not of a prefab.
      */
     static bool isScene(const nlohmann::ordered_json& data);
-
-    /** @brief Whether pointer is an entity of the scene data. */
-    static bool isEntity(const nlohmann::ordered_json& data,
-                         const Pointer& pointer);
 
     /** @brief Pointer to the children array of parent (root if empty). */
     static Pointer childrenPointer(const Pointer& parent);

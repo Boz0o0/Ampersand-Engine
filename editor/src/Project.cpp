@@ -2,6 +2,7 @@
 #include <editor/Project.hpp>
 #include <editor/Types.hpp>
 #include <fstream>
+#include <stdexcept>
 #include <system_error>
 
 namespace ampersand::editor {
@@ -62,10 +63,73 @@ const nlohmann::ordered_json& Project::getPrefab(const std::string& relative) {
         auto data = readJson(this->_root / key);
         found = this->_prefabs
                     .emplace(key, data ? std::move(*data)
-                                       : nlohmann::ordered_json::object())
+                                       : nlohmann::ordered_json(nullptr))
                     .first;
     }
     return found->second;
+}
+
+nlohmann::ordered_json Project::resolved(const nlohmann::ordered_json& entity) {
+    std::vector<std::string> chain;
+    return this->resolve(entity, chain);
+}
+
+nlohmann::ordered_json Project::resolve(
+    const nlohmann::ordered_json& description,
+    std::vector<std::string>& chain) {
+    nlohmann::ordered_json result = description;
+    const auto prefab = description.find("prefab");
+    if (prefab != description.end()) {
+        if (!prefab->is_string()) {
+            throw std::runtime_error("'prefab' must be a file path");
+        }
+        const std::string path =
+            std::filesystem::path(prefab->get<std::string>())
+                .lexically_normal()
+                .generic_string();
+        if (std::ranges::find(chain, path) != chain.end()) {
+            throw std::runtime_error("Prefab '" + path + "' uses itself");
+        }
+        const nlohmann::ordered_json& data = this->getPrefab(path);
+        if (!data.is_object()) {
+            throw std::runtime_error("Cannot read prefab '" + path + "'");
+        }
+        chain.push_back(path);
+        result = this->resolve(data, chain);
+        chain.pop_back();
+        result["components"].merge_patch(
+            description.value("components", nlohmann::ordered_json::object()));
+    } else {
+        result["children"] = nlohmann::ordered_json::array();
+    }
+    for (const auto& child :
+         description.value("children", nlohmann::ordered_json::array())) {
+        result["children"].push_back(this->resolve(child, chain));
+    }
+    return result;
+}
+
+nlohmann::ordered_json Project::mergeDiff(
+    const nlohmann::ordered_json& base, const nlohmann::ordered_json& target) {
+    nlohmann::ordered_json patch = nlohmann::ordered_json::object();
+    for (const auto& item : target.items()) {
+        const auto found = base.find(item.key());
+        if (found != base.end() && found->is_object() &&
+            item.value().is_object()) {
+            nlohmann::ordered_json inner = mergeDiff(*found, item.value());
+            if (!inner.empty()) {
+                patch[item.key()] = std::move(inner);
+            }
+        } else if (found == base.end() || *found != item.value()) {
+            patch[item.key()] = item.value();
+        }
+    }
+    for (const auto& item : base.items()) {
+        if (!target.contains(item.key())) {
+            patch[item.key()] = nullptr;
+        }
+    }
+    return patch;
 }
 
 bool Project::createEntity(const Pointer& parent) {
@@ -76,10 +140,13 @@ bool Project::createEntity(const Pointer& parent) {
     if (!parent.empty() && !isEntity(document.data, parent)) {
         return false;
     }
+    nlohmann::ordered_json components = nlohmann::ordered_json::object();
+    components["Transform"] =
+        TypeTable::get().getComponentDefaults("Transform");
     childrenOf(document.data, parent)
         .push_back({
             {"name", "Entity"},
-            {"components", {{"Transform", defaultTransform()}}},
+            {"components", std::move(components)},
         });
     document.dirty = true;
     return true;

@@ -213,7 +213,6 @@ void Editor::drawMenuBar() {
         return;
     }
     this->drawFileMenu();
-    Editor::drawEditMenu();
     this->drawHelpMenu();
     ImGui::EndMainMenuBar();
 }
@@ -234,16 +233,6 @@ void Editor::drawFileMenu() {
     }
     if (ImGui::MenuItem("Quit")) {
         this->_running = false;
-    }
-    ImGui::EndMenu();
-}
-
-void Editor::drawEditMenu() {
-    if (!ImGui::BeginMenu("Edit")) {
-        return;
-    }
-    if (ImGui::MenuItem("Project settings")) {
-        // OPEN MODAL TO EDIT SCENES, DEFAULT RESSOURCES
     }
     ImGui::EndMenu();
 }
