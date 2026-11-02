@@ -1,12 +1,17 @@
 #pragma once
 
+#include <imgui.h>
+
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
+#include <array>
+#include <cstdint>
 #include <editor/Project.hpp>
 #include <filesystem>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 /**
  * @file Editor.hpp
@@ -14,6 +19,36 @@
  */
 
 namespace ampersand::editor {
+
+/**
+ * @brief Item selected in the Hierarchy panel.
+ *
+ * The pointer is empty for the World (world/config.json), "/resources" for
+ * the scene resources, and "/entities/3/children/1" for an entity.
+ */
+struct Selection {
+    std::string scene;  // Name of the scene the item belongs to
+    Pointer pointer;
+
+    bool operator==(const Selection&) const = default;
+};
+
+/**
+ * @brief Change of the Hierarchy asked while drawing it, applied once the
+ * tree is drawn so no JSON array changes while ImGui iterates it.
+ */
+struct HierarchyAction {
+    enum class Kind : std::uint8_t {
+        CreateEmpty,  // target: parent, empty for the root
+        Duplicate,    // source: entity
+        Delete,       // source: entity
+        Move,         // source: entity, target: new parent, empty for root
+        Rename,       // source: entity, opens the rename popup
+    };
+    Kind kind;
+    Pointer source = Pointer();
+    Pointer target = Pointer();
+};
 
 /**
  * @brief Manages the Editor main loop.
@@ -35,6 +70,21 @@ public:
     void run();
 
 private:
+    /** @brief Text colour of the prefab instances in the Hierarchy. */
+    static constexpr ImVec4 kPrefabColor{0.45F, 0.70F, 1.0F, 1.0F};
+
+    /** @brief Drag and drop payload of a project file: its relative path. */
+    static inline const std::string kAssetPayload{"ASSET_PATH"};
+
+    /** @brief Drag and drop payload of an entity: its pointer, as a string. */
+    static inline const std::string kEntityPayload{"ENTITY_POINTER"};
+
+    /** @brief Title of the popup renaming an entity. */
+    static inline const std::string kRenamePopup{"Rename entity"};
+
+    /** @brief Minimum height of the drop zone below the Hierarchy tree. */
+    static constexpr float kDropZoneHeight{24.0F};
+
     /** @brief Creates the window and imgui settings. */
     void initEditor();
 
@@ -93,10 +143,68 @@ private:
     void drawHierarchy();
 
     /**
-     * @brief Draw an entity node, and its children if it's an open parent.
-     * index is its position among its siblings, used as ImGui ID.
+     * @brief Draw a selectable leaf node, selecting pointer when clicked.
      */
-    static void drawEntityNode(const nlohmann::ordered_json& entity, int index);
+    void drawSelectable(const std::string& label, const Selection& item);
+
+    /**
+     * @brief Draw a scene entity and its children, recursively.
+     * pointer is its path in the scene file, its last token its ImGui ID.
+     */
+    void drawEntity(nlohmann::ordered_json& entity, const Pointer& pointer);
+
+    /** @brief Send text as the drag and drop payload of the given type. */
+    static void setPayload(const std::string& type, const std::string& text);
+
+    /** @brief Text of a payload sent by setPayload. */
+    static std::string payloadText(const ImGuiPayload& payload);
+
+    /** @brief Flags of a Hierarchy tree node. */
+    static ImGuiTreeNodeFlags treeFlags(bool leaf, bool selected);
+
+    /** @brief Draw the context menu of the scene entity at pointer. */
+    void drawEntityMenu(const Pointer& pointer);
+
+    /**
+     * @brief Make the scene entity at pointer draggable, and a drop target
+     * re-parenting the dragged entity under it.
+     */
+    void drawEntityDragDrop(const Pointer& pointer);
+
+    /**
+     * @brief Draw the empty space below the tree: dropping an entity there
+     * moves it to the root, right-clicking it opens a Create Empty menu.
+     */
+    void drawHierarchyBackground();
+
+    /** @brief Apply the pending Hierarchy action, if any. */
+    void applyHierarchyAction();
+
+    /** @brief Draw the popup renaming the entity at _renaming. */
+    void drawRenamePopup();
+
+    /**
+     * @brief Draw the children an entity gets from its prefab, greyed out and
+     * not selectable since they are not in the scene file.
+     * chain holds the prefabs being drawn, to stop on a prefab using itself.
+     */
+    void drawPrefabChildren(const nlohmann::ordered_json& entity,
+                            std::vector<std::string>& chain);
+
+    /** @brief Draw a read-only entity coming from a prefab. */
+    void drawPrefabEntity(const nlohmann::ordered_json& entity,
+                          std::size_t index, std::vector<std::string>& chain);
+
+    /** @brief Whether the entity has children once its prefab is resolved. */
+    bool hasChildren(const nlohmann::ordered_json& entity,
+                     std::vector<std::string> chain);
+
+    /**
+     * @brief Label of an entity: its name, its prefab's name, or "Entity N"
+     * with N its index among its siblings.
+     */
+    std::string entityLabel(const nlohmann::ordered_json& entity,
+                            std::size_t index);
 
     /** @brief Draw the viewport panel. */
     static void drawViewport();
@@ -105,6 +213,10 @@ private:
     static void drawInspector();
 
     std::optional<Project> _project;
+    std::optional<Selection> _selection;
+    std::optional<HierarchyAction> _hierarchyAction;
+    Pointer _renaming;
+    std::array<char, 256> _renameBuffer{};
     std::string _iniPath;
     std::string _error;
     std::string _info;

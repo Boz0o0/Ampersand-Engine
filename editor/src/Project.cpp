@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <editor/Project.hpp>
+#include <editor/Types.hpp>
 #include <fstream>
 #include <system_error>
 
@@ -24,6 +25,7 @@ std::optional<Project> Project::open(const std::filesystem::path& root) {
 
 void Project::refreshFiles() {
     this->_files.clear();
+    this->_prefabs.clear();
     for (const std::string_view folder : kFolders) {
         const std::filesystem::path relative{folder};
         if (std::filesystem::is_directory(this->_root / relative)) {
@@ -50,6 +52,133 @@ bool Project::openScene(const std::filesystem::path& relative) {
         .document = {.path = relative, .data = std::move(*data)},
     };
     return true;
+}
+
+const nlohmann::ordered_json& Project::getPrefab(const std::string& relative) {
+    const std::string key =
+        std::filesystem::path(relative).lexically_normal().generic_string();
+    auto found = this->_prefabs.find(key);
+    if (found == this->_prefabs.end()) {
+        auto data = readJson(this->_root / key);
+        found = this->_prefabs
+                    .emplace(key, data ? std::move(*data)
+                                       : nlohmann::ordered_json::object())
+                    .first;
+    }
+    return found->second;
+}
+
+bool Project::createEntity(const Pointer& parent) {
+    if (!this->_scene) {
+        return false;
+    }
+    Document& document = this->_scene->document;
+    if (!parent.empty() && !isEntity(document.data, parent)) {
+        return false;
+    }
+    childrenOf(document.data, parent)
+        .push_back({
+            {"name", "Entity"},
+            {"components", {{"Transform", defaultTransform()}}},
+        });
+    document.dirty = true;
+    return true;
+}
+
+bool Project::duplicateEntity(const Pointer& entity) {
+    if (!this->_scene) {
+        return false;
+    }
+    Document& document = this->_scene->document;
+    if (!isEntity(document.data, entity)) {
+        return false;
+    }
+    const Pointer parent = entity.parent_pointer();
+    auto& siblings = document.data[parent];
+    const auto index = static_cast<std::ptrdiff_t>(std::stoul(entity.back()));
+    nlohmann::ordered_json copy = document.data[entity];
+    siblings.insert(siblings.begin() + index + 1, std::move(copy));
+    document.dirty = true;
+    return true;
+}
+
+bool Project::deleteEntity(const Pointer& entity) {
+    if (!this->_scene) {
+        return false;
+    }
+    Document& document = this->_scene->document;
+    if (!isEntity(document.data, entity)) {
+        return false;
+    }
+    const Pointer parent = entity.parent_pointer();
+    document.data[parent].erase(std::stoul(entity.back()));
+    document.dirty = true;
+    return true;
+}
+
+bool Project::moveEntity(const Pointer& entity, const Pointer& parent) {
+    if (!this->_scene) {
+        return false;
+    }
+    Document& document = this->_scene->document;
+    if (!isEntity(document.data, entity) ||
+        (!parent.empty() && !isEntity(document.data, parent)) ||
+        isInside(parent, entity) ||
+        childrenPointer(parent) == entity.parent_pointer()) {
+        return false;
+    }
+    const Pointer oldParent = entity.parent_pointer();
+    // Appending first keeps the indices of entity valid until it is erased
+    childrenOf(document.data, parent).push_back(document.data[entity]);
+    document.data[oldParent].erase(std::stoul(entity.back()));
+    document.dirty = true;
+    return true;
+}
+
+bool Project::renameEntity(const Pointer& entity, const std::string& name) {
+    if (!this->_scene) {
+        return false;
+    }
+    Document& document = this->_scene->document;
+    if (!isEntity(document.data, entity)) {
+        return false;
+    }
+    document.data[entity]["name"] = name;
+    document.dirty = true;
+    return true;
+}
+
+bool Project::isInside(const Pointer& pointer, const Pointer& root) {
+    const std::string path = pointer.to_string();
+    const std::string prefix = root.to_string();
+    return path.starts_with(prefix) &&
+           (path.size() == prefix.size() || path[prefix.size()] == '/');
+}
+
+bool Project::isEntity(const nlohmann::ordered_json& data,
+                       const Pointer& pointer) {
+    if (pointer.empty() || pointer.parent_pointer().empty()) {
+        return false;
+    }
+    const Pointer parent = pointer.parent_pointer();
+    const bool inChildren =
+        parent.back() == "children" || parent == childrenPointer(Pointer());
+    return inChildren && data.contains(pointer) && data.at(parent).is_array() &&
+           data.at(pointer).is_object();
+}
+
+Pointer Project::childrenPointer(const Pointer& parent) {
+    return parent.empty() ? Pointer("/entities") : parent / "children";
+}
+
+nlohmann::ordered_json& Project::childrenOf(nlohmann::ordered_json& data,
+                                            const Pointer& parent) {
+    const Pointer pointer = childrenPointer(parent);
+    auto& children = data[pointer];
+    if (!children.is_array()) {
+        children = nlohmann::ordered_json::array();
+    }
+    return children;
 }
 
 bool Project::isScene(const nlohmann::ordered_json& data) {

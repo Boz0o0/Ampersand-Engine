@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -15,6 +16,9 @@
  */
 
 namespace ampersand::editor {
+
+/** @brief Path to a value of a JSON document. */
+using Pointer = nlohmann::ordered_json::json_pointer;
 
 /**
  * @brief JSON file of the project, kept in memory until the next build.
@@ -88,6 +92,41 @@ public:
      */
     bool openScene(const std::filesystem::path& relative);
 
+    /**
+     * @brief The prefab file at relative, read once then kept in memory.
+     *
+     * @return The prefab, or an empty object if the file can't be read.
+     */
+    const nlohmann::ordered_json& getPrefab(const std::string& relative);
+
+    /*
+     * Edition of the opened scene. An entity is given by its pointer in the
+     * scene file, a parent by its pointer too or by an empty one for the root.
+     * Each returns false, changing nothing, if a pointer is not valid, and
+     * marks the scene dirty otherwise.
+     */
+
+    /** @brief Adds an empty entity, with a default Transform, to parent. */
+    bool createEntity(const Pointer& parent);
+
+    /** @brief Inserts a copy of entity right after it. */
+    bool duplicateEntity(const Pointer& entity);
+
+    /** @brief Removes entity and its children. */
+    bool deleteEntity(const Pointer& entity);
+
+    /**
+     * @brief Moves entity at the end of the children of parent.
+     * Fails if parent is entity itself, one of its children or its parent.
+     */
+    bool moveEntity(const Pointer& entity, const Pointer& parent);
+
+    /** @brief Sets the name of entity. */
+    bool renameEntity(const Pointer& entity, const std::string& name);
+
+    /** @brief Whether pointer is root or one of the values inside it. */
+    static bool isInside(const Pointer& pointer, const Pointer& root);
+
 private:
     /** @brief Version of the scene files the engine loads. */
     static constexpr std::int32_t kSceneVersion{2};
@@ -96,6 +135,20 @@ private:
      * @brief Checks the file has the shape of a scene, not of a prefab.
      */
     static bool isScene(const nlohmann::ordered_json& data);
+
+    /** @brief Whether pointer is an entity of the scene data. */
+    static bool isEntity(const nlohmann::ordered_json& data,
+                         const Pointer& pointer);
+
+    /** @brief Pointer to the children array of parent (root if empty). */
+    static Pointer childrenPointer(const Pointer& parent);
+
+    /**
+     * @brief The children array of parent in the scene data, created if
+     * missing. parent must be empty or an entity of data.
+     */
+    static nlohmann::ordered_json& childrenOf(nlohmann::ordered_json& data,
+                                              const Pointer& parent);
 
     /** @brief Folders shown in the Files panel, relative to the root. */
     static constexpr std::array<std::string_view, 3> kFolders{
@@ -114,6 +167,7 @@ private:
     Document _config;
     std::vector<FileNode> _files;
     std::optional<Scene> _scene;
+    std::map<std::string, nlohmann::ordered_json> _prefabs;  // By path
 };
 
 }  // namespace ampersand::editor

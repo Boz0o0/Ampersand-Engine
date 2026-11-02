@@ -74,7 +74,9 @@ void Editor::openScene(const std::filesystem::path& relative) {
     if (!this->_project) {
         return;
     }
-    if (!this->_project->openScene(relative)) {
+    if (this->_project->openScene(relative)) {
+        this->_selection.reset();
+    } else {
         this->_error = "'" + relative.generic_string() +
                        "' is not a scene: it needs \"version\": 2 and an "
                        "\"entities\" array, and must not be a prefab.";
@@ -224,7 +226,6 @@ void Editor::drawFileMenu() {
         this->pickProject();
     }
     if (ImGui::MenuItem("Create project")) {
-        this->pickProject();
     }
     if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
     }
