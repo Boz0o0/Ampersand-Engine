@@ -19,16 +19,17 @@ option(AMPERSAND_MODULE_RENDER "Build the Render module" ON)
 option(AMPERSAND_MODULE_SCENE "Build the Scene module" ON)
 option(AMPERSAND_MODULE_SCRIPTING "Build the Scripting module" ON)
 
-option(AMPERSAND_BUILD_TESTS "Build the engine unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(AMPERSAND_MODULES_BUILD_TESTS "Build the engine unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(AMPERSAND_EDITOR_BUILD_TESTS "Build the editor unit tests" ${PROJECT_IS_TOP_LEVEL})
 option(AMPERSAND_BUILD_EDITOR "Build the editor" OFF)
 
 include(cmake/CPM.cmake)
 
-if(AMPERSAND_BUILD_TESTS)
+if(AMPERSAND_MODULES_BUILD_TESTS OR AMPERSAND_EDITOR_BUILD_TESTS)
     include(CTest)
 endif()
 
-if(AMPERSAND_BUILD_TESTS AND BUILD_TESTING)
+if((AMPERSAND_MODULES_BUILD_TESTS OR AMPERSAND_EDITOR_BUILD_TESTS) AND BUILD_TESTING)
     CPMAddPackage(
         NAME googletest
         GITHUB_REPOSITORY google/googletest
@@ -113,16 +114,42 @@ if (AMPERSAND_MODULE_SCRIPTING)
     )
 endif()
 
-add_subdirectory(src)
+add_subdirectory(engine/src)
+
+if(AMPERSAND_MODULES_BUILD_TESTS AND BUILD_TESTING)
+    add_subdirectory(engine/tests)
+endif()
 
 if(AMPERSAND_BUILD_EDITOR)
     if(NOT AMPERSAND_MODULE_RENDER OR NOT AMPERSAND_MODULE_SCENE)
         message(FATAL_ERROR "AMPERSAND_MODULE_RENDER and AMPERSAND_MODULE_SCENE must be enabled to build the editor")
     endif()
 
-    add_subdirectory(editor)
+    CPMAddPackage(
+        NAME imgui
+        GITHUB_REPOSITORY ocornut/imgui
+        GIT_TAG v1.91.9b-docking
+        DOWNLOAD_ONLY YES
+    )
+
+    CPMAddPackage(
+        NAME imgui-sfml
+        GITHUB_REPOSITORY SFML/imgui-sfml
+        GIT_TAG v3.0
+        OPTIONS
+            "IMGUI_DIR ${imgui_SOURCE_DIR}"
+            "IMGUI_SFML_FIND_SFML OFF"
+    )
+
+    CPMAddPackage(
+        NAME nfd
+        GITHUB_REPOSITORY btzy/nativefiledialog-extended
+        GIT_TAG v1.4.1
+    )
+
+    add_subdirectory(editor/src)
 endif()
 
-if(AMPERSAND_BUILD_TESTS AND BUILD_TESTING)
-    add_subdirectory(tests)
+if(AMPERSAND_EDITOR_BUILD_TESTS AND BUILD_TESTING)
+    add_subdirectory(editor/tests)
 endif()
