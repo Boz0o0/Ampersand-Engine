@@ -45,6 +45,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Core**: `Stats` resource, filled by the `Scheduler` at the end of each `update` if the World has it: `frameMs`, `updateMs`, `fps`, `entities`, the `history` of the last 120 frame times, and `values` for the metrics of the game.
 - **Core**: `World::entityCount()`, the number of live entities.
 - **Tests**: unit tests of `World::entityCount()` and of the `Stats` filled by the `Scheduler`.
+- **Scene**: `SceneManager::bindScripting(scripting, world)`, which gives the Lua scripts `instantiate(path)` (creates a prefab now and returns its entity) and `loadScene(name)` (loads a scene at the end of the update of the `ScriptingSystem`).
+- **Tests**: unit tests of `instantiate` and `loadScene`.
 
 ## [0.5.1] - 2026-10-28
 

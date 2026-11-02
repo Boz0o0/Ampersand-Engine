@@ -13,6 +13,10 @@
 #include <ampersand/audio/IAudioEngine.hpp>
 #endif
 
+#ifdef AMPERSAND_MODULE_SCRIPTING
+#include <ampersand/scripting/systems/ScriptingSystem.hpp>
+#endif
+
 namespace ampersand::scene {
 
 using nlohmann::json;
@@ -303,6 +307,22 @@ public:
      * scene).
      */
     void setScene(const std::string& name, const std::string& path);
+
+#ifdef AMPERSAND_MODULE_SCRIPTING
+    /**
+     * @brief Gives the scripts the instantiate and loadScene functions of
+     * this SceneManager.
+     *
+     * loadScene is applied at the end of the update of the
+     * ScriptingSystem, with defer, since it destroys the entities of the
+     * running scripts.
+     *
+     * @param scripting ScriptingSystem running the scripts.
+     * @param world World given to instantiate and loadScene.
+     */
+    void bindScripting(scripting::ScriptingSystem& scripting,
+                       core::ecs::World& world);
+#endif
 
 private:
     /**
