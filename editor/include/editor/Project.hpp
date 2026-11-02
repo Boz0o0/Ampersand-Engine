@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 #include <optional>
@@ -35,6 +36,14 @@ struct FileNode {
 };
 
 /**
+ * @brief Scene file opened in the editor.
+ */
+struct Scene {
+    std::string name;  // "name" of the file, or its stem if it has none
+    Document document;
+};
+
+/**
  * @brief Game folder opened in the editor (assets/, scripts/ and world/).
  */
 class Project {
@@ -66,10 +75,28 @@ public:
         return _files;
     }
 
+    /** @brief The scene opened, if any. */
+    [[nodiscard]] std::optional<Scene>& getScene() { return _scene; }
+
     /** @brief Lists the project folders again from the disk. */
     void refreshFiles();
 
+    /**
+     * @brief Opens the scene file at relative, replacing the opened one.
+     *
+     * @return false, keeping the opened scene, if the file is not a scene.
+     */
+    bool openScene(const std::filesystem::path& relative);
+
 private:
+    /** @brief Version of the scene files the engine loads. */
+    static constexpr std::int32_t kSceneVersion{2};
+
+    /**
+     * @brief Checks the file has the shape of a scene, not of a prefab.
+     */
+    static bool isScene(const nlohmann::ordered_json& data);
+
     /** @brief Folders shown in the Files panel, relative to the root. */
     static constexpr std::array<std::string_view, 3> kFolders{
         "assets", "scripts", "world"};
@@ -86,6 +113,7 @@ private:
     std::filesystem::path _root;
     Document _config;
     std::vector<FileNode> _files;
+    std::optional<Scene> _scene;
 };
 
 }  // namespace ampersand::editor

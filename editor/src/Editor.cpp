@@ -22,7 +22,7 @@ Editor::Editor(const std::string& projectPath) {
 Editor::~Editor() { ImGui::SFML::Shutdown(this->_window); }
 
 void Editor::run() {
-    while (this->_window.isOpen()) {
+    while (this->_running) {
         this->pollEvents();
         ImGui::SFML::Update(this->_window, this->_clock.restart());
 
@@ -70,6 +70,17 @@ void Editor::open(const std::string& path) {
                            this->_project->getProjectName());
 }
 
+void Editor::openScene(const std::filesystem::path& relative) {
+    if (!this->_project) {
+        return;
+    }
+    if (!this->_project->openScene(relative)) {
+        this->_error = "'" + relative.generic_string() +
+                       "' is not a scene: it needs \"version\": 2 and an "
+                       "\"entities\" array, and must not be a prefab.";
+    }
+}
+
 void Editor::switchLayout(const Project& project) {
     const bool loaded = ImGui::GetCurrentContext()->SettingsLoaded;
     if (loaded && !this->_iniPath.empty()) {
@@ -113,7 +124,7 @@ void Editor::pollEvents() {
     while (const auto event = this->_window.pollEvent()) {
         ImGui::SFML::ProcessEvent(this->_window, *event);
         if (event->is<sf::Event::Closed>()) {
-            this->_window.close();
+            this->_running = false;
         }
     }
 }
@@ -196,35 +207,56 @@ void Editor::drawDockspace() {
 }
 
 void Editor::drawMenuBar() {
-    if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Open", "Ctrl+O")) {
-                this->pickProject();
-            }
-            if (ImGui::MenuItem("Create project")) {
-                this->pickProject();
-            }
-            if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
-            }
-            if (ImGui::MenuItem("Build", "Ctrl+B", false,
-                                this->_project.has_value())) {
-                this->buildProject();
-            }
-            if (ImGui::MenuItem("Quit")) {
-                this->_window.close();
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Help")) {
-            if (ImGui::MenuItem("Documentation")) {
-                this->_info =
-                    "Visit the Ampersand Engine documentation at : "
-                    "https://boz0o0.github.io/Ampersand-Engine/";
-            }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMainMenuBar();
+    if (!ImGui::BeginMainMenuBar()) {
+        return;
     }
+    this->drawFileMenu();
+    Editor::drawEditMenu();
+    this->drawHelpMenu();
+    ImGui::EndMainMenuBar();
+}
+
+void Editor::drawFileMenu() {
+    if (!ImGui::BeginMenu("File")) {
+        return;
+    }
+    if (ImGui::MenuItem("Open", "Ctrl+O")) {
+        this->pickProject();
+    }
+    if (ImGui::MenuItem("Create project")) {
+        this->pickProject();
+    }
+    if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
+    }
+    if (ImGui::MenuItem("Build", "Ctrl+B", false, this->_project.has_value())) {
+        this->buildProject();
+    }
+    if (ImGui::MenuItem("Quit")) {
+        this->_running = false;
+    }
+    ImGui::EndMenu();
+}
+
+void Editor::drawEditMenu() {
+    if (!ImGui::BeginMenu("Edit")) {
+        return;
+    }
+    if (ImGui::MenuItem("Project settings")) {
+        // OPEN MODAL TO EDIT SCENES, DEFAULT RESSOURCES
+    }
+    ImGui::EndMenu();
+}
+
+void Editor::drawHelpMenu() {
+    if (!ImGui::BeginMenu("Help")) {
+        return;
+    }
+    if (ImGui::MenuItem("Documentation")) {
+        this->_info =
+            "Visit the Ampersand Engine documentation at : "
+            "https://boz0o0.github.io/Ampersand-Engine/";
+    }
+    ImGui::EndMenu();
 }
 
 }  // namespace ampersand::editor

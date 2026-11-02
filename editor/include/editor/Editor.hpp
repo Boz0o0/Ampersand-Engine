@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <editor/Project.hpp>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -43,6 +44,9 @@ private:
     /** @brief Saves the layout of the current project and loads the new one. */
     void switchLayout(const Project& project);
 
+    /** @brief Open a scene, or show an error popup if file is not one. */
+    void openScene(const std::filesystem::path& relative);
+
     /** @brief Asks for a project folder with the native dialog and opens it. */
     void pickProject();
 
@@ -67,14 +71,32 @@ private:
     /** @brief Draw the menu bar. */
     void drawMenuBar();
 
+    /** @brief Draw the File menu. */
+    void drawFileMenu();
+
+    /** @brief Draw the Edit menu. */
+    static void drawEditMenu();
+
+    /** @brief Draw the Help menu. */
+    void drawHelpMenu();
+
     /** @brief Draw the files panel. */
     void drawFiles();
 
-    /** @brief Draw a file node, and its children if it's an open folder. */
-    static void drawFileNode(const FileNode& node);
+    /**
+     * @brief Draw a file node, and its children if it's an open folder.
+     * Double-clicking a file opens it as the scene.
+     */
+    void drawFileNode(const FileNode& node);
 
-    /** @brief Draw the hierarchy panel. */
-    static void drawHierarchy();
+    /** @brief Draw the hierarchy panel of the opened scene. */
+    void drawHierarchy();
+
+    /**
+     * @brief Draw an entity node, and its children if it's an open parent.
+     * index is its position among its siblings, used as ImGui ID.
+     */
+    static void drawEntityNode(const nlohmann::ordered_json& entity, int index);
 
     /** @brief Draw the viewport panel. */
     static void drawViewport();
@@ -88,6 +110,7 @@ private:
     std::string _info;
     sf::RenderWindow _window;
     sf::Clock _clock;
+    bool _running = true;
 };
 
 }  // namespace ampersand::editor

@@ -36,6 +36,11 @@ void Editor::drawFileNode(const FileNode& node) {
     ImGui::TreeNodeEx(
         node.name.c_str(),
         ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+    if (ImGui::IsItemHovered() &&
+        ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) &&
+        node.path.extension() == ".json") {
+        this->openScene(node.path);
+    }
     if (ImGui::BeginDragDropSource()) {
         const std::string path = node.path.generic_string();
         ImGui::SetDragDropPayload(assetPathPayload.c_str(), path.c_str(),
@@ -48,20 +53,53 @@ void Editor::drawFileNode(const FileNode& node) {
 void Editor::drawHierarchy() {
     ImGui::Begin("Hierarchy");
 
-    ImGui::TextUnformatted("Scene Objects");
+    if (this->_project == std::nullopt) return;
+    const std::optional<Scene>& scene = this->_project->getScene();
+    if (scene == std::nullopt) {
+        ImGui::TextDisabled("Double-click a scene file to open it.");
+        ImGui::End();
+        return;
+    }
+    ImGui::TextUnformatted(scene->name.c_str());
     ImGui::Separator();
-
-    if (ImGui::Selectable("Camera")) {
-        // Select camera
-    }
-    if (ImGui::Selectable("Player")) {
-        // Select player
-    }
-    if (ImGui::Selectable("Light")) {
-        // Select light
+    int index = 0;
+    for (const auto& entity : scene->document.data.at("entities")) {
+        drawEntityNode(entity, index++);
     }
 
     ImGui::End();
+}
+
+void Editor::drawEntityNode(const nlohmann::ordered_json& entity, int index) {
+    if (!entity.is_object()) {
+        return;
+    }
+    std::string name = entity.value("name", "");
+    if (name.empty() && entity.contains("prefab")) {
+        name =
+            std::filesystem::path(entity.value("prefab", "")).stem().string();
+    }
+    if (name.empty()) {
+        name = "Entity";
+    }
+    const auto children = entity.find("children");
+    const bool parent =
+        children != entity.end() && children->is_array() && !children->empty();
+
+    ImGui::PushID(index);
+    if (!parent) {
+        ImGui::TreeNodeEx(
+            name.c_str(),
+            ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+    } else if (ImGui::TreeNodeEx(name.c_str(),
+                                 ImGuiTreeNodeFlags_OpenOnArrow)) {
+        int childIndex = 0;
+        for (const auto& child : *children) {
+            drawEntityNode(child, childIndex++);
+        }
+        ImGui::TreePop();
+    }
+    ImGui::PopID();
 }
 
 void Editor::drawViewport() {

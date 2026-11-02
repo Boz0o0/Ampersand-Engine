@@ -37,6 +37,35 @@ void Project::refreshFiles() {
     }
 }
 
+bool Project::openScene(const std::filesystem::path& relative) {
+    auto data = readJson(this->_root / relative);
+    if (!data || !isScene(*data)) {
+        return false;
+    }
+    const auto name = data->find("name");
+    this->_scene = Scene{
+        .name = name != data->end() && name->is_string()
+                    ? name->get<std::string>()
+                    : relative.stem().string(),
+        .document = {.path = relative, .data = std::move(*data)},
+    };
+    return true;
+}
+
+bool Project::isScene(const nlohmann::ordered_json& data) {
+    const auto version = data.find("version");
+    const auto entities = data.find("entities");
+    const auto resources = data.find("resources");
+    const bool validResources = resources == data.end() ||
+                                resources->is_null() || resources->is_object();
+    const bool prefab = data.contains("components") ||
+                        data.contains("children") || data.contains("prefab");
+    return version != data.end() && version->is_number_integer() &&
+           *version == kSceneVersion && entities != data.end() &&
+           (entities->is_null() || entities->is_array()) && validResources &&
+           !prefab;
+}
+
 std::vector<FileNode> Project::listDirectory(
     const std::filesystem::path& root, const std::filesystem::path& relative) {
     std::vector<FileNode> nodes;
