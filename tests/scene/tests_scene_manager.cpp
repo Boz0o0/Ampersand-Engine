@@ -30,6 +30,7 @@ using ampersand::scene::SceneManager;
 
 #ifdef AMPERSAND_MODULE_SCRIPTING
 using ampersand::core::Clock;
+using ampersand::scripting::ScriptError;
 using ampersand::scripting::ScriptingSystem;
 using ampersand::scripting::Scripts;
 #endif
@@ -576,6 +577,157 @@ TEST_F(SceneManagerTest, ScriptsOfASceneRunAndAreDestroyedWithIt) {
     _scenes.loadScene(_world, "b");
     system.update(_world);
     EXPECT_EQ(marks, (std::vector<std::string>{"started", "left"}));
+}
+
+/**
+ * @brief Runs the scripts of the scenes with instantiate and loadScene bound,
+ * and keeps their errors.
+ */
+class SceneScriptsTest : public SceneManagerTest {
+protected:
+    void SetUp() override {
+        SceneManagerTest::SetUp();
+        _world.addResource<Clock>(Clock{.dt = 0.5F});
+        _world.addResource<EventQueue<ScriptError>>();
+        _scenes.bindScripting(_system, _world);
+    }
+
+    /** @brief Writes a script under the root. */
+    void script(const std::string& name, const std::string& code) const {
+        std::ofstream(_root / name) << code;
+    }
+
+    /** @brief Errors sent by the scripts since the last clear. */
+    [[nodiscard]] const std::vector<ScriptError>& errors() {
+        return _world.getResource<EventQueue<ScriptError>>().read();
+    }
+
+    ScriptingSystem _system;
+};
+
+TEST_F(SceneScriptsTest, ScriptInstantiatesAPrefab) {
+    script("spawner.lua", R"(
+        local S = {}
+        function S:start()
+            local enemy = instantiate("enemy.json")
+            getTransform(enemy).position.x = 42
+        end
+        return S
+    )");
+    write("enemy.json", R"({"components": {
+        "Transform": {"position": {"x": 0, "y": 0, "z": 0},
+            "scale": {"x": 1, "y": 1, "z": 1}, "rotationDegrees": {"x": 0, "y": 0, "z": 0},
+            "origin": {"x": 0, "y": 0, "z": 0}},
+        "Stats": {"health": 7, "speed": 1}
+    }})");
+    write("a.json", R"({"entities": [
+        {"components": {"Scripts": {"scripts": ["spawner.lua"]}}}
+    ]})");
+    _scenes.loadConfig(_world, config("config.json"));
+
+    _system.update(_world);
+
+    ASSERT_EQ(statsCount(), 1U);
+    const Entity enemy = _world.owners<Stats>().front();
+    EXPECT_EQ(_world.get<Stats>(enemy).health, 7);
+    EXPECT_FLOAT_EQ(_world.get<ampersand::core::Transform>(enemy).position.x,
+                    42.0F);
+    EXPECT_TRUE(errors().empty());
+}
+
+TEST_F(SceneScriptsTest, InstantiatedScriptsStartOnTheNextUpdate) {
+    script("spawner.lua", R"(
+        local S = {}
+        function S:start() instantiate("child.json") end
+        return S
+    )");
+    script("child.lua", R"(
+        local S = {}
+        function S:start() mark("child") end
+        return S
+    )");
+    write("child.json",
+          R"({"components": {"Scripts": {"scripts": ["child.lua"]}}})");
+    write("a.json", R"({"entities": [
+        {"components": {"Scripts": {"scripts": ["spawner.lua"]}}}
+    ]})");
+    std::vector<std::string> marks;
+    _system.lua().set_function(
+        "mark", [&marks](const std::string& mark) { marks.push_back(mark); });
+    _scenes.loadConfig(_world, config("config.json"));
+
+    _system.update(_world);
+    EXPECT_TRUE(marks.empty());
+
+    _system.update(_world);
+    EXPECT_EQ(marks, std::vector<std::string>{"child"});
+}
+
+TEST_F(SceneScriptsTest, InstantiatingAMissingPrefabIsAScriptError) {
+    script("spawner.lua", R"(
+        local S = {}
+        function S:start() instantiate("missing.json") end
+        return S
+    )");
+    write("a.json", R"({"entities": [
+        {"components": {"Scripts": {"scripts": ["spawner.lua"]}}}
+    ]})");
+    _scenes.loadConfig(_world, config("config.json"));
+
+    _system.update(_world);
+
+    ASSERT_EQ(errors().size(), 1U);
+    EXPECT_EQ(errors()[0].path, (_root / "spawner.lua").string());
+}
+
+TEST_F(SceneScriptsTest, ScriptLoadsASceneAtTheEndOfTheUpdate) {
+    script("menu.lua", R"(
+        local S = {}
+        function S:update()
+            loadScene("b")
+            mark(tostring(hasTransform(self.entity)))
+        end
+        return S
+    )");
+    write("a.json", R"({"entities": [{"components": {
+        "Transform": {"position": {"x": 0, "y": 0, "z": 0},
+            "scale": {"x": 1, "y": 1, "z": 1}, "rotationDegrees": {"x": 0, "y": 0, "z": 0},
+            "origin": {"x": 0, "y": 0, "z": 0}},
+        "Scripts": {"scripts": ["menu.lua"]}
+    }}]})");
+    write("b.json", R"({"entities": [
+        {"components": {"Stats": {"health": 1, "speed": 1}}}
+    ]})");
+    std::vector<std::string> marks;
+    _system.lua().set_function(
+        "mark", [&marks](const std::string& mark) { marks.push_back(mark); });
+    _scenes.loadConfig(_world, config("config.json"));
+    const Entity menu = _world.owners<Scripts>().front();
+
+    _system.update(_world);
+
+    EXPECT_EQ(marks, std::vector<std::string>{"true"});  // still alive then
+    EXPECT_EQ(_scenes.getCurrentScene(), "b");
+    EXPECT_FALSE(_world.alive(menu));
+    EXPECT_EQ(statsCount(), 1U);
+}
+
+TEST_F(SceneScriptsTest, LoadingAnUnknownSceneIsAScriptError) {
+    script("menu.lua", R"(
+        local S = {}
+        function S:start() loadScene("missing") end
+        return S
+    )");
+    write("a.json", R"({"entities": [
+        {"components": {"Scripts": {"scripts": ["menu.lua"]}}}
+    ]})");
+    _scenes.loadConfig(_world, config("config.json"));
+
+    _system.update(_world);
+
+    ASSERT_EQ(errors().size(), 1U);
+    EXPECT_EQ(errors()[0].path, (_root / "menu.lua").string());
+    EXPECT_EQ(_scenes.getCurrentScene(), "a");
 }
 
 #endif
