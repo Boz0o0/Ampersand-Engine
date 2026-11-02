@@ -7,14 +7,14 @@ For why we split it this way, see [Design decisions](../decisions.md#separation-
 
 | Module  | CMake target        | Option                     | Needs           | Sources        | Tests            |
 | ------- | ------------------- | -------------------------- | --------------- | -------------- | ---------------- |
-| Core    | `ampersand_core`    | `AMPERSAND_MODULE_CORE`    |                 | `src/core/`    | `tests/core/`    |
-| Physics | `ampersand_physics` | `AMPERSAND_MODULE_PHYSICS` | core            | `src/physics/` | `tests/physics/` |
-| Render  | `ampersand_render`  | `AMPERSAND_MODULE_RENDER`  | core, input, SFML | `src/render/`  | `tests/render/`  |
-| Input   | `ampersand_input`   | `AMPERSAND_MODULE_INPUT`   | core            | `src/input/`   | `tests/input/`   |
-| Audio   | `ampersand_audio`   | `AMPERSAND_MODULE_AUDIO`   | core, SFML      | `src/audio/`   | `tests/audio/`   |
-| Net     | `ampersand_net`     | `AMPERSAND_MODULE_NET`     | core, Asio      | `src/net/`     | `tests/net/`     |
-| Scene   | `ampersand_scene`   | `AMPERSAND_MODULE_SCENE`   | core, nlohmann/json | `src/scene/` |                  |
-| Scripting | `ampersand_scripting` | `AMPERSAND_MODULE_SCRIPTING` | core, Lua, sol2 | `src/scripting/` | `tests/scripting/` |
+| Core    | `ampersand_core`    | `AMPERSAND_MODULE_CORE`    |                 | `engine/src/core/`    | `engine/tests/core/`    |
+| Physics | `ampersand_physics` | `AMPERSAND_MODULE_PHYSICS` | core            | `engine/src/physics/` | `engine/tests/physics/` |
+| Render  | `ampersand_render`  | `AMPERSAND_MODULE_RENDER`  | core, input, SFML | `engine/src/render/`  | `engine/tests/render/`  |
+| Input   | `ampersand_input`   | `AMPERSAND_MODULE_INPUT`   | core            | `engine/src/input/`   | `engine/tests/input/`   |
+| Audio   | `ampersand_audio`   | `AMPERSAND_MODULE_AUDIO`   | core, SFML      | `engine/src/audio/`   | `engine/tests/audio/`   |
+| Net     | `ampersand_net`     | `AMPERSAND_MODULE_NET`     | core, Asio      | `engine/src/net/`     | `engine/tests/net/`     |
+| Scene   | `ampersand_scene`   | `AMPERSAND_MODULE_SCENE`   | core, nlohmann/json | `engine/src/scene/` | `engine/tests/scene/` |
+| Scripting | `ampersand_scripting` | `AMPERSAND_MODULE_SCRIPTING` | core, Lua, sol2 | `engine/src/scripting/` | `engine/tests/scripting/` |
 
 Every option is `ON` by default. Turn one off at configure time:
 
@@ -26,5 +26,5 @@ Linking a target also links the modules it needs: `ampersand_render` brings
 `ampersand_input` and `ampersand_core`. `ampersand_scene` links every other
 module that is turned on (except `net`), since it reads their types.
 
-The headers of a module are in `include/ampersand/<module>/`, with its
+The headers of a module are in `engine/include/ampersand/<module>/`, with its
 `components/`, `resources/` and `systems/` in folders of the same name.

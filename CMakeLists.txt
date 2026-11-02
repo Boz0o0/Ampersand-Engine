@@ -19,17 +19,17 @@ option(AMPERSAND_MODULE_RENDER "Build the Render module" ON)
 option(AMPERSAND_MODULE_SCENE "Build the Scene module" ON)
 option(AMPERSAND_MODULE_SCRIPTING "Build the Scripting module" ON)
 
-option(AMPERSAND_MODULES_BUILD_TESTS "Build the engine unit tests" ${PROJECT_IS_TOP_LEVEL})
-option(AMPERSAND_EDITOR_BUILD_TESTS "Build the editor unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(AMPERSAND_ENGINE_BUILD_TESTS "Build the engine unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(AMPERSAND_EDITOR_BUILD_TESTS "Build the editor unit tests (needs AMPERSAND_BUILD_EDITOR)" ${PROJECT_IS_TOP_LEVEL})
 option(AMPERSAND_BUILD_EDITOR "Build the editor" OFF)
 
 include(cmake/CPM.cmake)
 
-if(AMPERSAND_MODULES_BUILD_TESTS OR AMPERSAND_EDITOR_BUILD_TESTS)
+if(AMPERSAND_ENGINE_BUILD_TESTS OR AMPERSAND_EDITOR_BUILD_TESTS)
     include(CTest)
 endif()
 
-if((AMPERSAND_MODULES_BUILD_TESTS OR AMPERSAND_EDITOR_BUILD_TESTS) AND BUILD_TESTING)
+if((AMPERSAND_ENGINE_BUILD_TESTS OR AMPERSAND_EDITOR_BUILD_TESTS) AND BUILD_TESTING)
     CPMAddPackage(
         NAME googletest
         GITHUB_REPOSITORY google/googletest
@@ -116,7 +116,7 @@ endif()
 
 add_subdirectory(engine/src)
 
-if(AMPERSAND_MODULES_BUILD_TESTS AND BUILD_TESTING)
+if(AMPERSAND_ENGINE_BUILD_TESTS AND BUILD_TESTING)
     add_subdirectory(engine/tests)
 endif()
 
@@ -150,6 +150,6 @@ if(AMPERSAND_BUILD_EDITOR)
     add_subdirectory(editor/src)
 endif()
 
-if(AMPERSAND_EDITOR_BUILD_TESTS AND BUILD_TESTING)
+if(AMPERSAND_BUILD_EDITOR AND AMPERSAND_EDITOR_BUILD_TESTS AND BUILD_TESTING)
     add_subdirectory(editor/tests)
 endif()

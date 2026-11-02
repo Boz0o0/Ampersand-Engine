@@ -88,9 +88,14 @@ ctest --test-dir build --output-on-failure
 
 ```
 .
-├── include/ampersand/  # Public headers, one folder per module
-├── src/                # Sources, one folder per module
-├── tests/              # Unit tests, one folder per module
+├── engine/
+│   ├── include/ampersand/  # Public headers, one folder per module
+│   ├── src/                # Sources, one folder per module
+│   └── tests/              # Unit tests, one folder per module
+├── editor/
+│   ├── include/editor/     # Editor headers
+│   ├── src/                # Editor sources (AMPERSAND_BUILD_EDITOR)
+│   └── tests/              # Editor unit tests
 ├── docs/               # Documentation (MkDocs)
 ├── cmake/              # CPM.cmake (downloads the dependencies)
 └── CHANGELOG.md        # Changes of each version
