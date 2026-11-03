@@ -63,6 +63,15 @@ public:
      */
     static std::optional<Project> open(const std::filesystem::path& root);
 
+    /**
+     * @brief Creates a game folder at root.
+     *
+     * @return The project, or std::nullopt if root has no readable
+     * world/config.json holding a JSON object.
+     */
+    static std::optional<Project> create(const std::filesystem::path& root,
+                                         const std::string& name);
+
     /** @brief Absolute path of the game folder. */
     [[nodiscard]] const std::filesystem::path& getRoot() const { return _root; }
 

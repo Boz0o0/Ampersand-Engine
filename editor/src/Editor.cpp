@@ -6,6 +6,8 @@
 #include <SFML/Window/VideoMode.hpp>
 #include <editor/Editor.hpp>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <nfd.hpp>
 #include <stdexcept>
 #include <utility>
@@ -31,8 +33,10 @@ void Editor::run() {
         drawDockspace();
         this->drawErrorPopup();
         this->drawInfoPopup();
+        drawNewProjectModal();
 
         if (this->_project != std::nullopt) {
+            drawNewSceneModal();
             drawFiles();
             drawHierarchy();
             drawViewport();
@@ -70,6 +74,27 @@ void Editor::open(const std::string& path) {
                            this->_project->getProjectName());
 }
 
+void Editor::create(const std::string& path, const std::string& name) {
+    if (std::filesystem::exists(path + "/" + name) &&
+        !std::filesystem::is_empty(path + "/" + name) &&
+        std::filesystem::is_directory(path + "/" + name)) {
+        this->_error =
+            "Project '" + name + "' already exists at '" + path + "'.";
+        return;
+    }
+    std::optional<Project> newProject = Project::create(path, name);
+    if (newProject == std::nullopt) {
+        this->_error = "'" + path + "' is not a project: " +
+                       std::string(Project::kConfigPath) +
+                       " is missing or is not a JSON object.";
+        return;
+    }
+    this->switchLayout(*newProject);
+    this->_project = std::move(newProject);
+    this->_window.setTitle("Ampersand Engine - " +
+                           this->_project->getProjectName());
+}
+
 void Editor::openScene(const std::filesystem::path& relative) {
     if (!this->_project) {
         return;
@@ -95,7 +120,7 @@ void Editor::switchLayout(const Project& project) {
     }
 }
 
-void Editor::pickProject() {
+void Editor::pickProject(bool isCreating) {
     NFD::Guard guard;
     NFD::UniquePath outPath;
     const std::string defaultPath =
@@ -107,10 +132,42 @@ void Editor::pickProject() {
     ImGui::GetIO().ClearInputMouse();
 
     if (result == NFD_OKAY) {
-        this->open(outPath.get());
+        if (isCreating) {
+            this->_newProjectPath = outPath.get();
+        } else {
+            this->open(outPath.get());
+        }
     } else if (result == NFD_ERROR) {
         this->_error = NFD::GetError();
     }
+}
+
+void Editor::createNewScene(const std::string& name) {
+    if (this->_project == std::nullopt) {
+        return;
+    }
+    std::string realPath = this->_project->getRoot().string() + "/" +
+                           kSceneFolder + name + ".json";
+    if (std::filesystem::exists(realPath)) {
+        this->_error = "File already exists: " + realPath;
+        return;
+    }
+    std::ofstream newSceneFile(realPath);
+    newSceneFile << R"json({
+    "version": 2,
+    "name": ")json"
+                 << name << R"json(",
+    "resources": {},
+    "entities": []
+}
+)json";
+    if (!newSceneFile) {
+        this->_error = "Could not create scene file: " + realPath;
+        return;
+    }
+    newSceneFile.close();
+
+    this->_project->refreshFiles();
 }
 
 void Editor::buildProject() {
@@ -136,6 +193,11 @@ void Editor::handleShortcuts() {
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_O,
                         ImGuiInputFlags_RouteGlobal)) {
         this->pickProject();
+    }
+    // NOLINTNEXTLINE(bugprone-signed-bitwise): ImGui chords are signed
+    if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_N,
+                        ImGuiInputFlags_RouteGlobal)) {
+        this->_newSceneModal = true;
     }
     // NOLINTNEXTLINE(bugprone-signed-bitwise): ImGui chords are signed
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_B,
@@ -170,6 +232,80 @@ void Editor::drawInfoPopup() {
         ImGui::TextUnformatted(this->_info.c_str());
         if (ImGui::Button("OK")) {
             this->_info.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void Editor::drawNewSceneModal() {
+    if (!this->_newSceneModal) {
+        return;
+    }
+    ImGui::OpenPopup("New Scene");
+    if (ImGui::BeginPopupModal("New Scene", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Enter the name of the new scene:");
+
+        if (ImGui::IsWindowAppearing()) {
+            ImGui::SetKeyboardFocusHere();
+        }
+        bool submitted = ImGui::InputText(".json", this->_textBuffer.data(),
+                                          this->_textBuffer.size(),
+                                          ImGuiInputTextFlags_EnterReturnsTrue);
+        bool isEmpty = this->_textBuffer[0] == '\0';
+
+        ImGui::BeginDisabled(isEmpty);
+        if ((ImGui::Button("Create") || submitted) && !isEmpty) {
+            std::string name = this->_textBuffer.data();
+            this->createNewScene(name);
+            this->_textBuffer.fill('\0');
+            this->_newSceneModal = false;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            this->_textBuffer.fill('\0');
+            this->_newSceneModal = false;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void Editor::drawNewProjectModal() {
+    if (this->_newProjectPath.empty()) {
+        return;
+    }
+    ImGui::OpenPopup("New Project");
+    if (ImGui::BeginPopupModal("New Project", nullptr,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Enter the name of the new project:");
+
+        if (ImGui::IsWindowAppearing()) {
+            ImGui::SetKeyboardFocusHere();
+        }
+        bool submitted = ImGui::InputText(
+            "##projectName", this->_textBuffer.data(), this->_textBuffer.size(),
+            ImGuiInputTextFlags_EnterReturnsTrue);
+        bool isEmpty = this->_textBuffer[0] == '\0';
+
+        ImGui::BeginDisabled(isEmpty);
+        if ((ImGui::Button("Create") || submitted) && !isEmpty) {
+            std::string name = this->_textBuffer.data();
+            this->create(this->_newProjectPath, name);
+            this->_textBuffer.fill('\0');
+            this->_newProjectPath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            this->_textBuffer.fill('\0');
+            this->_newProjectPath.clear();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -222,11 +358,14 @@ void Editor::drawFileMenu() {
         return;
     }
     if (ImGui::MenuItem("Open", "Ctrl+O")) {
-        this->pickProject();
+        this->pickProject(false);
     }
     if (ImGui::MenuItem("Create project")) {
+        this->pickProject(true);
     }
-    if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
+    if (ImGui::MenuItem("New Scene", "Ctrl+N", false,
+                        this->_project.has_value())) {
+        this->_newSceneModal = true;
     }
     if (ImGui::MenuItem("Build", "Ctrl+B", false, this->_project.has_value())) {
         this->buildProject();

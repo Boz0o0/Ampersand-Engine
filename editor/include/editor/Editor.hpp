@@ -92,6 +92,9 @@ private:
     /** @brief Text colour of the errors shown in a panel. */
     static constexpr ImVec4 kErrorColor{1.0F, 0.40F, 0.40F, 1.0F};
 
+    /** @brief Scenes folder relative path. */
+    static inline const std::string kSceneFolder{"./world/scenes/"};
+
     /** @brief Drag and drop payload of a project file: its relative path. */
     static inline const std::string kAssetPayload{"ASSET_PATH"};
 
@@ -139,6 +142,9 @@ private:
     /** @brief Open a project, or show an error popup if path is not one. */
     void open(const std::string& path);
 
+    /** @brief Create a project, or show an error popup if path is not valid. */
+    void create(const std::string& path, const std::string& name);
+
     /** @brief Saves the layout of the current project and loads the new one. */
     void switchLayout(const Project& project);
 
@@ -146,7 +152,10 @@ private:
     void openScene(const std::filesystem::path& relative);
 
     /** @brief Asks for a project folder with the native dialog and opens it. */
-    void pickProject();
+    void pickProject(bool isCreating = false);
+
+    /** @brief Create a new scene. */
+    void createNewScene(const std::string& name);
 
     /** @brief Build the project. */
     void buildProject();
@@ -162,6 +171,12 @@ private:
 
     /** @brief Draw the info popup while there is an info to show. */
     void drawInfoPopup();
+
+    /** @brief Draw the new scene modal while there is one to show. */
+    void drawNewSceneModal();
+
+    /** @brief Draw the new project modal while there is one to show. */
+    void drawNewProjectModal();
 
     /** @brief Draw and create the dockspace. */
     static void drawDockspace();
@@ -419,9 +434,11 @@ private:
 
     std::optional<Project> _project;
     std::optional<Selection> _selection;
+    bool _newSceneModal{false};
+    std::string _newProjectPath{};
     std::optional<HierarchyAction> _hierarchyAction;
     Pointer _renaming;
-    std::array<char, 256> _renameBuffer{};
+    std::array<char, 256> _textBuffer{};
     std::string _iniPath;
     std::string _error;
     std::string _info;

@@ -289,9 +289,8 @@ void Editor::applyHierarchyAction() {
                     ? scene->document.data.at(action.source).value("name", "")
                     : "";
             this->_renaming = action.source;
-            this->_renameBuffer.fill('\0');
-            name.copy(this->_renameBuffer.data(),
-                      this->_renameBuffer.size() - 1);
+            this->_textBuffer.fill('\0');
+            name.copy(this->_textBuffer.data(), this->_textBuffer.size() - 1);
             ImGui::OpenPopup(kRenamePopup.c_str());
             break;
         }
@@ -310,13 +309,13 @@ void Editor::drawRenamePopup() {
     if (ImGui::IsWindowAppearing()) {
         ImGui::SetKeyboardFocusHere();
     }
-    const bool entered = ImGui::InputText("##name", this->_renameBuffer.data(),
-                                          this->_renameBuffer.size(),
+    const bool entered = ImGui::InputText("##name", this->_textBuffer.data(),
+                                          this->_textBuffer.size(),
                                           ImGuiInputTextFlags_EnterReturnsTrue);
     if (entered || ImGui::Button("OK")) {
         if (this->_project) {
             this->_project->renameEntity(this->_renaming,
-                                         this->_renameBuffer.data());
+                                         this->_textBuffer.data());
         }
         ImGui::CloseCurrentPopup();
     }

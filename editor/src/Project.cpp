@@ -24,6 +24,43 @@ std::optional<Project> Project::open(const std::filesystem::path& root) {
     return project;
 }
 
+std::optional<Project> Project::create(const std::filesystem::path& root,
+                                       const std::string& name) {
+    std::filesystem::create_directory(root / name);
+    std::filesystem::create_directories(root / name / "assets");
+    std::filesystem::create_directories(root / name / "scripts");
+    std::filesystem::create_directories(root / name / "world");
+    std::filesystem::create_directories(root / name / "world" / "scenes");
+    std::filesystem::create_directories(root / name / "world" / "prefabs");
+    std::ofstream config{root / name / kConfigPath};
+    std::ofstream defaultScene{root / name / "world" / "scenes" /
+                               "defaultScene.json"};
+    if (!config || !defaultScene) {
+        return std::nullopt;
+    }
+    config << R"json({
+    "version": 2,
+    "gameRoot": ")json"
+           << (root / name).string() << R"json(",
+    "startScene": "defaultScene",
+    "scenes": {
+        "defaultScene": "world/scenes/defaultScene.json"
+    },
+    "resources": {}
+}
+)json";
+    config.close();
+    defaultScene << R"json({
+    "version": 2,
+    "name": "defaultScene",
+    "resources": {},
+    "entities": []
+}
+)json";
+    defaultScene.close();
+    return open(root / name);
+}
+
 void Project::refreshFiles() {
     this->_files.clear();
     this->_prefabs.clear();
