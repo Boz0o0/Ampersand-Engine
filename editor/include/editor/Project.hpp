@@ -63,6 +63,23 @@ public:
      */
     static std::optional<Project> open(const std::filesystem::path& root);
 
+    /**
+     * @brief Creates a game folder at root.
+     *
+     * @return The project, or std::nullopt if root has no readable
+     * world/config.json holding a JSON object.
+     */
+    static std::optional<Project> create(const std::filesystem::path& root,
+                                         const std::string& name);
+
+    /**
+     * @brief Saves all dirty documents to disk.
+     *
+     * @return std::nullopt if all documents were saved successfully, otherwise
+     * the error message.
+     */
+    std::optional<std::string> build();
+
     /** @brief Absolute path of the game folder. */
     [[nodiscard]] const std::filesystem::path& getRoot() const { return _root; }
 
@@ -82,6 +99,16 @@ public:
     /** @brief The scene opened, if any. */
     [[nodiscard]] std::optional<Scene>& getScene() { return _scene; }
 
+    /** @brief Whether the opened scene changed since the last build. */
+    [[nodiscard]] bool isSceneDirty() const {
+        return _scene && _scene->document.dirty;
+    }
+
+    /** @brief Whether a document changed since the last build. */
+    [[nodiscard]] bool isDirty() const {
+        return _config.dirty || isSceneDirty();
+    }
+
     /** @brief Lists the project folders again from the disk. */
     void refreshFiles();
 
@@ -94,10 +121,29 @@ public:
 
     /**
      * @brief The prefab file at relative, read once then kept in memory.
+     * The editor only reads prefabs, it never changes them.
      *
-     * @return The prefab, or an empty object if the file can't be read.
+     * @return The prefab, or null if the file can't be read.
      */
     const nlohmann::ordered_json& getPrefab(const std::string& relative);
+
+    /**
+     * @brief entity with its prefab applied, as SceneManager::resolvePrefab
+     * does: the components of the entity merge-patched over the ones of its
+     * prefab (itself resolved), and the children of both, resolved.
+     *
+     * @throw std::runtime_error If a prefab can't be read or uses itself.
+     */
+    nlohmann::ordered_json resolved(const nlohmann::ordered_json& entity);
+
+    /**
+     * @brief The smallest merge patch turning base into target: keys whose
+     * values differ, recursing into objects, and null for the keys of base
+     * that target lacks. Not an RFC 6902 patch like nlohmann's diff.
+     */
+    static nlohmann::ordered_json mergeDiff(
+        const nlohmann::ordered_json& base,
+        const nlohmann::ordered_json& target);
 
     /*
      * Edition of the opened scene. An entity is given by its pointer in the
@@ -124,10 +170,21 @@ public:
     /** @brief Sets the name of entity. */
     bool renameEntity(const Pointer& entity, const std::string& name);
 
+    /** @brief Whether pointer is an entity of the scene data. */
+    static bool isEntity(const nlohmann::ordered_json& data,
+                         const Pointer& pointer);
+
     /** @brief Whether pointer is root or one of the values inside it. */
     static bool isInside(const Pointer& pointer, const Pointer& root);
 
 private:
+    /**
+     * @brief Recursion of resolved. chain holds the prefabs being resolved,
+     * to detect a prefab using itself.
+     */
+    nlohmann::ordered_json resolve(const nlohmann::ordered_json& description,
+                                   std::vector<std::string>& chain);
+
     /** @brief Version of the scene files the engine loads. */
     static constexpr std::int32_t kSceneVersion{2};
 
@@ -135,10 +192,6 @@ private:
      * @brief Checks the file has the shape of a scene, not of a prefab.
      */
     static bool isScene(const nlohmann::ordered_json& data);
-
-    /** @brief Whether pointer is an entity of the scene data. */
-    static bool isEntity(const nlohmann::ordered_json& data,
-                         const Pointer& pointer);
 
     /** @brief Pointer to the children array of parent (root if empty). */
     static Pointer childrenPointer(const Pointer& parent);
@@ -162,6 +215,11 @@ private:
     static std::vector<FileNode> listDirectory(
         const std::filesystem::path& root,
         const std::filesystem::path& relative);
+
+    /** @brief Writes document to root / document.path if dirty, then clears
+     * dirty. */
+    static std::optional<std::string> writeDocument(
+        const std::filesystem::path& root, Document& document);
 
     std::filesystem::path _root;
     Document _config;

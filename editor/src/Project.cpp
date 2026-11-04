@@ -2,6 +2,7 @@
 #include <editor/Project.hpp>
 #include <editor/Types.hpp>
 #include <fstream>
+#include <stdexcept>
 #include <system_error>
 
 namespace ampersand::editor {
@@ -17,10 +18,64 @@ std::optional<Project> Project::open(const std::filesystem::path& root) {
         return std::nullopt;
     }
     Project project;
-    project._root = absolute;
+    project._root = root;
     project._config = {.path = kConfigPath, .data = std::move(*config)};
     project.refreshFiles();
     return project;
+}
+
+std::optional<Project> Project::create(const std::filesystem::path& root,
+                                       const std::string& name) {
+    std::filesystem::create_directory(root / name);
+    std::filesystem::create_directories(root / name / "assets");
+    std::filesystem::create_directories(root / name / "scripts");
+    std::filesystem::create_directories(root / name / "world");
+    std::filesystem::create_directories(root / name / "world" / "scenes");
+    std::filesystem::create_directories(root / name / "world" / "prefabs");
+    std::ofstream config{root / name / kConfigPath};
+    std::ofstream defaultScene{root / name / "world" / "scenes" /
+                               "defaultScene.json"};
+    if (!config || !defaultScene) {
+        return std::nullopt;
+    }
+    config << R"json({
+    "version": 2,
+    "gameRoot": ")json"
+           << (root / name).string() << R"json(",
+    "startScene": "defaultScene",
+    "scenes": {
+        "defaultScene": "world/scenes/defaultScene.json"
+    },
+    "resources": {}
+}
+)json";
+    config.close();
+    defaultScene << R"json({
+    "version": 2,
+    "name": "defaultScene",
+    "resources": {},
+    "entities": []
+}
+)json";
+    defaultScene.close();
+    return open(root / name);
+}
+
+std::optional<std::string> Project::build() {
+    std::optional<std::string> error = std::nullopt;
+    if (this->_config.dirty) {
+        error = writeDocument(this->_root, this->_config);
+        if (error) {
+            return error;
+        }
+    }
+    if (this->_scene && this->_scene->document.dirty) {
+        error = writeDocument(this->_root, this->_scene->document);
+        if (error) {
+            return error;
+        }
+    }
+    return error;
 }
 
 void Project::refreshFiles() {
@@ -62,10 +117,73 @@ const nlohmann::ordered_json& Project::getPrefab(const std::string& relative) {
         auto data = readJson(this->_root / key);
         found = this->_prefabs
                     .emplace(key, data ? std::move(*data)
-                                       : nlohmann::ordered_json::object())
+                                       : nlohmann::ordered_json(nullptr))
                     .first;
     }
     return found->second;
+}
+
+nlohmann::ordered_json Project::resolved(const nlohmann::ordered_json& entity) {
+    std::vector<std::string> chain;
+    return this->resolve(entity, chain);
+}
+
+nlohmann::ordered_json Project::resolve(
+    const nlohmann::ordered_json& description,
+    std::vector<std::string>& chain) {
+    nlohmann::ordered_json result = description;
+    const auto prefab = description.find("prefab");
+    if (prefab != description.end()) {
+        if (!prefab->is_string()) {
+            throw std::runtime_error("'prefab' must be a file path");
+        }
+        const std::string path =
+            std::filesystem::path(prefab->get<std::string>())
+                .lexically_normal()
+                .generic_string();
+        if (std::ranges::find(chain, path) != chain.end()) {
+            throw std::runtime_error("Prefab '" + path + "' uses itself");
+        }
+        const nlohmann::ordered_json& data = this->getPrefab(path);
+        if (!data.is_object()) {
+            throw std::runtime_error("Cannot read prefab '" + path + "'");
+        }
+        chain.push_back(path);
+        result = this->resolve(data, chain);
+        chain.pop_back();
+        result["components"].merge_patch(
+            description.value("components", nlohmann::ordered_json::object()));
+    } else {
+        result["children"] = nlohmann::ordered_json::array();
+    }
+    for (const auto& child :
+         description.value("children", nlohmann::ordered_json::array())) {
+        result["children"].push_back(this->resolve(child, chain));
+    }
+    return result;
+}
+
+nlohmann::ordered_json Project::mergeDiff(
+    const nlohmann::ordered_json& base, const nlohmann::ordered_json& target) {
+    nlohmann::ordered_json patch = nlohmann::ordered_json::object();
+    for (const auto& item : target.items()) {
+        const auto found = base.find(item.key());
+        if (found != base.end() && found->is_object() &&
+            item.value().is_object()) {
+            nlohmann::ordered_json inner = mergeDiff(*found, item.value());
+            if (!inner.empty()) {
+                patch[item.key()] = std::move(inner);
+            }
+        } else if (found == base.end() || *found != item.value()) {
+            patch[item.key()] = item.value();
+        }
+    }
+    for (const auto& item : base.items()) {
+        if (!target.contains(item.key())) {
+            patch[item.key()] = nullptr;
+        }
+    }
+    return patch;
 }
 
 bool Project::createEntity(const Pointer& parent) {
@@ -76,10 +194,13 @@ bool Project::createEntity(const Pointer& parent) {
     if (!parent.empty() && !isEntity(document.data, parent)) {
         return false;
     }
+    nlohmann::ordered_json components = nlohmann::ordered_json::object();
+    components["Transform"] =
+        TypeTable::get().getComponentDefaults("Transform");
     childrenOf(document.data, parent)
         .push_back({
             {"name", "Entity"},
-            {"components", {{"Transform", defaultTransform()}}},
+            {"components", std::move(components)},
         });
     document.dirty = true;
     return true;
@@ -232,6 +353,21 @@ std::optional<nlohmann::ordered_json> Project::readJson(
         return std::nullopt;
     }
     return data;
+}
+
+std::optional<std::string> Project::writeDocument(
+    const std::filesystem::path& root, Document& document) {
+    std::ofstream file(root / document.path);
+    if (!file) {
+        return "Failed to open file " + (root / document.path).string() +
+               " for writing.";
+    }
+    file << document.data.dump(4) << '\n';
+    if (!file) {
+        return "Failed to write file " + (root / document.path).string() + ".";
+    }
+    document.dirty = false;
+    return std::nullopt;
 }
 
 }  // namespace ampersand::editor

@@ -84,6 +84,19 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
+## Editor
+
+A desktop editor (ImGui) for the JSON files of a game folder: scenes, entities,
+components and resources. It is off by default:
+
+```sh
+cmake -B build -DAMPERSAND_BUILD_EDITOR=ON
+cmake --build build --target ampersand_editor_app --parallel
+./build/editor/ampersand_editor [game folder]
+```
+
+See [Editor](https://boz0o0.github.io/Ampersand-Engine/editor/).
+
 ## Project structure
 
 ```
