@@ -28,6 +28,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ### Changed
 
+- **Build**: the engine files moved to `engine/` (`engine/include/`, `engine/src/`, `engine/tests/`) and the editor to `editor/`. Games that include the engine with CMake do not need to change anything.
+- **Build**: `AMPERSAND_BUILD_TESTS` is replaced by `AMPERSAND_ENGINE_BUILD_TESTS` and `AMPERSAND_EDITOR_BUILD_TESTS`.
 - **Core**: the `Transform` of a child is now **local**, relative to its parent (like in Unity): moving, turning or scaling the parent moves its children. It was in world space before, so games that moved the children by hand must stop doing it.
 - **Render**, **Physics**: the `RenderSystem` draws and the `CollisionSystem` compares each entity at its world transform (its `Transform` composed with its parents'). The `MovementSystem` still moves the local `Transform`.
 - **Render**: the fields `start` and `end` of `Line` are renamed `from` and `to` (local points of its `Transform`). Games that build or read a `Line` must use the new names.

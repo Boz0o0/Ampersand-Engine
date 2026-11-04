@@ -28,10 +28,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake build-essential libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev xvfb
+          sudo apt-get install -y cmake build-essential libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev libgtk-3-dev pkg-config xvfb
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DAMPERSAND_BUILD_EDITOR=ON
 
       - name: Build
         run: cmake --build build --parallel
@@ -53,7 +53,7 @@ jobs:
           restore-keys: cpm-windows-
 
       - name: Configure CMake
-        run: cmake -B build
+        run: cmake -B build -DAMPERSAND_BUILD_EDITOR=ON
 
       - name: Build
         run: cmake --build build --config Debug --parallel

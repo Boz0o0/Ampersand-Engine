@@ -24,8 +24,9 @@ ctest --test-dir build --output-on-failure
 ```
 
 The tests are only built when the engine is the top-level project
-(`AMPERSAND_BUILD_TESTS`), so a game that includes the engine does not build
-them.
+(`AMPERSAND_ENGINE_BUILD_TESTS`, and `AMPERSAND_EDITOR_BUILD_TESTS` when the
+editor is built with `AMPERSAND_BUILD_EDITOR`), so a game that includes the
+engine does not build them.
 
 !!! tip "Faster configure"
     Add `-DCPM_SOURCE_CACHE=$HOME/.cache/CPM` to keep the downloaded
