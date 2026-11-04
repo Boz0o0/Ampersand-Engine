@@ -9,6 +9,7 @@
 #include <editor/Project.hpp>
 #include <editor/Types.hpp>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
@@ -158,7 +159,7 @@ private:
     void createNewScene(const std::string& name);
 
     /** @brief Build the project. */
-    void buildProject();
+    bool buildProject();
 
     /** @brief Handle window events. */
     void pollEvents();
@@ -171,6 +172,15 @@ private:
 
     /** @brief Draw the info popup while there is an info to show. */
     void drawInfoPopup();
+
+    /**
+     * @brief Run action now if dirty is false, else keep it until the unsaved
+     * changes modal is answered.
+     */
+    void confirmUnsaved(bool dirty, std::function<void()> action);
+
+    /** @brief Draw the unsaved changes modal while an action waits for it. */
+    void drawUnsavedModal();
 
     /** @brief Draw the new scene modal while there is one to show. */
     void drawNewSceneModal();
@@ -442,6 +452,7 @@ private:
     std::string _iniPath;
     std::string _error;
     std::string _info;
+    std::function<void()> _pendingAction;  // Waits for the unsaved modal
     sf::RenderWindow _window;
     sf::Clock _clock;
     bool _running = true;

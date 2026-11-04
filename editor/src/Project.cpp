@@ -18,7 +18,7 @@ std::optional<Project> Project::open(const std::filesystem::path& root) {
         return std::nullopt;
     }
     Project project;
-    project._root = absolute;
+    project._root = root;
     project._config = {.path = kConfigPath, .data = std::move(*config)};
     project.refreshFiles();
     return project;
@@ -59,6 +59,23 @@ std::optional<Project> Project::create(const std::filesystem::path& root,
 )json";
     defaultScene.close();
     return open(root / name);
+}
+
+std::optional<std::string> Project::build() {
+    std::optional<std::string> error = std::nullopt;
+    if (this->_config.dirty) {
+        error = writeDocument(this->_root, this->_config);
+        if (error) {
+            return error;
+        }
+    }
+    if (this->_scene && this->_scene->document.dirty) {
+        error = writeDocument(this->_root, this->_scene->document);
+        if (error) {
+            return error;
+        }
+    }
+    return error;
 }
 
 void Project::refreshFiles() {
@@ -336,6 +353,21 @@ std::optional<nlohmann::ordered_json> Project::readJson(
         return std::nullopt;
     }
     return data;
+}
+
+std::optional<std::string> Project::writeDocument(
+    const std::filesystem::path& root, Document& document) {
+    std::ofstream file(root / document.path);
+    if (!file) {
+        return "Failed to open file " + (root / document.path).string() +
+               " for writing.";
+    }
+    file << document.data.dump(4) << '\n';
+    if (!file) {
+        return "Failed to write file " + (root / document.path).string() + ".";
+    }
+    document.dirty = false;
+    return std::nullopt;
 }
 
 }  // namespace ampersand::editor

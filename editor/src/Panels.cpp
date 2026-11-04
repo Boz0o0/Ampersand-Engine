@@ -43,7 +43,9 @@ void Editor::drawFileNode(const FileNode& node) {
     if (ImGui::IsItemHovered() &&
         ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) &&
         node.path.extension() == ".json") {
-        this->openScene(node.path);
+        this->confirmUnsaved(
+            this->_project && this->_project->isSceneDirty(),
+            [this, path = node.path] { this->openScene(path); });
     }
     if (ImGui::BeginDragDropSource()) {
         const std::string path = node.path.generic_string();

@@ -33,6 +33,7 @@ void Editor::run() {
         drawDockspace();
         this->drawErrorPopup();
         this->drawInfoPopup();
+        this->drawUnsavedModal();
         drawNewProjectModal();
 
         if (this->_project != std::nullopt) {
@@ -135,7 +136,10 @@ void Editor::pickProject(bool isCreating) {
         if (isCreating) {
             this->_newProjectPath = outPath.get();
         } else {
-            this->open(outPath.get());
+            this->confirmUnsaved(this->_project && this->_project->isDirty(),
+                                 [this, path = std::string(outPath.get())] {
+                                     this->open(path);
+                                 });
         }
     } else if (result == NFD_ERROR) {
         this->_error = NFD::GetError();
@@ -170,20 +174,27 @@ void Editor::createNewScene(const std::string& name) {
     this->_project->refreshFiles();
 }
 
-void Editor::buildProject() {
+bool Editor::buildProject() {
     if (this->_project == std::nullopt) {
-        return;
+        return true;
     }
 
-    // WRITE THE JSON HERE
+    std::optional<std::string> error = this->_project->build();
+    if (error) {
+        this->_error = *error;
+    } else {
+        this->_info = "Project built successfully.";
+    }
     this->_project->refreshFiles();
+    return error == std::nullopt;
 }
 
 void Editor::pollEvents() {
     while (const auto event = this->_window.pollEvent()) {
         ImGui::SFML::ProcessEvent(this->_window, *event);
         if (event->is<sf::Event::Closed>()) {
-            this->_running = false;
+            this->confirmUnsaved(this->_project && this->_project->isDirty(),
+                                 [this] { this->_running = false; });
         }
     }
 }
@@ -235,6 +246,49 @@ void Editor::drawInfoPopup() {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
+    }
+}
+
+void Editor::confirmUnsaved(bool dirty, std::function<void()> action) {
+    if (dirty) {
+        this->_pendingAction = std::move(action);
+    } else {
+        action();
+    }
+}
+
+void Editor::drawUnsavedModal() {
+    if (!this->_pendingAction) {
+        return;
+    }
+    ImGui::OpenPopup("Unsaved changes");
+    if (!ImGui::BeginPopupModal("Unsaved changes", nullptr,
+                                ImGuiWindowFlags_AlwaysAutoResize)) {
+        return;
+    }
+    ImGui::TextUnformatted("Build the unsaved changes before continuing?");
+    std::function<void()> action;
+    if (ImGui::Button("Build")) {
+        if (this->buildProject()) {
+            action = std::move(this->_pendingAction);
+        }
+        this->_pendingAction = nullptr;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Discard")) {
+        action = std::move(this->_pendingAction);
+        this->_pendingAction = nullptr;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+        this->_pendingAction = nullptr;
+    }
+    if (!this->_pendingAction) {
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+    if (action) {
+        action();
     }
 }
 
@@ -294,8 +348,12 @@ void Editor::drawNewProjectModal() {
 
         ImGui::BeginDisabled(isEmpty);
         if ((ImGui::Button("Create") || submitted) && !isEmpty) {
-            std::string name = this->_textBuffer.data();
-            this->create(this->_newProjectPath, name);
+            this->confirmUnsaved(
+                this->_project && this->_project->isDirty(),
+                [this, path = this->_newProjectPath,
+                 name = std::string(this->_textBuffer.data())] {
+                    this->create(path, name);
+                });
             this->_textBuffer.fill('\0');
             this->_newProjectPath.clear();
             ImGui::CloseCurrentPopup();
@@ -371,7 +429,8 @@ void Editor::drawFileMenu() {
         this->buildProject();
     }
     if (ImGui::MenuItem("Quit")) {
-        this->_running = false;
+        this->confirmUnsaved(this->_project && this->_project->isDirty(),
+                             [this] { this->_running = false; });
     }
     ImGui::EndMenu();
 }

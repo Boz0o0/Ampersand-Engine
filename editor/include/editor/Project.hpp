@@ -72,6 +72,14 @@ public:
     static std::optional<Project> create(const std::filesystem::path& root,
                                          const std::string& name);
 
+    /**
+     * @brief Saves all dirty documents to disk.
+     *
+     * @return std::nullopt if all documents were saved successfully, otherwise
+     * the error message.
+     */
+    std::optional<std::string> build();
+
     /** @brief Absolute path of the game folder. */
     [[nodiscard]] const std::filesystem::path& getRoot() const { return _root; }
 
@@ -90,6 +98,16 @@ public:
 
     /** @brief The scene opened, if any. */
     [[nodiscard]] std::optional<Scene>& getScene() { return _scene; }
+
+    /** @brief Whether the opened scene changed since the last build. */
+    [[nodiscard]] bool isSceneDirty() const {
+        return _scene && _scene->document.dirty;
+    }
+
+    /** @brief Whether a document changed since the last build. */
+    [[nodiscard]] bool isDirty() const {
+        return _config.dirty || isSceneDirty();
+    }
 
     /** @brief Lists the project folders again from the disk. */
     void refreshFiles();
@@ -197,6 +215,11 @@ private:
     static std::vector<FileNode> listDirectory(
         const std::filesystem::path& root,
         const std::filesystem::path& relative);
+
+    /** @brief Writes document to root / document.path if dirty, then clears
+     * dirty. */
+    static std::optional<std::string> writeDocument(
+        const std::filesystem::path& root, Document& document);
 
     std::filesystem::path _root;
     Document _config;
