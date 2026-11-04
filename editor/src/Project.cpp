@@ -26,39 +26,75 @@ std::optional<Project> Project::open(const std::filesystem::path& root) {
 
 std::optional<Project> Project::create(const std::filesystem::path& root,
                                        const std::string& name) {
-    std::filesystem::create_directory(root / name);
-    std::filesystem::create_directories(root / name / "assets");
-    std::filesystem::create_directories(root / name / "scripts");
-    std::filesystem::create_directories(root / name / "world");
-    std::filesystem::create_directories(root / name / "world" / "scenes");
-    std::filesystem::create_directories(root / name / "world" / "prefabs");
-    std::ofstream config{root / name / kConfigPath};
-    std::ofstream defaultScene{root / name / "world" / "scenes" /
-                               "defaultScene.json"};
-    if (!config || !defaultScene) {
+    if (!isValidName(name)) {
         return std::nullopt;
     }
-    config << R"json({
-    "version": 2,
-    "gameRoot": ")json"
-           << (root / name).string() << R"json(",
-    "startScene": "defaultScene",
-    "scenes": {
-        "defaultScene": "world/scenes/defaultScene.json"
-    },
-    "resources": {}
+    const std::filesystem::path folder = root / name;
+    std::error_code error;
+    constexpr std::array<std::string_view, 4> kCreated{
+        "assets",
+        "scripts",
+        "world/prefabs",
+        kSceneFolder,
+    };
+    for (const std::string_view sub : kCreated) {
+        std::filesystem::create_directories(folder / sub, error);
+        if (error) {
+            return std::nullopt;
+        }
+    }
+    const std::string start = "defaultScene";
+    Document config{.path = kConfigPath, .data = {}};
+    config.data["version"] = kSceneVersion;
+    config.data["gameRoot"] = name + "/";
+    config.data["startScene"] = start;
+    config.data["scenes"][start] =
+        (std::filesystem::path(kSceneFolder) / (start + ".json"))
+            .generic_string();
+    config.data["resources"] = nlohmann::ordered_json::object();
+    Document scene{
+        .path = config.data["scenes"][start].get<std::string>(),
+        .data = emptyScene(start),
+    };
+    if (writeDocument(folder, config) || writeDocument(folder, scene)) {
+        return std::nullopt;
+    }
+    return open(folder);
 }
-)json";
-    config.close();
-    defaultScene << R"json({
-    "version": 2,
-    "name": "defaultScene",
-    "resources": {},
-    "entities": []
+
+bool Project::isValidName(std::string_view name) {
+    if (name.empty() || name == "." || name == "..") {
+        return false;
+    }
+    return std::ranges::none_of(name, [](char character) {
+        return character == '/' || character == '\\' || character == ':' ||
+               static_cast<unsigned char>(character) < ' ';
+    });
 }
-)json";
-    defaultScene.close();
-    return open(root / name);
+
+std::optional<std::string> Project::createScene(const std::string& name) {
+    if (!isValidName(name)) {
+        return "Invalid scene name '" + name + "'.";
+    }
+    Document scene{
+        .path = std::filesystem::path(kSceneFolder) / (name + ".json"),
+        .data = emptyScene(name),
+    };
+    if (std::filesystem::exists(this->_root / scene.path)) {
+        return "File already exists: " + (this->_root / scene.path).string();
+    }
+    auto error = writeDocument(this->_root, scene);
+    this->refreshFiles();
+    return error;
+}
+
+nlohmann::ordered_json Project::emptyScene(const std::string& name) {
+    nlohmann::ordered_json scene;
+    scene["version"] = kSceneVersion;
+    scene["name"] = name;
+    scene["resources"] = nlohmann::ordered_json::object();
+    scene["entities"] = nlohmann::ordered_json::array();
+    return scene;
 }
 
 std::optional<std::string> Project::build() {

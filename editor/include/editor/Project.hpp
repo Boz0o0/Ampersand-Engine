@@ -73,6 +73,19 @@ public:
                                          const std::string& name);
 
     /**
+     * @brief Whether name can be used as a single file or folder name: not
+     * empty, not "." or "..", and without separator or control character.
+     */
+    static bool isValidName(std::string_view name);
+
+    /**
+     * @brief Creates an empty scene at world/scenes/<name>.json.
+     *
+     * @return std::nullopt on success, otherwise the error message.
+     */
+    std::optional<std::string> createScene(const std::string& name);
+
+    /**
      * @brief Saves all dirty documents to disk.
      *
      * @return std::nullopt if all documents were saved successfully, otherwise
@@ -206,6 +219,12 @@ private:
     /** @brief Folders shown in the Files panel, relative to the root. */
     static constexpr std::array<std::string_view, 3> kFolders{
         "assets", "scripts", "world"};
+
+    /** @brief Folder of the scenes, relative to the root. */
+    static constexpr std::string_view kSceneFolder{"world/scenes"};
+
+    /** @brief Data of an empty scene named name. */
+    static nlohmann::ordered_json emptyScene(const std::string& name);
 
     /** @brief Reads a JSON object, or std::nullopt if it can't. */
     static std::optional<nlohmann::ordered_json> readJson(

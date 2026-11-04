@@ -92,7 +92,7 @@ components and resources. It is off by default:
 ```sh
 cmake -B build -DAMPERSAND_BUILD_EDITOR=ON
 cmake --build build --target ampersand_editor_app --parallel
-./build/editor/ampersand_editor [game folder]
+./build/editor/src/ampersand_editor [game folder]
 ```
 
 See [Editor](https://boz0o0.github.io/Ampersand-Engine/editor/).

@@ -15,7 +15,7 @@ The editor is off by default. It needs the render and scene modules:
 ```sh
 cmake -B build -DAMPERSAND_BUILD_EDITOR=ON
 cmake --build build --target ampersand_editor_app --parallel
-./build/editor/ampersand_editor [game folder]
+./build/editor/src/ampersand_editor [game folder]
 ```
 
 ImGui (docking branch), ImGui-SFML and

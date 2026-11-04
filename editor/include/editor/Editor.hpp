@@ -93,9 +93,6 @@ private:
     /** @brief Text colour of the errors shown in a panel. */
     static constexpr ImVec4 kErrorColor{1.0F, 0.40F, 0.40F, 1.0F};
 
-    /** @brief Scenes folder relative path. */
-    static inline const std::string kSceneFolder{"./world/scenes/"};
-
     /** @brief Drag and drop payload of a project file: its relative path. */
     static inline const std::string kAssetPayload{"ASSET_PATH"};
 

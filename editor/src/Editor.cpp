@@ -76,6 +76,10 @@ void Editor::open(const std::string& path) {
 }
 
 void Editor::create(const std::string& path, const std::string& name) {
+    if (!Project::isValidName(name)) {
+        this->_error = "Invalid project name '" + name + "'.";
+        return;
+    }
     if (std::filesystem::exists(path + "/" + name) &&
         !std::filesystem::is_empty(path + "/" + name) &&
         std::filesystem::is_directory(path + "/" + name)) {
@@ -150,28 +154,9 @@ void Editor::createNewScene(const std::string& name) {
     if (this->_project == std::nullopt) {
         return;
     }
-    std::string realPath = this->_project->getRoot().string() + "/" +
-                           kSceneFolder + name + ".json";
-    if (std::filesystem::exists(realPath)) {
-        this->_error = "File already exists: " + realPath;
-        return;
+    if (auto error = this->_project->createScene(name)) {
+        this->_error = std::move(*error);
     }
-    std::ofstream newSceneFile(realPath);
-    newSceneFile << R"json({
-    "version": 2,
-    "name": ")json"
-                 << name << R"json(",
-    "resources": {},
-    "entities": []
-}
-)json";
-    if (!newSceneFile) {
-        this->_error = "Could not create scene file: " + realPath;
-        return;
-    }
-    newSceneFile.close();
-
-    this->_project->refreshFiles();
 }
 
 bool Editor::buildProject() {
