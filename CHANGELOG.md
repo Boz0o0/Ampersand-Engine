@@ -41,7 +41,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Scripting**: `getWorldTransform(entity)`, a copy of the transform in the world. `getBounds` uses the world transform.
 - **Scene**: `Rectangle`, `Circle` and `Line` components in the scenes and prefabs. A negative `size`, `radius` or `outlineThickness` throws.
 - **Scripting**: the `Rectangle`, `Circle` and `Line` types, with `getRectangle`, `hasRectangle`, `getCircle`, `hasCircle`, `getLine` and `hasLine`.
-- **Editor**: new ImGui editor (`AMPERSAND_BUILD_EDITOR`, off by default) for the JSON files of a game folder: open or create a project, Files panel, Hierarchy of the opened scene (create, duplicate, delete, rename, re-parent by drag and drop), Inspector of the configuration and scene resources and of the entity components, with the prefab overrides. See [Editor](https://boz0o0.github.io/Ampersand-Engine/editor/).
+- **Editor**: new ImGui editor (`AMPERSAND_BUILD_EDITOR`, off by default) for the JSON files of a game folder: open or create a project, Files panel, Hierarchy of the opened scene (create, duplicate, delete, rename, re-parent by drag and drop), Inspector of the configuration (start scene, scenes, resources), of the scene resources and of the entity components, with the prefab overrides. See [Editor](https://boz0o0.github.io/Ampersand-Engine/editor/).
 - **Editor**: **Build** (`Ctrl+B`) writes the changed files, and a modal asks to build or discard the unsaved changes before quitting, opening a project or opening another scene.
 - **Tests**: unit tests of `compose`, of `worldTransform` (three levels, parent without `Transform`), of the collision of a child and of `getWorldTransform`.
 

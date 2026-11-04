@@ -126,10 +126,11 @@ private:
 
     /**
      * @brief Keys of the strings holding a project file path ("scripts" for
-     * the items of the array of the Scripts component).
+     * the items of the array of the Scripts component, "scenes" for the
+     * entries of the scenes of the configuration).
      */
-    static constexpr std::array<std::string_view, 6> kAssetKeys{
-        "texture", "font", "sound", "music", "path", "scripts"};
+    static constexpr std::array<std::string_view, 7> kAssetKeys{
+        "texture", "font", "sound", "music", "path", "scripts", "scenes"};
 
     /** @brief Shown in a choice combo for a null value. */
     static constexpr std::string_view kNoChoice{"(none)"};
@@ -388,6 +389,26 @@ private:
     /** @brief Draw the inspector of the World, scene resources or entity. */
     static void drawSelectionInspector(Project& project,
                                        const Selection& selection);
+
+    /**
+     * @brief Edit the startScene and scenes (name to file path) of the
+     * configuration. Renaming the start scene renames startScene too.
+     */
+    static bool editConfigScenes(nlohmann::ordered_json& config);
+
+    /**
+     * @brief Combo of the scene names for startScene, with an error if it is
+     * not one of them (the engine refuses to load it).
+     */
+    static bool editStartScene(nlohmann::ordered_json& config);
+
+    /**
+     * @brief If the scene named startScene was renamed from before to after,
+     * set startScene to its new name.
+     */
+    static void followStartScene(nlohmann::ordered_json& config,
+                                 const nlohmann::ordered_json& before,
+                                 const nlohmann::ordered_json& after);
 
     /**
      * @brief Draw the inspector of a scene entity: its name, persistent flag

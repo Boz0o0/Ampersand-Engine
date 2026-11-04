@@ -37,8 +37,8 @@ object. The editor shows its `assets/`, `scripts/` and `world/` folders.
 | Quit           | -        | closes the editor                                                                                      |
 
 A new scene is **not** added to the `scenes` of `config.json`: a folder can
-hold scenes the game does not use. Add it there for `SceneManager::loadScene`
-to find it.
+hold scenes the game does not use. Add it in the **World** inspector for
+`SceneManager::loadScene` to find it (see [Inspector](#inspector)).
 
 The layout of the panels is saved per project, in `<game folder>/imgui.ini`.
 
@@ -79,7 +79,7 @@ are greyed out: they are not in the scene file, so they cannot be selected.
 
 | Selection       | What can be edited                                                                     |
 | --------------- | -------------------------------------------------------------------------------------- |
-| World           | the `resources` of `config.json`, including the ones only allowed there (`Renderer`...) |
+| World           | the `startScene`, `scenes` and `resources` of `config.json`, including the resources only allowed there (`Renderer`...) |
 | Scene resources | the `resources` of the scene                                                           |
 | Entity          | its name, `persistent` (root entities only) and its components                         |
 
@@ -94,6 +94,13 @@ On a prefab instance, the components are shown merged with the prefab. The
 fields that differ from the prefab are shown in orange, with a button to go
 back to the value of the prefab, and only these fields are written to the
 scene (like the overrides of a Unity prefab).
+
+In the **World**, **Scenes** lists the scenes of the game, by name: **+**
+adds one, **-** removes one, and each has a name and a file path (drop a scene
+file from Files on it). **Start scene** picks the scene loaded first among
+them; it is shown in red when it is not one of the scenes, since the engine
+refuses to load the configuration then. Renaming the start scene in
+**Scenes** renames it in **Start scene** too.
 
 ## Build
 
@@ -127,5 +134,4 @@ not need a build first. If the build fails, the action is not done.
 - No undo.
 - No game view: the Viewport is empty, and the game must be run on its own.
 - Prefab files cannot be edited.
-- Only the `resources` of `config.json` can be edited (not `startScene` or
-  `scenes`).
+- `gameRoot` cannot be edited.

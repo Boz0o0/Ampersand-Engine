@@ -454,6 +454,9 @@ void Editor::drawSelectionInspector(Project& project,
     if (selection.pointer.empty()) {
         ImGui::SeparatorText("World");
         Document& config = project.getConfig();
+        if (editConfigScenes(config.data)) {
+            config.dirty = true;
+        }
         if (editTypedMap(config.data, "resources", resources)) {
             config.dirty = true;
         }
@@ -472,6 +475,70 @@ void Editor::drawSelectionInspector(Project& project,
         return;
     }
     drawEntityInspector(project, scene->document, selection.pointer);
+}
+
+bool Editor::editConfigScenes(nlohmann::ordered_json& config) {
+    bool changed = editStartScene(config);
+    nlohmann::ordered_json scenes =
+        config.value("scenes", nlohmann::ordered_json::object());
+    if (!scenes.is_object()) {
+        scenes = nlohmann::ordered_json::object();
+    }
+    const nlohmann::ordered_json before = scenes;
+    if (editMap("Scenes", scenes, "scenes")) {
+        followStartScene(config, before, scenes);
+        config["scenes"] = std::move(scenes);
+        changed = true;
+    }
+    return changed;
+}
+
+bool Editor::editStartScene(nlohmann::ordered_json& config) {
+    const auto found = config.find("startScene");
+    const std::string current = found != config.end() && found->is_string()
+                                    ? found->get<std::string>()
+                                    : std::string();
+    const auto scenes = config.find("scenes");
+    const bool known = scenes != config.end() && scenes->is_object() &&
+                       scenes->contains(current);
+    bool changed = false;
+    if (ImGui::BeginCombo("Start scene", current.c_str())) {
+        if (scenes != config.end() && scenes->is_object()) {
+            for (const auto& item : scenes->items()) {
+                if (ImGui::Selectable(item.key().c_str(),
+                                      item.key() == current)) {
+                    config["startScene"] = item.key();
+                    changed = true;
+                }
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (!known) {
+        ImGui::TextColored(kErrorColor, "The start scene must be a scene.");
+    }
+    return changed;
+}
+
+void Editor::followStartScene(nlohmann::ordered_json& config,
+                              const nlohmann::ordered_json& before,
+                              const nlohmann::ordered_json& after) {
+    const auto start = config.find("startScene");
+    if (start == config.end() || !start->is_string()) {
+        return;
+    }
+    const std::string name = start->get<std::string>();
+    if (after.contains(name) || before.size() != after.size()) {
+        return;
+    }
+    auto renamed = after.begin();
+    for (auto scene = before.begin(); scene != before.end();
+         ++scene, ++renamed) {
+        if (scene.key() == name) {
+            *start = renamed.key();
+            return;
+        }
+    }
 }
 
 void Editor::drawEntityInspector(Project& project, Document& document,

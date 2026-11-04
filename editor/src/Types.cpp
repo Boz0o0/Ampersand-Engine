@@ -27,6 +27,7 @@ const TypeTable& TypeTable::get() {
 }
 
 TypeTable::TypeTable() {
+    this->_fields["scenes"].entryDefault = std::string();
     this->addCore();
     this->addRender();
     this->addPhysics();
