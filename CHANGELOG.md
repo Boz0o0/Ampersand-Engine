@@ -26,6 +26,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-04
+
 ### Changed
 
 - **Core**: the `Transform` of a child is now **local**, relative to its parent (like in Unity): moving, turning or scaling the parent moves its children. It was in world space before, so games that moved the children by hand must stop doing it.
@@ -149,7 +151,8 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.1...v0.4.2
