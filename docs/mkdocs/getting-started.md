@@ -43,6 +43,9 @@ cmake -B build -DAMPERSAND_MODULE_RENDER=OFF -DAMPERSAND_MODULE_AUDIO=OFF
 an error if one is missing. The list of the modules and their options is in
 [Modules](architecture/modules.md).
 
+The [editor](editor.md) is off by default: add `-DAMPERSAND_BUILD_EDITOR=ON`
+(it needs `render` and `scene`).
+
 ## Using the engine in a game
 
 Get the engine with
