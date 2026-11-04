@@ -53,7 +53,7 @@ game
 | Folder              | What it holds                                                                          |
 | ------------------- | -------------------------------------------------------------------------------------- |
 | `assets/`           | the textures, fonts, sounds and music used by the components and resources             |
-| `scripts/`          | the Lua scripts of the game (not read by the engine yet)                               |
+| `scripts/`          | the Lua scripts of the game, run by the [scripting module](scripting.md)               |
 | `world/`            | the JSON files read by the `SceneManager`                                              |
 | `world/config.json` | the [configuration](#files), opened with `loadConfig(world, "game/world/config.json")` |
 | `world/prefabs/`    | the [prefabs](#prefabs), one entity per file                                           |
@@ -290,6 +290,9 @@ the resource is already there.
 
 `loadScene` destroys entities: call it outside the loops over `owners<T>()` or
 `children(e)` (between two `scheduler.update`, as in the example).
+
+With the scripting module, `bindScripting(scripting, world)` gives the scripts
+`instantiate` and `loadScene`, see [Scripting](scripting.md#scenes-and-prefabs).
 
 ## Persistent entities
 

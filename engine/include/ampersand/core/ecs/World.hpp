@@ -65,6 +65,13 @@ public:
     [[nodiscard]] bool alive(Entity entity) const;
 
     /**
+     * @brief Counts the live entities.
+     *
+     * @return Number of entities created and not destroyed yet.
+     */
+    [[nodiscard]] std::uint32_t entityCount() const;
+
+    /**
      * @brief Makes an entity the child of another one, or a root.
      *
      * Removes the child from the children of its old parent and adds it to

@@ -4,8 +4,11 @@
 #include <ampersand/core/ecs/EventQueue.hpp>
 #include <ampersand/core/ecs/ISystem.hpp>
 #include <ampersand/core/ecs/World.hpp>
+#include <chrono>
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -15,6 +18,8 @@ namespace ampersand::core::ecs {
  * @brief Runs the systems of a World in the order they were added, one frame
  * at a time, keeps the Clock resource up to date, then applies the
  * CommandQueue and empties the event queues at the end of each frame.
+ *
+ * If the World has a Stats resource, it also fills it after each frame.
  *
  * The World must outlive the Scheduler.
  */
@@ -68,7 +73,8 @@ public:
     /**
      * @brief Runs one frame: sets the Clock (dt = deltaTime, elapsed +=
      * deltaTime), runs every system in order, applies the CommandQueue, then
-     * empties the event queues.
+     * empties the event queues. Fills the Stats resource last, if the World
+     * has one.
      *
      * An exception thrown by a system stops the frame and goes to the caller:
      * the CommandQueue is not applied and the event queues are not emptied.
@@ -79,10 +85,25 @@ public:
     void update(float deltaTime);
 
 private:
+    using TimePoint = std::chrono::steady_clock::time_point;
+
+    /**
+     * @brief Fills the Stats resource with the frame that started at start.
+     *
+     * @param start Time at which the frame started.
+     */
+    void recordStats(TimePoint start);
+
     World& _world;
     std::vector<std::unique_ptr<ISystem>> _systems;
     /** @brief Work done after the systems, at the end of each frame. */
     std::vector<std::function<void(World&)>> _endOfFrame;
+    /** @brief Start of the previous frame, none before the first one. */
+    std::optional<TimePoint> _previousStart;
+    /** @brief Milliseconds counted since the last Stats fps. */
+    float _fpsMs{};
+    /** @brief Frames counted since the last Stats fps. */
+    std::uint32_t _fpsFrames{};
 };
 
 }  // namespace ampersand::core::ecs

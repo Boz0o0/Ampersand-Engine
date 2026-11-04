@@ -30,6 +30,16 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 - **Build**: the engine files moved to `engine/` (`engine/include/`, `engine/src/`, `engine/tests/`) and the editor to `editor/`. Games that include the engine with CMake do not need to change anything.
 - **Build**: `AMPERSAND_BUILD_TESTS` is replaced by `AMPERSAND_ENGINE_BUILD_TESTS` and `AMPERSAND_EDITOR_BUILD_TESTS`.
+
+### Added
+
+- **Editor**: new ImGui editor (`AMPERSAND_BUILD_EDITOR`, off by default) for the JSON files of a game folder: open or create a project, Files panel, Hierarchy of the opened scene (create, duplicate, delete, rename, re-parent by drag and drop), Inspector of the configuration (start scene, scenes, resources), of the scene resources and of the entity components, with the prefab overrides. See [Editor](https://boz0o0.github.io/Ampersand-Engine/editor/).
+- **Editor**: **Build** (`Ctrl+B`) writes the changed files, and a modal asks to build or discard the unsaved changes before quitting, opening a project or opening another scene.
+
+## [0.6.0] - 2026-11-04
+
+### Changed
+
 - **Core**: the `Transform` of a child is now **local**, relative to its parent (like in Unity): moving, turning or scaling the parent moves its children. It was in world space before, so games that moved the children by hand must stop doing it.
 - **Render**, **Physics**: the `RenderSystem` draws and the `CollisionSystem` compares each entity at its world transform (its `Transform` composed with its parents'). The `MovementSystem` still moves the local `Transform`.
 - **Render**: the fields `start` and `end` of `Line` are renamed `from` and `to` (local points of its `Transform`). Games that build or read a `Line` must use the new names.
@@ -43,9 +53,12 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Scripting**: `getWorldTransform(entity)`, a copy of the transform in the world. `getBounds` uses the world transform.
 - **Scene**: `Rectangle`, `Circle` and `Line` components in the scenes and prefabs. A negative `size`, `radius` or `outlineThickness` throws.
 - **Scripting**: the `Rectangle`, `Circle` and `Line` types, with `getRectangle`, `hasRectangle`, `getCircle`, `hasCircle`, `getLine` and `hasLine`.
-- **Editor**: new ImGui editor (`AMPERSAND_BUILD_EDITOR`, off by default) for the JSON files of a game folder: open or create a project, Files panel, Hierarchy of the opened scene (create, duplicate, delete, rename, re-parent by drag and drop), Inspector of the configuration (start scene, scenes, resources), of the scene resources and of the entity components, with the prefab overrides. See [Editor](https://boz0o0.github.io/Ampersand-Engine/editor/).
-- **Editor**: **Build** (`Ctrl+B`) writes the changed files, and a modal asks to build or discard the unsaved changes before quitting, opening a project or opening another scene.
 - **Tests**: unit tests of `compose`, of `worldTransform` (three levels, parent without `Transform`), of the collision of a child and of `getWorldTransform`.
+- **Core**: `Stats` resource, filled by the `Scheduler` at the end of each `update` if the World has it: `frameMs`, `updateMs`, `fps`, `entities`, the `history` of the last 120 frame times, and `values` for the metrics of the game.
+- **Core**: `World::entityCount()`, the number of live entities.
+- **Tests**: unit tests of `World::entityCount()` and of the `Stats` filled by the `Scheduler`.
+- **Scene**: `SceneManager::bindScripting(scripting, world)`, which gives the Lua scripts `instantiate(path)` (creates a prefab now and returns its entity) and `loadScene(name)` (loads a scene at the end of the update of the `ScriptingSystem`).
+- **Tests**: unit tests of `instantiate` and `loadScene`.
 
 ## [0.5.1] - 2026-10-28
 
@@ -148,7 +161,8 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.1...v0.4.2

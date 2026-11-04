@@ -87,11 +87,12 @@ graph TD
 
 ## Entities
 
-| Call         | Effect                                                                                          | Throws               |
-| ------------ | ----------------------------------------------------------------------------------------------- | -------------------- |
-| `create()`   | new entity, with no component                                                                   | `EntityLimitReached` |
-| `destroy(e)` | removes all its components, frees its row, then destroys its children ([Hierarchy](#hierarchy)) | `InvalidEntity`      |
-| `alive(e)`   | `true` if the handle still designates a live entity                                             | never                |
+| Call            | Effect                                                                                          | Throws               |
+| --------------- | ----------------------------------------------------------------------------------------------- | -------------------- |
+| `create()`      | new entity, with no component                                                                   | `EntityLimitReached` |
+| `destroy(e)`    | removes all its components, frees its row, then destroys its children ([Hierarchy](#hierarchy)) | `InvalidEntity`      |
+| `alive(e)`      | `true` if the handle still designates a live entity                                             | never                |
+| `entityCount()` | number of live entities                                                                         | never                |
 
 ### The handle
 
@@ -287,6 +288,9 @@ time given to `update`, and `elapsed` grows by `dt`.
 
 The order matters: a system sees what the systems before it did in the same
 frame (move, then test the collisions, then apply the damage).
+
+If the World has a `Stats` resource, the Scheduler fills it at the end of each
+`update` (frames per second, time of the frame...), see [Stats](stats.md).
 
 ```cpp
 ecs::Scheduler scheduler(world);  // the World must outlive the Scheduler

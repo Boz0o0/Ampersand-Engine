@@ -27,6 +27,21 @@ void SceneManager::registerScripting() {
                const json& data) { loadScripts(world, entity, data); });
 }
 
+void SceneManager::bindScripting(scripting::ScriptingSystem& scripting,
+                                 core::ecs::World& world) {
+    scripting.lua().set_function("instantiate",
+                                 [this, &world](const std::string& path) {
+                                     return instantiate(world, path);
+                                 });
+    scripting.lua().set_function(
+        "loadScene", [this, &scripting](std::string name) {
+            scripting.defer(
+                [this, name = std::move(name)](core::ecs::World& world) {
+                    loadScene(world, name);
+                });
+        });
+}
+
 }  // namespace ampersand::scene
 
 #endif

@@ -153,4 +153,8 @@ bool World::alive(Entity entity) const {
            _versions[entity.index] == entity.version;
 }
 
+std::uint32_t World::entityCount() const {
+    return static_cast<std::uint32_t>(_versions.size() - _free.size());
+}
+
 }  // namespace ampersand::core::ecs
