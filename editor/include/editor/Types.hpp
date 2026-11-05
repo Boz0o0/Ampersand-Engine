@@ -54,10 +54,10 @@ public:
         return _resources;
     }
 
-    /** @brief Default JSON of the component type name, or {} if unknown. */
     /** @brief What is known of the fields named key, or nothing if unknown. */
     [[nodiscard]] const FieldInfo& getField(std::string_view key) const;
 
+    /** @brief Default JSON of the component type name, or {} if unknown. */
     [[nodiscard]] nlohmann::ordered_json getComponentDefaults(
         std::string_view name) const;
 

@@ -23,6 +23,10 @@ ImGui (docking branch), ImGui-SFML and
 are downloaded by CMake. Without an argument, the editor starts empty: open or
 create a project from the **File** menu.
 
+The unit tests of the editor (`test_editor`, the non-GUI part: projects,
+scenes, entities, prefabs) are built with it and run by `ctest`
+(`AMPERSAND_EDITOR_BUILD_TESTS`, on when the engine is the top-level project).
+
 ## Projects
 
 A project is a game folder with a readable `world/config.json` holding a JSON
@@ -35,6 +39,28 @@ object. The editor shows its `assets/`, `scripts/` and `world/` folders.
 | New Scene      | `Ctrl+N` | creates `world/scenes/<name>.json`, empty                                                              |
 | Build          | `Ctrl+B` | writes the changed files to the disk                                                                   |
 | Quit           | -        | closes the editor                                                                                      |
+
+**Create project** makes:
+
+```
+<name>/
+├── assets/
+├── scripts/
+└── world/
+    ├── config.json        # gameRoot "<name>/", startScene "defaultScene"
+    ├── prefabs/
+    └── scenes/
+        └── defaultScene.json
+```
+
+`gameRoot` is relative (`"<name>/"`), so the game must be run from the parent
+folder of the project, like `"game/"` for the R-Type. The files are written
+with nlohmann/json, so any name or path is escaped.
+
+A project or scene name must be a single file name: an empty name, `.`, `..`,
+or a name with `/`, `\`, `:` or a control character is refused with an error,
+so a scene is always written in `world/scenes/`. Creating a scene that already
+exists is refused too.
 
 A new scene is **not** added to the `scenes` of `config.json`: a folder can
 hold scenes the game does not use. Add it in the **World** inspector for
@@ -134,4 +160,4 @@ not need a build first. If the build fails, the action is not done.
 - No undo.
 - No game view: the Viewport is empty, and the game must be run on its own.
 - Prefab files cannot be edited.
-- `gameRoot` cannot be edited.
+- `gameRoot` cannot be edited: it stays `"<name>/"`, set by **Create project**.
