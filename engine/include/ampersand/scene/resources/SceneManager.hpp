@@ -37,9 +37,9 @@ enum class ResourceScope : std::uint8_t {
  * The engine types (resources such as Camera or Renderer, components such as
  * Transform or Sprite) are registered on construction, for the enabled
  * modules (src/scene/loaders). The game only registers its own types with
- * registerResource and registerComponent. Renderer, AudioListener and
- * InputManager are only allowed in the configuration (ResourceScope::Config):
- * the systems using them need them in every scene.
+ * registerResource and registerComponent. Renderer, AudioListener,
+ * InputManager and Stats are only allowed in the configuration
+ * (ResourceScope::Config): the systems using them need them in every scene.
  *
  * Configuration format: {"version", "gameRoot", "startScene", "scenes":
  * {name: path}, "resources": {...}}. Scene format: {"version", "resources":
@@ -330,6 +330,13 @@ private:
      * enabled modules.
      */
     void registerBuiltins();
+
+    /**
+     * @brief Adds the Stats resource, which turns the measures of the
+     * Scheduler on. Its fields are filled by the Scheduler, so the block must
+     * be an empty object ("Stats": {}).
+     */
+    static void loadStats(core::ecs::World& world, const json& data);
 
 #ifdef AMPERSAND_MODULE_RENDER
     /**

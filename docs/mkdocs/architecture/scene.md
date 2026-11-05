@@ -340,6 +340,7 @@ modules that are built. The values use these formats, every field mandatory:
 | `InputManager`  | input   | `axes` (name → `Axis`) and `buttons` (name → list of bindings), both optional               |
 | `AudioListener` | audio   | `"backend": "sfml"`, `volume` (optional, 100)                                               |
 | `SceneMusic`    | audio   | `music` (a path), `volume`, `loop`, `playing` (optional: 100, `true`, `false`)              |
+| `Stats`         | core    | none, `{}`: turns the [Stats](stats.md) on, filled by the `Scheduler`                       |
 
 An `Axis` has `positive`, `negative` (bindings), `joystick` (a `JoystickAxis`
 name such as `"X"`, or `null`; an unknown name throws), `dead` and
@@ -367,9 +368,9 @@ A `Sprite` or `Text` needs the `Renderer` (a `Rectangle`, `Circle` or `Line`
 does not: it has no asset to load), and an `AudioSource` or `SceneMusic`
 needs the `AudioListener`.
 
-`Renderer`, `InputManager` and `AudioListener` are only allowed in the
+`Renderer`, `InputManager`, `AudioListener` and `Stats` are only allowed in the
 `resources` of the **configuration** (`ResourceScope::Config`): the
-`RenderSystem`, `InputSystem` and `AudioSystem` need them in every scene. A scene giving one fails before anything is unloaded:
+`RenderSystem`, `InputSystem`, `AudioSystem` and `Scheduler` need them in every scene. A scene giving one fails before anything is unloaded:
 
 ```text
 Failed to load scene 'level1': Resource 'Renderer' is only allowed in the configuration

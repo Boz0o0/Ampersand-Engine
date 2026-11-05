@@ -41,6 +41,11 @@ void TypeTable::addCore() {
         .name = "Transform",
         .defaults = toJson(core::Transform{}),
     });
+    this->_resources.push_back({
+        .name = "Stats",
+        .defaults = nlohmann::ordered_json::object(),
+        .configOnly = true,
+    });
 }
 
 void TypeTable::addRender() {
