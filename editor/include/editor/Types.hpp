@@ -32,8 +32,8 @@ struct FieldInfo {
     nlohmann::ordered_json entryDefault;  // Object of free keys (a map): the
                                           // value of a new entry; null if not
     nlohmann::ordered_json itemDefault;   // Array: value of a new item, or null
-    std::vector<std::string> choices;  // Allowed names of a string field, null
-                                       // meaning none; empty if any string
+    std::vector<std::string> choices;     // Allowed names of a string field (or
+                                          // null); empty if any string
 };
 
 /**

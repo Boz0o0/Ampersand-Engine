@@ -243,8 +243,8 @@ private:
         const std::filesystem::path& root,
         const std::filesystem::path& relative);
 
-    /** @brief Writes document to root / document.path if dirty, then clears
-     * dirty. */
+    /** @brief Writes document to root / document.path, dirty or not, then
+     * clears dirty. */
     static std::optional<std::string> writeDocument(
         const std::filesystem::path& root, Document& document);
 

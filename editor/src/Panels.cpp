@@ -132,8 +132,9 @@ void Editor::drawEntity(nlohmann::ordered_json& entity,
     };
     const std::size_t index = std::stoul(pointer.back());
     const bool prefab = entity.contains("prefab");
+    std::vector<std::string> chain;
     const ImGuiTreeNodeFlags flags =
-        treeFlags(!this->hasChildren(entity, {}), this->_selection == item);
+        treeFlags(!this->hasChildren(entity, chain), this->_selection == item);
 
     ImGui::PushID(static_cast<int>(index));
     if (prefab) {
@@ -150,7 +151,6 @@ void Editor::drawEntity(nlohmann::ordered_json& entity,
     this->drawEntityMenu(pointer);
     this->drawEntityDragDrop(pointer);
     if (open) {
-        std::vector<std::string> chain;
         this->drawPrefabChildren(entity, chain);
         auto children = entity.find("children");
         if (children != entity.end() && children->is_array()) {
@@ -385,7 +385,7 @@ void Editor::drawPrefabEntity(const nlohmann::ordered_json& entity,
 }
 
 bool Editor::hasChildren(const nlohmann::ordered_json& entity,
-                         std::vector<std::string> chain) {
+                         std::vector<std::string>& chain) {
     const auto children = entity.find("children");
     if (children != entity.end() && children->is_array() &&
         !children->empty()) {
@@ -405,7 +405,10 @@ bool Editor::hasChildren(const nlohmann::ordered_json& entity,
         return false;
     }
     chain.push_back(path);
-    return this->hasChildren(this->_project->getPrefab(path), chain);
+    const bool result =
+        this->hasChildren(this->_project->getPrefab(path), chain);
+    chain.pop_back();
+    return result;
 }
 
 std::string Editor::entityLabel(const nlohmann::ordered_json& entity,

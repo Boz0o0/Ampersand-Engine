@@ -89,9 +89,8 @@ void Editor::create(const std::string& path, const std::string& name) {
     }
     std::optional<Project> newProject = Project::create(path, name);
     if (newProject == std::nullopt) {
-        this->_error = "'" + path + "' is not a project: " +
-                       std::string(Project::kConfigPath) +
-                       " is missing or is not a JSON object.";
+        this->_error = "Failed to create project '" + name + "' in '" + path +
+                       "': its folders or files could not be written.";
         return;
     }
     this->switchLayout(*newProject);
@@ -108,8 +107,9 @@ void Editor::openScene(const std::filesystem::path& relative) {
         this->_selection.reset();
     } else {
         this->_error = "'" + relative.generic_string() +
-                       "' is not a scene: it needs \"version\": 2 and an "
-                       "\"entities\" array, and must not be a prefab.";
+                       "' is not a scene: it needs \"version\": 2 and "
+                       "\"entities\" (an array or null), and must not be a "
+                       "prefab.";
     }
 }
 

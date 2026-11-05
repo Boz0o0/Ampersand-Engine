@@ -263,9 +263,12 @@ private:
     void drawPrefabEntity(const nlohmann::ordered_json& entity,
                           std::size_t index, std::vector<std::string>& chain);
 
-    /** @brief Whether the entity has children once its prefab is resolved. */
+    /**
+     * @brief Whether the entity has children once its prefab is resolved.
+     * chain holds the prefabs being resolved, as in drawPrefabChildren.
+     */
     bool hasChildren(const nlohmann::ordered_json& entity,
-                     std::vector<std::string> chain);
+                     std::vector<std::string>& chain);
 
     /**
      * @brief Label of an entity: its name, its prefab's name, or "Entity N"
@@ -466,7 +469,7 @@ private:
     std::string _newProjectPath{};
     std::optional<HierarchyAction> _hierarchyAction;
     Pointer _renaming;
-    std::array<char, 256> _textBuffer{};
+    std::array<char, kTextSize> _textBuffer{};  // Rename and new modals
     std::string _iniPath;
     std::string _error;
     std::string _info;
