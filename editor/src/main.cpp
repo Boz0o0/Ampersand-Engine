@@ -7,11 +7,13 @@ int main(int argc, const char** argv) {
         return 84;
     }
     try {
-        ampersand::editor::Editor gui = argc == 2
-                                            ? ampersand::editor::Editor(argv[1])
-                                            : ampersand::editor::Editor();
-
-        gui.run();
+        if (argc == 2) {
+            ampersand::editor::Editor gui(argv[1]);
+            gui.run();
+        } else {
+            ampersand::editor::Editor gui;
+            gui.run();
+        }
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         return 84;

@@ -19,7 +19,7 @@ std::optional<Project> Project::open(const std::filesystem::path& root) {
         return std::nullopt;
     }
     Project project;
-    project._root = root;
+    project._root = absolute;
     project._config = {.path = kConfigPath, .data = std::move(*config)};
     project.refreshFiles();
     return project;
