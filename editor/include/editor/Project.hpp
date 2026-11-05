@@ -73,8 +73,10 @@ public:
                                          const std::string& name);
 
     /**
-     * @brief Whether name can be used as a single file or folder name: not
-     * empty, not "." or "..", and without separator or control character.
+     * @brief Whether name can be used as a single file or folder name on
+     * every platform: not empty, without < > : " / \\ | ? * or control
+     * character, not ending with a space or a dot (so not "." or ".."), and
+     * not a Windows device name (CON, PRN, AUX, NUL, COM1-9, LPT1-9).
      */
     static bool isValidName(std::string_view name);
 
@@ -219,6 +221,12 @@ private:
     /** @brief Folders shown in the Files panel, relative to the root. */
     static constexpr std::array<std::string_view, 3> kFolders{
         "assets", "scripts", "world"};
+
+    /**
+     * @brief Whether name, before its first dot and in any case, is a Windows
+     * device name (CON, PRN, AUX, NUL, COM1-9, LPT1-9).
+     */
+    static bool isReservedName(std::string_view name);
 
     /** @brief Folder of the scenes, relative to the root. */
     static constexpr std::string_view kSceneFolder{"world/scenes"};

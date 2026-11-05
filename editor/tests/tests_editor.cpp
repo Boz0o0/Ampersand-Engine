@@ -87,7 +87,8 @@ TEST(ProjectNameTest, AcceptsPlainNames) {
     EXPECT_TRUE(Project::isValidName("level1"));
     EXPECT_TRUE(Project::isValidName("My Game"));
     EXPECT_TRUE(Project::isValidName("a.b"));
-    EXPECT_TRUE(Project::isValidName("quote\"d"));
+    EXPECT_TRUE(Project::isValidName("console"));
+    EXPECT_TRUE(Project::isValidName("COM0"));
 }
 
 TEST(ProjectNameTest, RefusesPathsAndEmptyNames) {
@@ -99,6 +100,20 @@ TEST(ProjectNameTest, RefusesPathsAndEmptyNames) {
     EXPECT_FALSE(Project::isValidName("a\\b"));
     EXPECT_FALSE(Project::isValidName("C:"));
     EXPECT_FALSE(Project::isValidName("new\nline"));
+}
+
+TEST(ProjectNameTest, RefusesTheNamesWindowsRefuses) {
+    EXPECT_FALSE(Project::isValidName("quote\"d"));
+    EXPECT_FALSE(Project::isValidName("a<b"));
+    EXPECT_FALSE(Project::isValidName("a|b"));
+    EXPECT_FALSE(Project::isValidName("why?"));
+    EXPECT_FALSE(Project::isValidName("star*"));
+    EXPECT_FALSE(Project::isValidName("trailing "));
+    EXPECT_FALSE(Project::isValidName("trailing."));
+    EXPECT_FALSE(Project::isValidName("con"));
+    EXPECT_FALSE(Project::isValidName("NUL.txt"));
+    EXPECT_FALSE(Project::isValidName("Com1"));
+    EXPECT_FALSE(Project::isValidName("LPT9"));
 }
 
 TEST_F(ProjectTest, CreateWritesTheFolders) {
@@ -125,11 +140,11 @@ TEST_F(ProjectTest, CreateWritesTheDefaultScene) {
     EXPECT_FALSE(project().isDirty());
 }
 
-TEST_F(ProjectTest, CreateEscapesTheNameInTheConfig) {
-    auto project = Project::create(_root, "My \"Game\"");
+TEST_F(ProjectTest, CreateKeepsTheNameInTheConfig) {
+    auto project = Project::create(_root, "My Game");
     ASSERT_TRUE(project.has_value());
-    EXPECT_EQ(project.value().getProjectName(), "My \"Game\"");
-    EXPECT_EQ(project.value().getConfig().data["gameRoot"], "My \"Game\"/");
+    EXPECT_EQ(project.value().getProjectName(), "My Game");
+    EXPECT_EQ(project.value().getConfig().data["gameRoot"], "My Game/");
 }
 
 TEST_F(ProjectTest, CreateRefusesAnInvalidName) {
@@ -165,12 +180,12 @@ TEST_F(ProjectTest, RefreshFilesListsFoldersFirstThenByName) {
 }
 
 TEST_F(ProjectTest, CreateSceneWritesAnEmptyScene) {
-    EXPECT_EQ(project().createScene("level \"1\""), std::nullopt);
-    const json scene = read("world/scenes/level \"1\".json");
+    EXPECT_EQ(project().createScene("level 1"), std::nullopt);
+    const json scene = read("world/scenes/level 1.json");
     EXPECT_EQ(scene["version"], 2);
-    EXPECT_EQ(scene["name"], "level \"1\"");
+    EXPECT_EQ(scene["name"], "level 1");
     EXPECT_TRUE(scene["entities"].is_array());
-    EXPECT_TRUE(project().openScene("world/scenes/level \"1\".json"));
+    EXPECT_TRUE(project().openScene("world/scenes/level 1.json"));
 }
 
 TEST_F(ProjectTest, CreateSceneRefusesInvalidAndExistingNames) {

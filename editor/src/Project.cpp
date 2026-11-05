@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cctype>
 #include <editor/Project.hpp>
 #include <editor/Types.hpp>
 #include <fstream>
@@ -63,13 +64,34 @@ std::optional<Project> Project::create(const std::filesystem::path& root,
 }
 
 bool Project::isValidName(std::string_view name) {
-    if (name.empty() || name == "." || name == "..") {
+    constexpr std::string_view kForbidden{"<>:\"/\\|?*"};
+    if (name.empty() || name.back() == ' ' || name.back() == '.' ||
+        isReservedName(name)) {
         return false;
     }
-    return std::ranges::none_of(name, [](char character) {
-        return character == '/' || character == '\\' || character == ':' ||
+    return std::ranges::none_of(name, [kForbidden](char character) {
+        return kForbidden.find(character) != std::string_view::npos ||
                static_cast<unsigned char>(character) < ' ';
     });
+}
+
+bool Project::isReservedName(std::string_view name) {
+    constexpr std::array<std::string_view, 4> kDevices{
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+    };
+    std::string upper;
+    for (const char character : name.substr(0, name.find('.'))) {
+        upper += static_cast<char>(
+            std::toupper(static_cast<unsigned char>(character)));
+    }
+    const bool numbered =
+        upper.size() == 4 &&
+        (upper.starts_with("COM") || upper.starts_with("LPT")) &&
+        upper.back() >= '1' && upper.back() <= '9';
+    return numbered || std::ranges::find(kDevices, upper) != kDevices.end();
 }
 
 std::optional<std::string> Project::createScene(const std::string& name) {

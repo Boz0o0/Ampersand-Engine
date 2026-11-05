@@ -57,9 +57,16 @@ object. The editor shows its `assets/`, `scripts/` and `world/` folders.
 folder of the project, like `"game/"` for the R-Type. The files are written
 with nlohmann/json, so any name or path is escaped.
 
-A project or scene name must be a single file name: an empty name, `.`, `..`,
-or a name with `/`, `\`, `:` or a control character is refused with an error,
-so a scene is always written in `world/scenes/`. Creating a scene that already
+A project or scene name must be a single file name that works on every
+platform, so a project made on macOS or Linux also opens on Windows. These
+names are refused with an error:
+
+- an empty name, or one ending with a space or a dot (so `.` and `..` too);
+- a name with `<`, `>`, `:`, `"`, `/`, `\`, `|`, `?`, `*` or a control character;
+- a Windows device name, in any case and with any extension: `CON`, `PRN`,
+  `AUX`, `NUL`, `COM1` to `COM9`, `LPT1` to `LPT9`.
+
+So a scene is always written in `world/scenes/`. Creating a scene that already
 exists is refused too.
 
 A new scene is **not** added to the `scenes` of `config.json`: a folder can
