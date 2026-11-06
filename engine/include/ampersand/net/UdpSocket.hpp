@@ -80,7 +80,10 @@ public:
 
     UdpSocket(const UdpSocket&) = delete;
     UdpSocket& operator=(const UdpSocket&) = delete;
-    /** @brief Moves the socket; any call on the moved-from one throws. */
+    /**
+     * @brief Moves the socket; any call on the moved-from one throws, except
+     * stats.
+     */
     UdpSocket(UdpSocket&&) noexcept;
     UdpSocket& operator=(UdpSocket&&) noexcept;
 

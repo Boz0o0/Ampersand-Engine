@@ -109,8 +109,6 @@ std::uint16_t UdpSocket::localPort() const {
     return endpoint.port();
 }
 
-const NetStats& UdpSocket::stats() const{
-    return this->_netStats;
-}
+const NetStats& UdpSocket::stats() const { return this->_netStats; }
 
 }  // namespace ampersand::net
