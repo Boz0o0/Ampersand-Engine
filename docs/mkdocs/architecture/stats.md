@@ -62,6 +62,21 @@ hud.value = std::format("{:.0f} FPS  {} entities  {:.0f} ms ping", stats.fps,
                         stats.entities, stats.values["game.ping"]);
 ```
 
+## Network traffic
+
+The `Scheduler` does not know the sockets of the game: a `UdpSocket` counts its
+own [traffic](net.md#traffic), and the game copies what it wants in `values`.
+`values` holds floats, which lose precision on big totals, so prefer rates to
+totals of bytes.
+
+```cpp
+const net::NetStats current = socket.stats();
+stats.values["net.kbSentPerSec"] =
+    static_cast<float>(current.bytesSent - previous.bytesSent) / 1000.0F / elapsedSeconds;
+stats.values["net.packetsDropped"] = static_cast<float>(current.packetsDropped);
+previous = current;
+```
+
 ## Limits
 
 | Rule      | Value                                                                      |
