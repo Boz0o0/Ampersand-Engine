@@ -41,6 +41,20 @@ struct Endpoint {
     }
 };
 
+/** @brief Traffic counted by a UdpSocket since it was opened. */
+struct NetStats {
+    /** @brief Datagrams handed to the system. */
+    std::uint64_t packetsSent{};
+    /** @brief Datagrams read by receive. */
+    std::uint64_t packetsReceived{};
+    /** @brief Bytes of the datagrams counted in packetsSent. */
+    std::uint64_t bytesSent{};
+    /** @brief Bytes written into the buffers given to receive. */
+    std::uint64_t bytesReceived{};
+    /** @brief Datagrams dropped by send because the send buffer was full. */
+    std::uint64_t packetsDropped{};
+};
+
 /**
  * @brief A non-blocking IPv4 UDP socket that sends and receives raw datagrams.
  *
@@ -117,8 +131,12 @@ public:
      */
     [[nodiscard]] std::uint16_t localPort() const;
 
+    /** @brief The traffic counted since the socket was opened. */
+    [[nodiscard]] const NetStats& stats() const;
+
 private:
     struct Impl;
+    NetStats _netStats;
     std::unique_ptr<Impl> _impl;
 
     /** @throws NetError If the socket has been moved from. */
