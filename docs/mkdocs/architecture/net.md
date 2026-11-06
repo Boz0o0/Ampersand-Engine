@@ -13,6 +13,7 @@ inside the module, so the game only includes `<ampersand/net/UdpSocket.hpp>`,
 | `UdpSocket` | class | a **non-blocking** IPv4 UDP socket: no call waits for the network             |
 | `Endpoint`  | struct | a peer on the network: numeric `address` (`"127.0.0.1"`) and `port`          |
 | `NetError`  | error | thrown when a socket operation fails (port already used, unknown host...)     |
+| `NetStats`  | struct | the traffic counted by a socket since it was opened                          |
 | `BinaryWriter` | class | appends integers, floats, enums and strings to a byte buffer, in big-endian |
 | `BinaryReader` | class | reads them back; every read checks the size and returns `false` instead of going past the end |
 
@@ -24,6 +25,7 @@ inside the module, so the game only includes `<ampersand/net/UdpSocket.hpp>`,
 | `send(data, to)`          | sends one datagram (bytes or a string)                          |
 | `receive(buffer, from)`   | reads one waiting datagram into `buffer`, fills `from`, returns its size, or `std::nullopt` if none is waiting |
 | `localPort()`             | the port the socket is bound to                                 |
+| `stats()`                 | the [traffic](#traffic) counted by the socket                   |
 
 ## Example
 
@@ -87,6 +89,30 @@ if (!reader.read(id) || !reader.readString(name, 16) || !reader.atEnd()) {
 }
 ```
 
+## Traffic
+
+Each socket counts its traffic since it was opened. The counters only go up, and
+follow the socket when it is moved.
+
+| Field             | What it counts                                                      |
+| ----------------- | ------------------------------------------------------------------- |
+| `packetsSent`     | datagrams handed to the system                                      |
+| `bytesSent`       | bytes of these datagrams                                            |
+| `packetsReceived` | datagrams read by `receive`                                         |
+| `bytesReceived`   | bytes written into the buffers, without the ones lost to a small buffer |
+| `packetsDropped`  | datagrams dropped by `send` because the system send buffer was full |
+
+A rate is the difference between two reads, so keep a copy of the previous one:
+
+```cpp
+const net::NetStats current = socket.stats();
+const float kbSentPerSec =
+    static_cast<float>(current.bytesSent - previous.bytesSent) / 1000.0F / elapsedSeconds;
+previous = current;
+```
+
+To show them with the other metrics, see [Stats](stats.md#network-traffic).
+
 ## Limits
 
 | Rule      | Value                                                                       |
@@ -94,3 +120,4 @@ if (!reader.read(id) || !reader.readString(name, 16) || !reader.atEnd()) {
 | Protocol  | UDP over IPv4 only                                                          |
 | Datagrams | bytes beyond the size of `buffer` are lost: give a buffer as big as the biggest packet |
 | Delivery  | none of UDP's limits are handled: packets can be lost, duplicated or arrive out of order |
+| Traffic   | a socket only sees its own datagrams: the ping and the packets lost on the network need a protocol, so they are up to the game |
