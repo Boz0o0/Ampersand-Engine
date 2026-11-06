@@ -12,6 +12,7 @@
 
 using ampersand::net::Endpoint;
 using ampersand::net::NetError;
+using ampersand::net::NetStats;
 using ampersand::net::UdpSocket;
 
 namespace {
@@ -151,4 +152,99 @@ TEST(UdpSocket, ThrowsOnInvalidAddress) {
 
 TEST(UdpSocket, ThrowsOnUnknownHost) {
     EXPECT_THROW((void)UdpSocket::resolve("host.invalid", 4242), NetError);
+}
+
+TEST(NetStats, StartsAtZero) {
+    const UdpSocket socket;
+    const NetStats& stats = socket.stats();
+    EXPECT_EQ(stats.packetsSent, 0U);
+    EXPECT_EQ(stats.packetsReceived, 0U);
+    EXPECT_EQ(stats.bytesSent, 0U);
+    EXPECT_EQ(stats.bytesReceived, 0U);
+    EXPECT_EQ(stats.packetsDropped, 0U);
+}
+
+TEST(NetStats, CountsSentAndReceivedTraffic) {
+    UdpSocket server;
+    UdpSocket client;
+    const Endpoint serverEndpoint =
+        UdpSocket::resolve("127.0.0.1", server.localPort());
+
+    client.send("hello", serverEndpoint);
+    client.send("salut!", serverEndpoint);
+    Endpoint sender;
+    EXPECT_EQ(receiveString(server, sender), "hello");
+    EXPECT_EQ(receiveString(server, sender), "salut!");
+
+    EXPECT_EQ(client.stats().packetsSent, 2U);
+    EXPECT_EQ(client.stats().bytesSent, 11U);
+    EXPECT_EQ(client.stats().packetsReceived, 0U);
+    EXPECT_EQ(client.stats().bytesReceived, 0U);
+    EXPECT_EQ(client.stats().packetsDropped, 0U);
+
+    EXPECT_EQ(server.stats().packetsReceived, 2U);
+    EXPECT_EQ(server.stats().bytesReceived, 11U);
+    EXPECT_EQ(server.stats().packetsSent, 0U);
+    EXPECT_EQ(server.stats().bytesSent, 0U);
+}
+
+TEST(NetStats, CountsRawBytes) {
+    UdpSocket server;
+    UdpSocket client;
+    const std::array<std::byte, 3> data{};
+
+    client.send(data, {.address = "127.0.0.1", .port = server.localPort()});
+
+    EXPECT_EQ(client.stats().packetsSent, 1U);
+    EXPECT_EQ(client.stats().bytesSent, data.size());
+}
+
+TEST(NetStats, CountsOnlyTheBytesWrittenInTheBuffer) {
+    UdpSocket server;
+    UdpSocket client;
+
+    client.send("hello", {.address = "127.0.0.1", .port = server.localPort()});
+    std::array<std::byte, 2> buffer{};
+    Endpoint sender;
+    ASSERT_EQ(receiveWithin(server, buffer, sender), buffer.size());
+
+    EXPECT_EQ(server.stats().packetsReceived, 1U);
+    EXPECT_EQ(server.stats().bytesReceived, buffer.size());
+}
+
+TEST(NetStats, EmptyReceiveCountsNothing) {
+    UdpSocket socket;
+    std::array<std::byte, 8> buffer{};
+    Endpoint sender;
+
+    EXPECT_EQ(socket.receive(buffer, sender), std::nullopt);
+
+    EXPECT_EQ(socket.stats().packetsReceived, 0U);
+    EXPECT_EQ(socket.stats().bytesReceived, 0U);
+}
+
+TEST(NetStats, FailedSendCountsNothing) {
+    UdpSocket socket;
+
+    EXPECT_THROW(
+        socket.send("hello", {.address = "not an address", .port = 4242}),
+        NetError);
+
+    EXPECT_EQ(socket.stats().packetsSent, 0U);
+    EXPECT_EQ(socket.stats().bytesSent, 0U);
+    EXPECT_EQ(socket.stats().packetsDropped, 0U);
+}
+
+TEST(NetStats, FollowsTheSocketWhenMoved) {
+    UdpSocket server;
+    UdpSocket first;
+    first.send("hello", {.address = "127.0.0.1", .port = server.localPort()});
+
+    const UdpSocket second(std::move(first));
+
+    EXPECT_EQ(second.stats().packetsSent, 1U);
+    EXPECT_EQ(second.stats().bytesSent, 5U);
+    // NOLINTNEXTLINE(bugprone-use-after-move,clang-analyzer-cplusplus.Move):
+    // stats is the one call that stays valid on a moved-from socket
+    EXPECT_NO_THROW((void)first.stats());
 }
