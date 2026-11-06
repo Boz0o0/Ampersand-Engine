@@ -8,7 +8,7 @@ function(add_engine_module MODULE)
 
     target_include_directories(ampersand_${MODULE}
         PUBLIC
-            "${PROJECT_SOURCE_DIR}/include"
+            "${PROJECT_SOURCE_DIR}/engine/include"
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
 

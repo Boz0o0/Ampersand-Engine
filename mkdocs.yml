@@ -13,7 +13,14 @@ theme:
       toggle: { icon: material/brightness-4, name: Light mode }
     - scheme: default
       toggle: { icon: material/brightness-7, name: Dark mode }
-  features: [navigation.sections, navigation.indexes, navigation.instant, content.code.copy, search.highlight]
+  features:
+    [
+      navigation.sections,
+      navigation.indexes,
+      navigation.instant,
+      content.code.copy,
+      search.highlight,
+    ]
 
 markdown_extensions:
   - admonition
@@ -45,6 +52,7 @@ nav:
       - Scene: architecture/scene.md
       - Scripting: architecture/scripting.md
       - Stats: architecture/stats.md
+  - Editor: editor.md
   - Design decisions: decisions.md
   - Changelog: changelog.md
   - R-Type:

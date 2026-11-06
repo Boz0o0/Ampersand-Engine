@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <ampersand/core/ecs/EventQueue.hpp>
 #include <ampersand/core/ecs/Events.hpp>
+#include <ampersand/core/resources/Stats.hpp>
 #include <ampersand/scene/resources/SceneManager.hpp>
 #include <filesystem>
 #include <fstream>
@@ -14,6 +15,7 @@ SceneManager::SceneManager() { registerBuiltins(); }
 
 void SceneManager::registerBuiltins() {
     registerComponent<core::Transform>("Transform");
+    registerResource<core::Stats>("Stats", loadStats, ResourceScope::Config);
 #ifdef AMPERSAND_MODULE_RENDER
     registerRender();
 #endif
@@ -29,6 +31,13 @@ void SceneManager::registerBuiltins() {
 #ifdef AMPERSAND_MODULE_SCRIPTING
     registerScripting();
 #endif
+}
+
+void SceneManager::loadStats(core::ecs::World& world, const json& data) {
+    if (!data.is_object() || !data.empty()) {
+        throw std::runtime_error("'Stats' must be an empty object");
+    }
+    world.addResource<core::Stats>();
 }
 
 void SceneManager::registerResource(const std::string& name,

@@ -24,8 +24,9 @@ ctest --test-dir build --output-on-failure
 ```
 
 The tests are only built when the engine is the top-level project
-(`AMPERSAND_BUILD_TESTS`), so a game that includes the engine does not build
-them.
+(`AMPERSAND_ENGINE_BUILD_TESTS`, and `AMPERSAND_EDITOR_BUILD_TESTS` when the
+editor is built with `AMPERSAND_BUILD_EDITOR`), so a game that includes the
+engine does not build them.
 
 !!! tip "Faster configure"
     Add `-DCPM_SOURCE_CACHE=$HOME/.cache/CPM` to keep the downloaded
@@ -42,6 +43,9 @@ cmake -B build -DAMPERSAND_MODULE_RENDER=OFF -DAMPERSAND_MODULE_AUDIO=OFF
 `core` is needed by every module, and `render` needs `input`: CMake stops with
 an error if one is missing. The list of the modules and their options is in
 [Modules](architecture/modules.md).
+
+The [editor](editor.md) is off by default: add `-DAMPERSAND_BUILD_EDITOR=ON`
+(it needs `render` and `scene`).
 
 ## Using the engine in a game
 

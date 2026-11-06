@@ -84,13 +84,31 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
+## Editor
+
+A desktop editor (ImGui) for the JSON files of a game folder: scenes, entities,
+components and resources. It is off by default:
+
+```sh
+cmake -B build -DAMPERSAND_BUILD_EDITOR=ON
+cmake --build build --target ampersand_editor_app --parallel
+./build/editor/src/ampersand_editor [game folder]
+```
+
+See [Editor](https://boz0o0.github.io/Ampersand-Engine/editor/).
+
 ## Project structure
 
 ```
 .
-├── include/ampersand/  # Public headers, one folder per module
-├── src/                # Sources, one folder per module
-├── tests/              # Unit tests, one folder per module
+├── engine/
+│   ├── include/ampersand/  # Public headers, one folder per module
+│   ├── src/                # Sources, one folder per module
+│   └── tests/              # Unit tests, one folder per module
+├── editor/
+│   ├── include/editor/     # Editor headers
+│   ├── src/                # Editor sources (AMPERSAND_BUILD_EDITOR)
+│   └── tests/              # Editor unit tests
 ├── docs/               # Documentation (MkDocs)
 ├── cmake/              # CPM.cmake (downloads the dependencies)
 └── CHANGELOG.md        # Changes of each version

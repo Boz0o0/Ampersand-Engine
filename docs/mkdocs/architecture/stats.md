@@ -17,6 +17,13 @@ The `Scheduler` does not add `Stats` itself: without it, nothing is measured.
 world.addResource<core::Stats>();  // turns the stats on
 ```
 
+Or from the `resources` of the [configuration](scene.md#files) (not of a scene,
+so the history is not reset by each scene):
+
+```json
+"resources": { "Stats": {} }
+```
+
 ## Fields
 
 | Field      | What it holds                                                                                |
