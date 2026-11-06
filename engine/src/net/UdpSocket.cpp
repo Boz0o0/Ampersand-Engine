@@ -66,10 +66,16 @@ void UdpSocket::send(std::span<const std::byte> data, const Endpoint& target) {
     asio::error_code error;
     this->impl().socket.send_to(asio::buffer(data.data(), data.size()),
                                 toAsio(target), 0, error);
-    if (error && error != asio::error::would_block) {
+    if (error == asio::error::would_block) {
+        this->_netStats.packetsDropped++;
+        return;
+    }
+    if (error) {
         throw NetError("cannot send to " + target.toString() + ": " +
                        error.message());
     }
+    this->_netStats.packetsSent++;
+    this->_netStats.bytesSent += data.size();
 }
 
 void UdpSocket::send(std::string_view data, const Endpoint& target) {
@@ -89,6 +95,8 @@ std::optional<std::size_t> UdpSocket::receive(std::span<std::byte> buffer,
         throw NetError("cannot receive: " + error.message());
     }
     from = fromAsio(sender);
+    this->_netStats.packetsReceived++;
+    this->_netStats.bytesReceived += length;
     return length;
 }
 
@@ -100,5 +108,7 @@ std::uint16_t UdpSocket::localPort() const {
     }
     return endpoint.port();
 }
+
+const NetStats& UdpSocket::stats() const { return this->_netStats; }
 
 }  // namespace ampersand::net
