@@ -11,6 +11,8 @@ It is split into independent modules, so a game only compiles what it uses.
 - **[Getting started](getting-started.md)**: requirements, building the engine, choosing modules and using it in a game.
 - **[Architecture](architecture/index.md)**: how the engine is organised and how each module works.
 - **[Design decisions](decisions.md)**: the choices we made, the alternatives we considered, and why.
+- **[Comparative study](comparative-study.md)**: every technology compared with its alternatives, with the algorithms, storage and security of the engine.
+- **[Accessibility](accessibility.md)**: what the engine, the editor and the documentation give to players and developers with disabilities.
 
 ## Modules
 

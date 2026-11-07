@@ -2,6 +2,7 @@
 
 This page explains the main choices we made for the engine, and why.
 For how things work, see [Architecture](architecture/index.md).
+Every technology compared side by side is in the [Comparative study](comparative-study.md).
 
 ## ECS
 
