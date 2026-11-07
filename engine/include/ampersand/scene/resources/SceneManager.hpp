@@ -310,12 +310,13 @@ public:
 
 #ifdef AMPERSAND_MODULE_SCRIPTING
     /**
-     * @brief Gives the scripts the instantiate and loadScene functions of
-     * this SceneManager.
+     * @brief Gives the scripts the instantiate, loadScene and
+     * getCurrentScene functions of this SceneManager.
      *
      * loadScene is applied at the end of the update of the
      * ScriptingSystem, with defer, since it destroys the entities of the
-     * running scripts.
+     * running scripts: until then, getCurrentScene still gives the old
+     * scene.
      *
      * @param scripting ScriptingSystem running the scripts.
      * @param world World given to instantiate and loadScene.
