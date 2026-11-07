@@ -37,6 +37,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Editor**: new ImGui editor (`AMPERSAND_BUILD_EDITOR`, off by default) for the JSON files of a game folder: open or create a project, Files panel, Hierarchy of the opened scene (create, duplicate, delete, rename, re-parent by drag and drop), Inspector of the configuration (start scene, scenes, resources), of the scene resources and of the entity components, with the prefab overrides. See [Editor](https://boz0o0.github.io/Ampersand-Engine/editor/).
 - **Editor**: **Build** (`Ctrl+B`) writes the changed files, and a modal asks to build or discard the unsaved changes before quitting, opening a project or opening another scene.
 - **Tests**: unit tests of the editor (`test_editor`): creation and opening of projects and scenes, name checks, build, edition of the entities, prefab resolution and `mergeDiff`.
+- **Scripting**: new Lua functions `setParent`, `isAlive`, `getClock`, `getStats`, `setStat`, `input.anyKeyDown`, `getCollisions`, `animation.isFinished`, `quit` and `getCurrentScene`. See [Scripting](https://boz0o0.github.io/Ampersand-Engine/architecture/scripting/#functions).
+- **Tests**: unit tests of the new Lua functions.
 
 ## [0.6.0] - 2026-11-04
 

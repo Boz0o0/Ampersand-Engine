@@ -79,6 +79,8 @@ the first time it is used.
 | `Vec3`        | `core::math::Vec3f`       | `x`, `y`, `z`                                                   | `Vec3.new()`, `Vec3.new(x, y, z)`                   |
 | `Rect`        | `core::math::Rect<float>` | `x`, `y`, `width`, `height`, `intersects(rect)`                 | `Rect.new()`, `Rect.new(x, y, width, height)`       |
 | `Transform`   | `core::Transform`         | `position`, `scale`, `rotationDegrees`, `origin` (`Vec3`)       | no                                                  |
+| `Clock`       | `core::Clock`             | `dt`, `elapsed` (read only)                                     | no                                                  |
+| `Stats`       | `core::Stats`             | `frameMs`, `updateMs`, `fps`, `entities`, `history`, `values` (read only) | no                                        |
 | `BoxCollider` | `physics::BoxCollider`    | `bounds` (`Rect`, local to the entity)                          | no                                                  |
 | `Velocity`    | `physics::Velocity`       | `value` (`Vec2`, per second)                                    | no                                                  |
 | `IntRect`     | `core::math::Rect<int>`   | `x`, `y`, `width`, `height`                                     | `IntRect.new()`, `IntRect.new(x, y, width, height)` |
@@ -101,6 +103,11 @@ the first time it is used.
 | `kill(entity)`                            | core    |                      | sends an `EntityDestroyed`, then destroys it like `destroy`          |
 | `getParent(entity)`                       | core    | `Entity`             | the parent, `nil` for a root                                         |
 | `getChildren(entity)`                     | core    | list of `Entity`     | the children, in the order they were attached                        |
+| `setParent(child, parent)`                | core    |                      | attaches `child` under `parent`, or makes it a root without `parent` |
+| `isAlive(entity)`                         | core    | boolean              | whether the entity still exists                                      |
+| `getClock()`                              | core    | `Clock`              | the time of the frame                                                |
+| `getStats()`                              | core    | `Stats`              | the [Stats](stats.md), `nil` without the resource                    |
+| `setStat(name, value)`                    | core    |                      | writes `values[name]` of the `Stats`, nothing without the resource   |
 | `input.getAxis(name)`                     | input   | number               | value of the axis, from -1 to 1                                      |
 | `input.getButton(name)`                   | input   | boolean              | whether the virtual button is held                                   |
 | `input.getButtonDown(name)`               | input   | boolean              | whether it was pressed during this frame                             |
@@ -109,10 +116,12 @@ the first time it is used.
 | `input.getMouseButtonDown(name)`          | input   | boolean              | whether it was pressed during this frame                             |
 | `input.getMouseButtonUp(name)`            | input   | boolean              | whether it was released during this frame                            |
 | `input.getMousePosition()`                | input   | `Vec2`               | the mouse in pixels of the window, from its top left corner          |
+| `input.anyKeyDown()`                      | input   | boolean              | whether a key, mouse or controller button was pressed this frame     |
 | `getBoxCollider(entity)`                  | physics | `BoxCollider`        | the `BoxCollider` of the entity                                      |
 | `hasBoxCollider(entity)`                  | physics | boolean              | whether the entity has a `BoxCollider`                               |
 | `getBounds(entity)`                       | physics | `Rect`               | the box in the world, from its `BoxCollider` and world transform     |
 | `getColliders()`                          | physics | list of `Entity`     | the entities with a `BoxCollider` and a `Transform`                  |
+| `getCollisions(entity)`                   | physics | list of `Entity`     | the entities it touches, found by the `CollisionSystem`              |
 | `getVelocity(entity)`                     | physics | `Velocity`           | the `Velocity` of the entity, applied by the `MovementSystem`        |
 | `hasVelocity(entity)`                     | physics | boolean              | whether the entity has a `Velocity`                                  |
 | `getText(entity)`                         | render  | `Text`               | the `Text` of the entity                                             |
@@ -130,10 +139,13 @@ the first time it is used.
 | `animation.playOnce(entity, action)`      | render  |                      | plays the state `action` once, then goes back                        |
 | `animation.isPlayingAction(entity)`       | render  | boolean              | whether an action of `playOnce` still plays                          |
 | `animation.getState(entity)`              | render  | string               | the current state (the base state while an action plays)             |
+| `animation.isFinished(entity)`            | render  | boolean              | whether the `Animation` (not looping) played its last frame          |
+| `quit()`                                  | render  |                      | closes the window at the next update of the `RenderSystem`           |
 | `getAudioSource(entity)`                  | audio   | `AudioSource`        | the `AudioSource` of the entity                                      |
 | `hasAudioSource(entity)`                  | audio   | boolean              | whether the entity has an `AudioSource`                              |
 | `instantiate(path)`                       | scene   | `Entity`             | creates the prefab now and returns its root entity                   |
 | `loadScene(name)`                         | scene   |                      | loads the scene at the end of the update                             |
+| `getCurrentScene()`                       | scene   | string               | the current scene (the old one until `loadScene` is applied)         |
 
 The functions and types of a module (`Velocity`, `Text`, `AudioSource`...)
 only exist when it is turned on: `input` is `nil` without `AMPERSAND_MODULE_INPUT`. Calling one on
