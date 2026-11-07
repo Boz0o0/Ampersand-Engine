@@ -40,6 +40,8 @@ void SceneManager::bindScripting(scripting::ScriptingSystem& scripting,
                     loadScene(world, name);
                 });
         });
+    scripting.lua().set_function("getCurrentScene",
+                                 [this] { return getCurrentScene(); });
 }
 
 }  // namespace ampersand::scene
