@@ -8,6 +8,7 @@
 #include <ampersand/core/math/Vec2.hpp>
 #include <ampersand/core/math/Vec3.hpp>
 #include <ampersand/core/resources/Clock.hpp>
+#include <ampersand/core/resources/Stats.hpp>
 #include <ampersand/scripting/components/Scripts.hpp>
 #include <ampersand/scripting/systems/ScriptingSystem.hpp>
 #include <cstdint>
@@ -22,9 +23,11 @@
 #ifdef AMPERSAND_MODULE_PHYSICS
 #include <ampersand/physics/components/BoxCollider.hpp>
 #include <ampersand/physics/components/Velocity.hpp>
+#include <ampersand/physics/resources/Collisions.hpp>
 #endif
 
 #ifdef AMPERSAND_MODULE_RENDER
+#include <ampersand/render/components/Animation.hpp>
 #include <ampersand/render/components/AnimationStateMachine.hpp>
 #include <ampersand/render/components/Primitive.hpp>
 #include <ampersand/render/components/Sprite.hpp>
@@ -78,6 +81,7 @@ void ScriptingSystem::update(core::ecs::World& world) {
     if (!_bound) {
         bindTypes();
         bindWorld(world);
+        bindResources(world);
         bindInput(world);
         bindPhysics(world);
         bindRender(world);
@@ -265,6 +269,47 @@ void ScriptingSystem::bindWorld(core::ecs::World& world) {
     _lua.set_function("getChildren", [&world](core::ecs::Entity entity) {
         return sol::as_table(world.children(entity));
     });
+    _lua.set_function(
+        "setParent", [&world](core::ecs::Entity child,
+                              sol::optional<core::ecs::Entity> parent) {
+            world.setParent(child, parent.value_or(core::ecs::Entity{}));
+        });
+    _lua.set_function("isAlive", [&world](core::ecs::Entity entity) {
+        return world.alive(entity);
+    });
+}
+
+void ScriptingSystem::bindResources(core::ecs::World& world) {
+    _lua.new_usertype<core::Clock>("Clock", sol::no_constructor, "dt",
+                                   sol::readonly(&core::Clock::dt), "elapsed",
+                                   sol::readonly(&core::Clock::elapsed));
+    _lua.set_function("getClock", [&world]() -> const core::Clock& {
+        return world.getResource<core::Clock>();
+    });
+    _lua.new_usertype<core::Stats>(
+        "Stats", sol::no_constructor, "frameMs",
+        sol::readonly(&core::Stats::frameMs), "updateMs",
+        sol::readonly(&core::Stats::updateMs), "fps",
+        sol::readonly(&core::Stats::fps), "entities",
+        sol::readonly(&core::Stats::entities), "history",
+        sol::property([](const core::Stats& stats) {
+            return sol::as_table(stats.history);
+        }),
+        "values", sol::property([](const core::Stats& stats) {
+            return sol::as_table(stats.values);
+        }));
+    _lua.set_function("getStats", [&world]() -> const core::Stats* {
+        if (!world.hasResource<core::Stats>()) {
+            return nullptr;
+        }
+        return &world.getResource<core::Stats>();
+    });
+    _lua.set_function(
+        "setStat", [&world](const std::string& name, float value) {
+            if (world.hasResource<core::Stats>()) {
+                world.getResource<core::Stats>().values[name] = value;
+            }
+        });
 }
 
 void ScriptingSystem::bindInput([[maybe_unused]] core::ecs::World& world) {
@@ -318,6 +363,12 @@ void ScriptingSystem::bindInput([[maybe_unused]] core::ecs::World& world) {
         return core::math::Vec2f{static_cast<float>(pixel.x),
                                  static_cast<float>(pixel.y)};
     });
+    inputTable.set_function("anyKeyDown", [&world] {
+        const auto& manager = world.getResource<input::InputManager>();
+        return !manager.keysPressed().empty() ||
+               !manager.buttonsPressed().empty() ||
+               !manager.joystickButtonsPressed().empty();
+    });
 #endif
 }
 
@@ -356,6 +407,20 @@ void ScriptingSystem::bindPhysics([[maybe_unused]] core::ecs::World& world) {
             }
         }
         return sol::as_table(std::move(colliders));
+    });
+    _lua.set_function("getCollisions", [&world](core::ecs::Entity entity) {
+        std::vector<core::ecs::Entity> touching;
+        if (world.hasResource<physics::Collisions>()) {
+            for (const auto& [first, second] :
+                 world.getResource<physics::Collisions>().pairs) {
+                if (first == entity) {
+                    touching.push_back(second);
+                } else if (second == entity) {
+                    touching.push_back(first);
+                }
+            }
+        }
+        return sol::as_table(std::move(touching));
     });
 #endif
 }
@@ -456,6 +521,13 @@ void ScriptingSystem::bindRender([[maybe_unused]] core::ecs::World& world) {
                            });
     animation.set_function("getState", [machine](core::ecs::Entity entity) {
         return machine(entity).current();
+    });
+    animation.set_function("isFinished", [&world](core::ecs::Entity entity) {
+        return render::isFinished(world.get<render::Animation>(entity));
+    });
+
+    _lua.set_function("quit", [&world] {
+        world.getResource<render::Renderer>().isOpen = false;
     });
 #endif
 }
