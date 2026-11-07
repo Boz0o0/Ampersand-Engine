@@ -54,6 +54,8 @@ nav:
       - Stats: architecture/stats.md
   - Editor: editor.md
   - Design decisions: decisions.md
+  - Comparative study: comparative-study.md
+  - Accessibility: accessibility.md
   - Changelog: changelog.md
   - R-Type:
       - Documentation ↗: https://boz0o0.github.io/R-Type/
