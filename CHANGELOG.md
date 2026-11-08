@@ -13,6 +13,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-08
+
 ### Changed
 
 - **Build**: the engine files moved to `engine/` (`engine/include/`, `engine/src/`, `engine/tests/`) and the editor to `editor/`. Games that include the engine with CMake do not need to change anything.
@@ -29,6 +31,7 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Net**: `UdpSocket::stats()`, a `NetStats` with the packets and bytes sent and received by the socket, and the packets dropped because the send buffer was full.
 - **Net**: `NetStatsSystem`, which writes the traffic of a socket in the `values` of the `Stats` resource: `net.kbSentPerSec`, `net.kbReceivedPerSec`, `net.packetsSentPerSec`, `net.packetsReceivedPerSec` (measured over about one second) and `net.packetsDropped`.
 - **Tests**: unit tests of `NetStats` and of the `NetStatsSystem`.
+- **Docs**: comparative study in [Design decisions](https://boz0o0.github.io/Ampersand-Engine/decisions/), [Contributing](https://boz0o0.github.io/Ampersand-Engine/contributing/) page with the release steps, and the architecture menu grouped by role.
 
 ## [0.6.0] - 2026-11-04
 
@@ -155,7 +158,8 @@ First release, with the very base of the engine.
 - One CMake option and one static library per module.
 - Documentation website.
 
-[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Boz0o0/Ampersand-Engine/compare/v0.4.2...v0.5.0
