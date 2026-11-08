@@ -65,6 +65,37 @@ hud.value = std::format("{:.0f} FPS  {} entities  {:.0f} ms ping", stats.fps,
 From Lua, `getStats()` reads them and `setStat(name, value)` writes a value
 (see [Scripting](scripting.md#functions)).
 
+## Network traffic
+
+A `UdpSocket` counts its own [traffic](net.md#traffic). The `NetStatsSystem` of
+the net module writes it in `values`, if the World has a `Stats`:
+
+```cpp
+#include <ampersand/net/systems/NetStatsSystem.hpp>
+
+net::UdpSocket socket;
+scheduler.add<net::NetStatsSystem>(socket);  // the socket must outlive it
+```
+
+| Key                         | What it holds                                         |
+| --------------------------- | ----------------------------------------------------- |
+| `net.kbSentPerSec`          | kilobytes (1000 bytes) sent per second                |
+| `net.kbReceivedPerSec`      | kilobytes received per second                         |
+| `net.packetsSentPerSec`     | datagrams sent per second                             |
+| `net.packetsReceivedPerSec` | datagrams received per second                         |
+| `net.packetsDropped`        | datagrams dropped by `send` since the socket was opened |
+
+Like `fps`, the rates are measured with the real clock over about one second,
+and stay at 0 during the first one. The totals of bytes are not written:
+`values` holds floats, which lose precision past about 16 MB. A second argument
+changes the interval (`scheduler.add<net::NetStatsSystem>(socket, 500ms)`).
+
+```cpp
+hud.value = std::format("{:.0f} FPS  up {:.1f} kB/s  down {:.1f} kB/s", stats.fps,
+                        stats.values["net.kbSentPerSec"],
+                        stats.values["net.kbReceivedPerSec"]);
+```
+
 ## Limits
 
 | Rule      | Value                                                                      |

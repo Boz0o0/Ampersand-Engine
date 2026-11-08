@@ -39,6 +39,9 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Tests**: unit tests of the editor (`test_editor`): creation and opening of projects and scenes, name checks, build, edition of the entities, prefab resolution and `mergeDiff`.
 - **Scripting**: new Lua functions `setParent`, `isAlive`, `getClock`, `getStats`, `setStat`, `input.anyKeyDown`, `getCollisions`, `animation.isFinished`, `quit` and `getCurrentScene`. See [Scripting](https://boz0o0.github.io/Ampersand-Engine/architecture/scripting/#functions).
 - **Tests**: unit tests of the new Lua functions.
+- **Net**: `UdpSocket::stats()`, a `NetStats` with the packets and bytes sent and received by the socket, and the packets dropped because the send buffer was full.
+- **Net**: `NetStatsSystem`, which writes the traffic of a socket in the `values` of the `Stats` resource: `net.kbSentPerSec`, `net.kbReceivedPerSec`, `net.packetsSentPerSec`, `net.packetsReceivedPerSec` (measured over about one second) and `net.packetsDropped`.
+- **Tests**: unit tests of `NetStats` and of the `NetStatsSystem`.
 
 ## [0.6.0] - 2026-11-04
 
