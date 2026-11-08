@@ -14,6 +14,7 @@ inside the module, so the game only includes `<ampersand/net/UdpSocket.hpp>`,
 | `Endpoint`  | struct | a peer on the network: numeric `address` (`"127.0.0.1"`) and `port`          |
 | `NetError`  | error | thrown when a socket operation fails (port already used, unknown host...)     |
 | `NetStats`  | struct | the traffic counted by a socket since it was opened                          |
+| `NetStatsSystem` | system | writes the traffic of a socket in the [Stats](stats.md#network-traffic) resource |
 | `BinaryWriter` | class | appends integers, floats, enums and strings to a byte buffer, in big-endian |
 | `BinaryReader` | class | reads them back; every read checks the size and returns `false` instead of going past the end |
 
@@ -102,16 +103,12 @@ follow the socket when it is moved.
 | `bytesReceived`   | bytes written into the buffers, without the ones lost to a small buffer |
 | `packetsDropped`  | datagrams dropped by `send` because the system send buffer was full |
 
-A rate is the difference between two reads, so keep a copy of the previous one:
+To have them in the `Stats` resource, with the other metrics, add a
+`NetStatsSystem` (see [Stats](stats.md#network-traffic)):
 
 ```cpp
-const net::NetStats current = socket.stats();
-const float kbSentPerSec =
-    static_cast<float>(current.bytesSent - previous.bytesSent) / 1000.0F / elapsedSeconds;
-previous = current;
+scheduler.add<net::NetStatsSystem>(socket);
 ```
-
-To show them with the other metrics, see [Stats](stats.md#network-traffic).
 
 ## Limits
 

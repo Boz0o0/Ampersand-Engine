@@ -38,7 +38,8 @@ under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 - **Editor**: **Build** (`Ctrl+B`) writes the changed files, and a modal asks to build or discard the unsaved changes before quitting, opening a project or opening another scene.
 - **Tests**: unit tests of the editor (`test_editor`): creation and opening of projects and scenes, name checks, build, edition of the entities, prefab resolution and `mergeDiff`.
 - **Net**: `UdpSocket::stats()`, a `NetStats` with the packets and bytes sent and received by the socket, and the packets dropped because the send buffer was full.
-- **Tests**: unit tests of `NetStats`.
+- **Net**: `NetStatsSystem`, which writes the traffic of a socket in the `values` of the `Stats` resource: `net.kbSentPerSec`, `net.kbReceivedPerSec`, `net.packetsSentPerSec`, `net.packetsReceivedPerSec` (measured over about one second) and `net.packetsDropped`.
+- **Tests**: unit tests of `NetStats` and of the `NetStatsSystem`.
 
 ## [0.6.0] - 2026-11-04
 
