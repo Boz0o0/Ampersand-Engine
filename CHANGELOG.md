@@ -4,25 +4,12 @@ All notable changes to the engine are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
-Everything here is written by hand.
-
 **When making a pull request**, please add a short description of your changes
 under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed` or
 `Removed`, create it if it is missing).
 
-**When releasing a new version**:
-
-1. In a pull request, rename `## [Unreleased]` to the new version and today's
-   date (eg: `## [0.2.0] - 2026-10-16`), and add an empty `## [Unreleased]` above
-   it.
-2. Update the links at the bottom of this file.
-3. Set the same version in `project()` of `CMakeLists.txt`
-   (eg: `VERSION 0.2.0`).
-4. Set the new tag in the `GIT_TAG` of the FetchContent snippets, in
-   `README.md` and `docs/mkdocs/getting-started.md` (eg: `GIT_TAG v0.2.0`).
-5. Once it is merged, tag `main` and push the tag
-   (`git tag v0.2.0 && git push origin v0.2.0`). The release workflow does the checks and creates the GitHub
-   release.
+**When releasing a new version**, follow the steps of
+[Contributing](https://boz0o0.github.io/Ampersand-Engine/contributing/#release).
 
 ## [Unreleased]
 

@@ -41,19 +41,23 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - Architecture:
-      - architecture/index.md
-      - ECS: architecture/ecs.md
+      - Overview: architecture/index.md
       - Modules: architecture/modules.md
-      - Physics: architecture/physics.md
-      - Render: architecture/render.md
-      - Input: architecture/input.md
-      - Audio: architecture/audio.md
-      - Net: architecture/net.md
-      - Scene: architecture/scene.md
-      - Scripting: architecture/scripting.md
-      - Stats: architecture/stats.md
+      - Core:
+          - ECS: architecture/ecs.md
+          - Stats: architecture/stats.md
+      - Engine modules:
+          - Physics: architecture/physics.md
+          - Input: architecture/input.md
+          - Render: architecture/render.md
+          - Audio: architecture/audio.md
+          - Net: architecture/net.md
+      - Game content:
+          - Scene: architecture/scene.md
+          - Scripting: architecture/scripting.md
   - Editor: editor.md
   - Design decisions: decisions.md
+  - Contributing: contributing.md
   - Changelog: changelog.md
   - R-Type:
       - Documentation ↗: https://boz0o0.github.io/R-Type/

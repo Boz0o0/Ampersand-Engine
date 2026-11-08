@@ -3,6 +3,40 @@
 This page explains the main choices we made for the engine, and why.
 For how things work, see [Architecture](architecture/index.md).
 
+## Comparative study
+The ECS, the modules and Lua are explained after the tables, and the choices of the game in the [R-Type decisions](https://boz0o0.github.io/R-Type/decisions/).
+
+### Technologies
+| Need | Choice | Alternatives | Why |
+| --- | --- | --- | --- |
+| Language | C++20 | C++17 | imposed C++; C++20 gives designated initializers, `std::span` and ranges, used everywhere |
+| Build | CMake | Meson, Xmake | known by the team, supported by every IDE and CI |
+| Dependencies | CPM | Conan, vcpkg | one file in `cmake/`, one call per dependency with its version; Conan needs Python, vcpkg its own tool |
+| Architecture | our own sparse set ECS | OOP inheritance, bitset ECS, archetype ECS | data apart from the logic, nothing to keep in sync ([ECS](#ecs)) |
+| Modularity | one static library per module | run-time plugins | C++ has no stable ABI across compilers; Lua covers run-time extension ([Separation of modules](#separation-of-modules)) |
+| Graphics, audio, input | SFML 3 | SDL 3, Raylib | C++ API, audio built in, known by the whole team |
+| Sockets | Asio standalone | POSIX sockets + Winsock, SFML Network | the same code on Linux and Windows, without Boost |
+| Data files | JSON | YAML, binary | readable diffs, editable by hand; YAML breaks silently |
+| Scripting | Lua 5.4 + sol2 | Python, ChaiScript | small, fast, made to be embedded ([Why Lua](#why-lua)) |
+| Editor | Dear ImGui | Qt | made for engine tools, a few files; Qt is huge |
+| Documentation | MkDocs Material + Doxygen | Sphinx, GitBook, a wiki | Markdown in the repository, search and diagrams, published by the CI |
+
+### Algorithms and data structures
+| Need | Choice | Alternatives | Why |
+| --- | --- | --- | --- |
+| Components | one packed pool per type, one row per entity | archetypes | finding a component is direct |
+| Entity handles | row + version | raw index | an old handle to a reused row is seen as dead |
+| Destroying during a frame | `CommandQueue` | destroying at once | no system loses an entity another one uses |
+| Collisions | every pair tested, O(n²) | grid, quadtree | enough for a few hundred hitboxes |
+
+### Security
+| Need | Choice | Alternatives | Why |
+| --- | --- | --- | --- |
+| Malformed packets | every read checked, never throws | exceptions | a bad packet is dropped, nothing crashes |
+| Scripts | only `base`, `math`, `string`, `table` | every Lua library | no access to files or the system |
+| Game files | the load is undone on error | loading what can be read | never half a level |
+| Dependencies | fixed versions, changed by pull request | latest versions | every update is reviewed and tested by the CI |
+
 ## ECS
 
 ### Why an ECS

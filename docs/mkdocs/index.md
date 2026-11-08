@@ -11,15 +11,19 @@ It is split into independent modules, so a game only compiles what it uses.
 - **[Getting started](getting-started.md)**: requirements, building the engine, choosing modules and using it in a game.
 - **[Architecture](architecture/index.md)**: how the engine is organised and how each module works.
 - **[Design decisions](decisions.md)**: the choices we made, the alternatives we considered, and why.
+- **[Contributing](contributing.md)**: how we work, our commits, code style, docs and tests.
 
 ## Modules
 
-- **[ECS](architecture/ecs.md)** (`core`): entities, components, systems and resources.
+- **[ECS](architecture/ecs.md)** and **[Stats](architecture/stats.md)** (`core`): entities, components, systems and resources, and the in-game metrics.
 - **[Physics](architecture/physics.md)**: movement, gravity and collisions.
-- **[Render](architecture/render.md)**: sprites, text, animation and camera, drawn by a `RenderSystem`.
-- **[Input](architecture/input.md)**: keyboard and mouse of the frame, in one resource.
+- **[Input](architecture/input.md)**: keyboard, mouse and controllers of the frame, in one resource.
+- **[Render](architecture/render.md)**: sprites, text, shapes, animation and camera, drawn by a `RenderSystem`.
 - **[Audio](architecture/audio.md)**: sound effects and music, played by an `AudioSystem`.
-- **[Net](architecture/net.md)**: a non-blocking UDP socket.
+- **[Net](architecture/net.md)**: a non-blocking UDP socket, and its traffic.
+- **[Scene](architecture/scene.md)**: the World built from JSON configuration, scenes and prefabs.
+- **[Scripting](architecture/scripting.md)**: the behaviour of the entities, in Lua.
+- **[Editor](editor.md)**: a desktop app to edit the scenes without writing JSON.
 
 ## Used by
 
