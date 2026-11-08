@@ -11,6 +11,7 @@ It is split into independent modules, so a game only compiles what it uses.
 - **[Getting started](getting-started.md)**: requirements, building the engine, choosing modules and using it in a game.
 - **[Architecture](architecture/index.md)**: how the engine is organised and how each module works.
 - **[Design decisions](decisions.md)**: the choices we made, the alternatives we considered, and why.
+- **[Contributing](contributing.md)**: how we work, our commits, code style, docs and tests.
 
 ## Modules
 
