@@ -62,6 +62,9 @@ hud.value = std::format("{:.0f} FPS  {} entities  {:.0f} ms ping", stats.fps,
                         stats.entities, stats.values["game.ping"]);
 ```
 
+From Lua, `getStats()` reads them and `setStat(name, value)` writes a value
+(see [Scripting](scripting.md#functions)).
+
 ## Network traffic
 
 A `UdpSocket` counts its own [traffic](net.md#traffic). The `NetStatsSystem` of
